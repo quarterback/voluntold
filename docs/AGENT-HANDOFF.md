@@ -20,7 +20,9 @@ If an existing repository or deployment platform makes another stack demonstrabl
 - Two organizations cannot access each other's records.
 - Expired/revoked link cannot access intake or tasks.
 - A one-slot opportunity cannot be claimed by two volunteers concurrently.
-- Every outbound offer requires organizer action; every accepted commitment requires volunteer action.
+- Every outbound offer requires organizer action; every accepted contribution requires volunteer action.
+- Contribution, offer and opportunity states follow the tables in MOBILIZATION-PRD.md, including `blocked` and `withdrawn`; withdrawing from coverage reopens the slot.
+- A volunteer token never appears in server logs, analytics or the address bar after the first redirect.
 - Temporary availability is respected; fixed coverage is not automatically fragmented.
 - Volunteers do not create accounts; voluntary consent and opt-out work.
 - All key screens work at small mobile widths and via keyboard.

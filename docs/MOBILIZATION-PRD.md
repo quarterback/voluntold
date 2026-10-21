@@ -25,9 +25,9 @@ Help coordinators describe a real organizational need, produce manageable opport
 
 **Outcome-based task:** e.g. review an event page and send suggested edits; may be completed at any point before a deadline. Effort is estimated, not clocked.
 
-**Coverage task:** e.g. check in attendees 12:00–14:00. Has explicit start/end window, minimum capacity and replacement rules. A withdrawal reopens the uncovered slot and triggers coordinator visibility; it does not imply the volunteer may abandon a confirmed coverage commitment without notifying anyone.
+**Coverage task:** e.g. check in attendees 12:00–14:00. Has explicit start/end window, minimum capacity and replacement rules. A withdrawal reopens the uncovered slot and triggers coordinator visibility; a volunteer leaving an accepted coverage contribution still tells the organizer, and the system records it.
 
-Recurring tasks are templated opportunities that generate discrete commitments, rather than permanent role assignments.
+Recurring tasks are templated opportunities that generate separate contributions, rather than permanent roles.
 
 ## Required fields on publish
 
@@ -43,21 +43,50 @@ Recurring tasks are templated opportunities that generate discrete commitments, 
 
 Optional: referenced source materials, dependencies, accessibility needs, tasks that must precede this one, and suggested skills.
 
-## Task and commitment states
+## States
 
-Need: `draft` → `scoping` → `ready` → `closed`.
+This is the only state model. The database, API, organizer views and CSV export all use these names.
 
-Opportunity: `draft` → `published` → `filled` → `completed` or `cancelled`.
+**Need:** `draft` → `scoping` → `ready` → `closed`.
 
-Offer: `proposed` → `sent` → `accepted` / `declined` / `expired` / `withdrawn`.
+**Opportunity**
 
-Contribution: `accepted` → `in_progress` → `submitted` → `confirmed` or `reopened`.
+| State | Meaning | Next |
+|---|---|---|
+| `draft` | Being written; not visible to volunteers. | `published`, `canceled` |
+| `published` | Visible to its audience; at least one slot open. | `filled`, `completed`, `canceled` |
+| `filled` | Every slot is held by a contribution (see "Holds a slot" below). | `published` (a contribution was withdrawn), `completed`, `canceled` |
+| `completed` | Every remaining contribution is `confirmed`, `withdrawn` or `canceled`, and the organizer closed it. | none |
+| `canceled` | Organizer called off the work. | none |
 
-The accepted state requires an explicit volunteer action. No AI-generated status transition may impersonate a volunteer. Keep a timestamped event history.
+**Offer**
+
+| State | Meaning | Next |
+|---|---|---|
+| `proposed` | Suggested by matching or drafted by the organizer; the volunteer cannot see it. | `sent`, `retracted` |
+| `sent` | Organizer approved it; the volunteer can see it. | `accepted`, `declined`, `expired`, `retracted` |
+| `accepted` | Volunteer said yes; a contribution was created. | none |
+| `declined` | Volunteer said no. | none |
+| `expired` | Reached `expires_at` without an answer. | none |
+| `retracted` | Organizer pulled it back before an answer. | none |
+
+**Contribution:** created when a volunteer accepts an offer or claims an open opportunity.
+
+| State | Meaning | Holds a slot | Next |
+|---|---|---|---|
+| `accepted` | Volunteer accepted; work not started. | yes | `in_progress`, `blocked`, `submitted`, `withdrawn`, `canceled` |
+| `in_progress` | Volunteer marked the work started. Optional; outcome tasks may go straight to `submitted`. | yes | `blocked`, `submitted`, `withdrawn`, `canceled` |
+| `blocked` | Volunteer flagged a blocker with a note; the organizer sees it. Either side clears it. | yes | `in_progress`, `withdrawn`, `canceled` |
+| `submitted` | Volunteer marked the work done, with an optional note and hours. | yes | `confirmed`, `in_progress` (organizer sent it back with a note) |
+| `confirmed` | Organizer recorded completion. | yes | none |
+| `withdrawn` | Volunteer stepped back before submitting. The slot reopens; for a coverage task the organizer sees the gap. | no | none |
+| `canceled` | The opportunity was canceled while the contribution was active. | no | none |
+
+The volunteer moves a contribution to `accepted`, `in_progress`, `blocked`, `submitted` or `withdrawn`. The organizer confirms it, sends submitted work back to `in_progress`, or cancels the opportunity. Either side can clear a blocker, which returns the contribution to `in_progress`. No AI-generated transition may act for either side. Every transition writes a timestamped event.
 
 ## Example test case
 
-Need: "Our local arts chapter has a public program Thursday, 7 a.m. to 5 p.m.; registration and welcome desk must be staffed; marketing needs review before Wednesday."
+Need: "Our local arts chapter has a public program Thursday, 10 a.m. to 2 p.m.; the registration and welcome desk must be staffed the whole time; marketing needs review before Wednesday."
 
 Suggested decomposition:
 - Publish/check the event page, estimated 45–75 minutes, deliverable-based, due Wednesday.
@@ -69,9 +98,9 @@ A volunteer available 10:45–12:00 can cover a suitable sub-slot *only if the o
 
 ## Matching logic
 
-Hard filters: current availability, commitment capacity, visibility, required authorization/certifications, location and minimum coverage window.
+Hard filters: current availability, time capacity, visibility, required authorization/certifications, location and minimum coverage window.
 
-Soft signals: stated interests, self-described skills, preferred types of work, prior opt-in history and whether the task matches the person's requested commitment size.
+Soft signals: stated interests, self-described skills, preferred types of work, prior opt-in history and whether the task matches how much time the person offered.
 
 Show explanations such as "Interested in communications; available this week; estimated 60 minutes" and explicit mismatches such as "Only available next month." Coordinator approves targeted offers; published open tasks can be claimed subject to eligibility and capacity rules.
 
@@ -79,11 +108,12 @@ Show explanations such as "Interested in communications; available this week; es
 
 - Organizer can publish a useful opportunity without completing an organizational chart.
 - Organizer can manually modify all AI-generated text and publish without calling a model.
-- Coverage tasks are never silently converted to more flexible commitments.
+- Coverage tasks are never silently converted to more flexible work.
 - Two volunteers claiming the last available slot at the same time cannot both obtain the sole slot.
-- Withdrawing from accepted coverage notifies the organizer's dashboard and marks the gap.
+- Withdrawing from accepted coverage returns the opportunity from `filled` to `published`, notifies the organizer's dashboard and marks the gap.
+- A blocked contribution shows its note to the organizer and still holds its slot.
 - Completed tasks preserve agreed outcome, contributor, approval state and optional hours.
-- An unassigned opportunity is distinguishable from one offered but not yet accepted.
+- An opportunity nobody has been offered is distinguishable from one offered but not yet accepted.
 - Organization A cannot publish, claim, edit or export organization B's tasks.
 - All public links hide volunteer contact details and private organizer notes.
 

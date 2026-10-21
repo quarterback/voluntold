@@ -29,7 +29,7 @@ Application code goes in this repository, `quarterback/voluntold`, alongside the
 
 Organization 1: local design association; organizer preparing a public lecture next Thursday. Needs event page review (60 minutes, flexible), preparation of check-in instructions (45 minutes, flexible), and registration desk (12:00–14:00 fixed coverage).
 
-Volunteers: Alex (communications, 90 minutes this week), Sam (design, one afternoon this month), Jordan (events, available next month, prefers recurring work). Matching must exclude Jordan from this week's fixed coverage; match Alex to time-bounded communications work if otherwise eligible; do not auto-assign anyone.
+Volunteers: Alex (communications, 90 minutes this week), Sam (design, one afternoon this month), Jordan (events, available next month, prefers recurring work). Matching must exclude Jordan from this week's fixed coverage; match Alex to time-bounded communications work if otherwise eligible; never accept on a volunteer's behalf.
 
 Organization 2: neighborhood arts group with a distinct administrator and volunteers. Tenant separation must prevent cross-reading and cross-claiming all records.
 
@@ -41,7 +41,7 @@ Organization 2: neighborhood arts group with a distinct administrator and volunt
 
 **Hour 1–3: transaction backend**
 - CRUD for needs, tasks, volunteer intake and scoped access.
-- Claim/accept with atomic capacity enforcement, complete/confirm, event record, CSV export.
+- Claim/accept with atomic capacity enforcement, blocker and withdrawal, submit/confirm, event record, CSV export.
 - Unit and API tests for state transitions and permission boundaries.
 
 **Hour 3–5: usable UI**

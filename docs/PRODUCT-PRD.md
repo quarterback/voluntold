@@ -9,6 +9,16 @@ Help volunteer-run organizations turn willingness to help into completed contrib
 
 The system assists management judgment: asking organizers better questions, shaping tasks, checking capacity, and maintaining a record. It does not require formal role definitions, employee-style onboarding or mandatory volunteer accounts.
 
+## Terms
+
+- **Need:** what the organizer says is going on, in their own words.
+- **Opportunity:** a published piece of work with an outcome, effort or coverage window, and a number of slots.
+- **Offer:** an organizer's request to a specific volunteer to take an opportunity.
+- **Contribution:** the record created when a volunteer accepts. It runs from acceptance to confirmation or withdrawal. The code, database and API use this word, not "commitment" or "assignment".
+- **Availability:** a volunteer's stated window and capacity. It expires.
+
+States for each are defined once, in [MOBILIZATION-PRD.md](MOBILIZATION-PRD.md#states).
+
 ## Target users
 
 - **Organizer/coordinator:** A board member, chapter officer or volunteer director at a professional association, community group, member organization or small nonprofit. May be new to delegation and may not know how to specify tasks.
@@ -32,7 +42,7 @@ Volunteer board seats and formal fiduciary/governance roles are different from t
 
 **Completed contributions per active organization per 30 days**.
 
-Instrument the preceding funnel independently: organizations with an approved opportunity; shareable opportunities viewed; volunteer responses; accepted commitments; work completed; repeat opportunities and repeat contributors. Do not treat generated tasks, registered records or sent invitations as completed work.
+Instrument the preceding funnel independently: organizations with an approved opportunity; shareable opportunities viewed; volunteer responses; accepted contributions; confirmed contributions; repeat opportunities and repeat contributors. Do not treat generated tasks, registered records or sent invitations as completed work.
 
 Adoption targets (aspirational; not projections):
 - First real pilot: 5 independent organizations complete at least one contribution.
@@ -45,11 +55,11 @@ Adoption targets (aspirational; not projections):
 - Organization-initiated activation: coordinators can initiate volunteer invites directly.
 - Volunteers are people helping, not employees: small asks, plain language, flexible participation.
 - Availability is temporal. It has a date/window and can expire.
-- A match is a recommendation; an offer is a request; a commitment exists only after explicit volunteer acceptance.
+- A match is a recommendation; an offer is a request; a contribution exists only after explicit volunteer acceptance.
 - Some work requires fixed coverage. Model it honestly and allow a volunteer to request release so the organizer can find replacement coverage.
 - Help organizations discover the work they can delegate, including work they have not yet defined.
 - Default to free hosted use, low infrastructure cost and portable records.
-- An agent proposes, explains and asks questions. Coordinators approve publication and outbound commitments. No autonomous promises on behalf of volunteers.
+- An agent proposes, explains and asks questions. Coordinators approve publication and every outbound offer. No autonomous promises on behalf of volunteers.
 - Data about volunteers is private to the inviting organization and its authorized coordinators.
 
 ## v0 capabilities (must ship together as a vertical slice)
@@ -61,7 +71,7 @@ Adoption targets (aspirational; not projections):
 - Invite a known volunteer through a private link. Manual share/copy is sufficient at first.
 - View intake responses and suggested matches, with reasons.
 - Offer approved work to a volunteer or allow an eligible person to claim an open opportunity.
-- See task lifecycle: draft, available, offered, accepted, in progress, done, closed, canceled.
+- See each opportunity's state and each contribution's state, as defined in [MOBILIZATION-PRD.md](MOBILIZATION-PRD.md#states), with blocked and withdrawn contributions called out.
 - See volunteer response and contribution record; export CSV.
 
 **Volunteer**
@@ -69,7 +79,7 @@ Adoption targets (aspirational; not projections):
 - Answer short intake prompts: preferred name, interest/skills, current availability window, task preferences, preferred contact method and consent to be contacted.
 - See an opportunity description including estimated effort, due date, specific outcome, location/remote requirement, point of contact, constraints and whether it requires fixed coverage.
 - Accept, decline, or signal a different availability window.
-- Access agreed instructions, flag blocker or withdraw, and mark done with an optional note/hours.
+- Access agreed instructions, flag a blocker, withdraw, and mark done with an optional note/hours.
 - Reopen a valid private link to update availability or stop further invitations.
 
 **AI assistance**
@@ -103,7 +113,7 @@ Core hosted product: free during adoption period with transparent fair-use prote
 ## Risks and countermeasures
 
 - **Wrong work proposed:** Tasks require organizer editing and approval. Keep a human reviewer on every task.
-- **Volunteer overload:** Availability and max commitment are explicit; do not infer consent from a matching score.
+- **Volunteer overload:** Availability and maximum time are explicit; do not infer consent from a matching score.
 - **Sensitive information:** Do not expose full volunteer details on public opportunity pages or another tenant's workspace.
 - **Casual participants can't onboard:** Intake must be link-first, mobile-friendly and short; never gate acceptance behind volunteer account registration.
 - **One coordinator becomes a bottleneck:** Surface blockers and show when a task is unclaimed or the promised handoff is missing.

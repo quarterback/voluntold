@@ -13,6 +13,7 @@ A small team using coding agents can ship one persistent end-to-end transaction 
 - **Organizer identity:** use a proven managed authentication service (email OTP or OAuth) rather than implementing credentials or homegrown sessions. Verify signed auth tokens server-side; store org membership and permissions locally.
 - **Volunteer access:** one-time and reusable **scoped capability links**. Store only hash digests of random tokens; enforce org, volunteer, task, scope, expiration, revocation and usage limits server-side.
 - **AI calls:** separate adapter/gateway (Qwen or DeepSeek via hosted inference provider initially). Structured JSON-schema output, input minimization, per-request token limits, rate limiting, deadlines and budget caps. Manual editing always possible.
+- **Model provider requirement:** use only a provider whose terms say prompts and outputs are not used for training and are not retained beyond short-term abuse monitoring. Record the provider, the terms and the date checked in an ADR before any real volunteer text is sent. Send volunteer intake text only for the call that needs it; task drafting needs the organizer's need, not volunteer profiles.
 - **Async events:** Cloudflare Queues later for outbound messages, retries, reminders and provider rate limits. Launch can share URLs manually to avoid a deliverability dependency; organizer sign-in may still require a configured auth email service.
 - **Files:** avoid uploads in v0. Defer object storage until materials and export attachments justify it.
 - **Monitoring:** structured events, request IDs and error logging without leaking volunteer intake text or token URLs; basic uptime checks.
@@ -29,7 +30,7 @@ This stack is a recommendation, not a claim that provider pricing or self-hostin
 `needs(id, org_id, author_member_id, description, status, created_at)`  
 `opportunities(id, org_id, need_id, title, description, outcome, task_type, estimate_minutes, start_at, deadline_at, capacity, status, visibility, reviewer_member_id)`  
 `offers(id, org_id, opportunity_id, volunteer_id, status, expires_at, created_at)`  
-`commitments(id, org_id, opportunity_id, volunteer_id, status, accepted_at, submitted_at, confirmed_at, hours_minutes_nullable)`  
+`contributions(id, org_id, opportunity_id, volunteer_id, offer_id_nullable, status, accepted_at, submitted_at, confirmed_at, withdrawn_at, blocker_note_nullable, hours_minutes_nullable)`  
 `capabilities(id, org_id, volunteer_id_nullable, opportunity_id_nullable, token_hash, permission_scope, expires_at, revoked_at, uses)`  
 `events(id, org_id, actor_kind, actor_id_nullable, verb, object_type, object_id, timestamp, metadata_json)`  
 `ai_usage(id, org_id, provider, model, purpose, input_tokens, output_tokens, cost_usd_estimate, created_at)`
@@ -46,17 +47,21 @@ Organizer (authenticated):
 - `POST /api/orgs/:orgId/offers`, `GET /api/orgs/:orgId/contributions/export`
 
 Scoped volunteer:
-- `GET /v/:token` displays intake or opportunity according to token scope
-- `POST /api/volunteer/intake` (token required)
-- `POST /api/volunteer/offer-response` (token required)
-- `POST /api/volunteer/contribution` (token required)
-- `POST /api/volunteer/availability` and `POST /api/volunteer/opt-out` (token required)
+- `GET /v/:token` exchanges the token for a scoped session and redirects to the intake or opportunity its scope allows (see token handling below)
+- `POST /api/volunteer/intake` (scoped session required)
+- `POST /api/volunteer/offer-response` (scoped session required)
+- `POST /api/volunteer/contribution` (scoped session required)
+- `POST /api/volunteer/availability` and `POST /api/volunteer/opt-out` (scoped session required)
 
 Open opportunity:
 - `GET /o/:publicId` sanitized opportunity page
-- `POST /api/opportunities/:publicId/interest` rate limited, Turnstile as needed; returns scoped next step
+- `POST /api/opportunities/:publicId/interest` rate limited, Turnstile as needed. Creates a new volunteer record in the opportunity's organization with status `responded` and returns a scoped capability for the next step. It never attaches the response to an existing record by email; see ACTIVATION-PRD.md.
 
-Do not put private invite token values in logged request URLs or analytics. Consider a one-time token exchange into an HttpOnly session cookie on first access, then a scrubbed URL.
+Token handling (required for launch):
+- Each time a `/v/:token` link is opened, the server checks the token, sets a short-lived `HttpOnly`, `Secure`, `SameSite=Lax` session cookie limited to that capability's scope, and redirects to a URL without the token. Later requests use the cookie.
+- Serve `/v/*` with `Referrer-Policy: no-referrer` and no third-party scripts, so the token cannot leak through the Referer header.
+- Request logging, error reporting and analytics redact the `/v/:token` path segment.
+- Revoking or expiring the capability also ends sessions created from it.
 
 ## Matching contract
 
@@ -70,7 +75,7 @@ Deterministic filters exclude volunteers whose explicit window is incompatible, 
 - SHA-256/HMAC of cryptographically strong invitation token (server secret held outside repository); rotate/revoke; sensible expiry. Hash comparison not plain-text token storage.
 - Random opaque public IDs; no sequential volunteer identifiers in shareable URLs.
 - CSRF protections for cookie-authenticated state-changing endpoints; CORS default-deny; parameterized SQL; per-route request limits.
-- Double-claim protection: unique constraint or atomic conditional write around opportunity capacity; test concurrency.
+- Double-claim protection: an atomic conditional write so the count of slot-holding contributions (see [MOBILIZATION-PRD.md](MOBILIZATION-PRD.md#states)) never exceeds the opportunity's capacity; test concurrency.
 - Contact consent, self-service opt-out, admin deletion/export, modest retention defaults, no model training on volunteer profiles by default.
 - Admins can see only their org; volunteers can see only their own scoped information and published opportunity details.
 - Keep test data synthetic and visibly labeled in test/demo environment, never pass it off as completed volunteer activity.
@@ -83,7 +88,7 @@ Deterministic filters exclude volunteers whose explicit window is incompatible, 
 
 1,000–10,000+ orgs: partition tenancy where appropriate; evaluate D1 size and read/write throughput constraints, or managed PostgreSQL. Maintain migration tests and verify actual p95 latency and queue processing under load; no ungrounded claim of throughput.
 
-The volunteer does not need a hosted identity account, so volunteer *records* and monthly *active participants* should be modeled separately. Adapter contracts keep Slack/Discord/email as delivery channels rather than parallel stores of commitments.
+The volunteer does not need a hosted identity account, so volunteer *records* and monthly *active participants* should be modeled separately. Adapter contracts keep Slack/Discord/email as delivery channels rather than parallel stores of contributions.
 
 ## Service cost controls
 

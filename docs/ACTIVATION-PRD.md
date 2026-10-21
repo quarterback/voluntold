@@ -16,7 +16,7 @@ An organizer shares an invitation that allows a person to complete a lightweight
 2. **Open intake:** Organization shares an approved public intake URL to its existing community. The volunteer chooses to express interest and confirms that the organization may contact them.
 3. **Opportunity-first:** Someone opens a shared opportunity, completes only the missing intake information needed to accept, and may opt into future opportunities.
 
-All three write to the same volunteer record for the organization when authorized and when identity can be reconciled safely. Do not silently merge volunteers across organizations.
+All three write to the organization's volunteer records. Reuse an existing record only when the person arrives through a private link already tied to that record. A matching email or name is not proof of identity, because anyone can type one: open intake and opportunity-first responses create a new record, and an organizer can merge duplicates by hand within their own organization. Never merge volunteers across organizations.
 
 ## Intake interaction
 
@@ -36,7 +36,7 @@ If a volunteer declines future outreach, they can still finish an existing accep
 - `invited`: Invitation created, no volunteer response.
 - `responded`: Intake submitted; volunteer has not accepted work.
 - `available`: Current valid time window and consent permit suggestions.
-- `committed`: Volunteer has explicitly accepted at least one active assignment.
+- `committed`: Volunteer has at least one contribution in `accepted`, `in_progress`, `blocked` or `submitted`.
 - `inactive`: Availability expired or person has opted out.
 - `alumni`: Past contributor; no current availability assumed.
 
@@ -56,7 +56,7 @@ Model eligibility deterministically: consent, task visibility, skill prerequisit
 - A person available for 60 minutes is not recommended for an indivisible 4-hour shift.
 - Same email entered at two organizations does not leak data across tenants.
 - Expired/revoked invitation URLs cannot view or edit private records.
-- Accidental duplicate submissions don't create multiple distinct commitments.
+- Accidental duplicate submissions don't create duplicate volunteer records or contributions.
 - Organizer sees response, availability freshness and suggested tasks; volunteer can update their preferences via a scoped private URL.
 
 ## After launch

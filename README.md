@@ -4,9 +4,9 @@ Vloora product proposal, October 21, 2026. Product name and public brand are und
 
 ## What the product does
 
-A volunteer-run organization can describe work it needs done, prepare useful short- or long-term opportunities, reach people it already knows, and get a real commitment without making volunteers join another management platform. Volunteers can share skills, interests and temporary availability, accept work, and record a contribution from a link. Organizations get a durable record and a way to mobilize people again when new work appears.
+A volunteer-run organization can describe work it needs done, prepare useful short- or long-term opportunities, reach people it already knows, and get an explicit yes without making volunteers join another management platform. Volunteers can share skills, interests and temporary availability, accept work, and record a contribution from a link. Organizations get a durable record and a way to mobilize people again when new work appears.
 
-The core unit is a **contribution**, rather than a volunteer's job title or shift. Fixed coverage remains available where the work genuinely requires it. Participation is opt-in; organizer proposals and agent matches are not assignments until a person accepts.
+The core unit is a **contribution**, rather than a volunteer's job title or shift. Fixed coverage remains available where the work genuinely requires it. Participation is opt-in; organizer proposals and agent matches bind no one until a person accepts.
 
 ## Why this product
 
