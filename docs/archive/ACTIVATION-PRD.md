@@ -14,7 +14,7 @@ Every approved volunteer gets a first ask soon after approval, and gets asked ag
 
 ## How people come in
 
-All routes write to one organization's volunteer records. Recruiting and vetting happen outside the tool ([0001](decisions/0001-start-after-approval.md)).
+All routes write to one organization's volunteer records. Recruiting and vetting happen outside the tool ([0001](../decisions/0001-start-after-approval.md)).
 
 1. **Import:** the coordinator uploads a CSV of people the organization has already approved. The importer maps columns, drafts tiers and availability from free text for the coordinator to correct, and shows likely duplicates within the file for the coordinator to merge. A "last helped" column, if present, sets each person's wait from day one. Imported people are `approved`. People with no email and no phone are held on the import's "no contact information" list, not added to the roster, until the coordinator fills them in or drops them.
 

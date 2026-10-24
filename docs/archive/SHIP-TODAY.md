@@ -1,6 +1,6 @@
 # Ship today: October 24, 2026
 
-Replaces the October 21 plan. What changed and why is in the "What changed" section of [PRODUCT-PRD.md](PRODUCT-PRD.md) and in [docs/decisions/](decisions/).
+Replaces the October 21 plan. What changed and why is in the "What changed" section of [PRODUCT-PRD.md](PRODUCT-PRD.md) and in [docs/decisions/](../decisions/).
 
 ## Shipping decision
 
@@ -40,7 +40,7 @@ Application code goes in this repository, `quarterback/voluntold`. The product n
 
 ## Screens for today
 
-All in Material 3 ([0004](decisions/0004-material-3-for-the-interface.md)), built for a 412 px wide phone first. Navigation bar: Today, Work, People, Intake.
+All in Material 3 ([0004](../decisions/0004-material-3-for-the-interface.md)), built for a 412 px wide phone first. Navigation bar: Today, Work, People, Intake.
 
 | Screen | What it holds |
 |---|---|
@@ -129,6 +129,6 @@ These timings are an aggressive target for an agent assisted build with hosting 
 
 ## Right after launch
 
-- Start text message registration ([0005](decisions/0005-email-first-then-text-then-slack.md)) so it is approved when the text release is ready.
+- Start text message registration ([0005](../decisions/0005-email-first-then-text-then-slack.md)) so it is approved when the text release is ready.
 - Fix blockers before adding channels.
 - Publish operating cost without disclosing personal data.

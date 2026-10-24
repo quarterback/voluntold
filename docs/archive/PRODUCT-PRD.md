@@ -7,11 +7,11 @@
 
 The October 21 version made intake the front door and ended each contribution with an organizer confirming it. Decisions made since then change both.
 
-- The product starts after a volunteer is approved. Recruiting and vetting stay outside it ([0001](decisions/0001-start-after-approval.md)).
-- The schedule is the record. There is no confirm step and no timesheet ([0002](decisions/0002-the-schedule-is-the-record.md)).
-- The coordinator's app works when the internet is down ([0003](decisions/0003-coordinator-app-works-offline.md)).
-- The interface follows Material 3 ([0004](decisions/0004-material-3-for-the-interface.md)).
-- Offers go out by email first, then by text, then by Slack ([0005](decisions/0005-email-first-then-text-then-slack.md)).
+- The product starts after a volunteer is approved. Recruiting and vetting stay outside it ([0001](../decisions/0001-start-after-approval.md)).
+- The schedule is the record. There is no confirm step and no timesheet ([0002](../decisions/0002-the-schedule-is-the-record.md)).
+- The coordinator's app works when the internet is down ([0003](../decisions/0003-coordinator-app-works-offline.md)).
+- The interface follows Material 3 ([0004](../decisions/0004-material-3-for-the-interface.md)).
+- Offers go out by email first, then by text, then by Slack ([0005](../decisions/0005-email-first-then-text-then-slack.md)).
 - New: volunteer tiers, a Today screen of drafted asks, rounds of offers, a weekly limit on asks per person, and import from spreadsheets.
 
 ## Product outcome
@@ -139,14 +139,14 @@ Notes of unscheduled hours come with roles, in a later release.
 
 **Interface**
 
-- Material 3, built for phones first, as [0004](decisions/0004-material-3-for-the-interface.md) sets out.
+- Material 3, built for phones first, as [0004](../decisions/0004-material-3-for-the-interface.md) sets out.
 - Screen copy in plain language. Buttons say what they do ("Approve 3," "Send round 3 now," "I can't make it"). No arrows in labels, no status tags, and no internal names such as `offer` on screen.
 
 ## Planned releases after v0
 
 In order. Each must work without the ones after it.
 
-1. **Text messages:** asks, answers and reminders by text, once a number is registered ([0005](decisions/0005-email-first-then-text-then-slack.md)). STOP and HELP replies work.
+1. **Text messages:** asks, answers and reminders by text, once a number is registered ([0005](../decisions/0005-email-first-then-text-then-slack.md)). STOP and HELP replies work.
 2. **Intake and waitlist by tier:** a switch per tier. When a tier is off, new volunteers join its waitlist and hear when to expect an ask. Everyone who joins hears from the organization within 3 days.
 3. **Urgent asks:** what, when, how many and where. The ask goes first to a lead who has led before, then to everyone who opted into urgent asks within the set distance.
 4. **Roles with requirements:** a role such as show host can carry yearly requirements, such as 24 hours outside the show, two meetings and a training. Requirements fill in from contributions, RSVPs and one line notes of unscheduled hours, which this release adds. People short on hours get drafts first. Renewal goes to the host with their status, and the coordinator sees a list grouped by status. The coordinator decides each renewal.

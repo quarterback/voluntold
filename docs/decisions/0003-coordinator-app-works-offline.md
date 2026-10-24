@@ -4,6 +4,8 @@ Date: 2026-10-24
 
 Status: Accepted in principle by the owner on 2026-10-23. The mechanism below is proposed.
 
+Changed by [0007](0007-pilot-scope.md) on 2026-10-24: working offline moves to later, after the pilot.
+
 ## Context
 
 The owner set two requirements on October 23. When the tool is needed, it has to work, so a mode that works without the web is key. And organizations should run it within their own context.

@@ -4,6 +4,8 @@ Date: 2026-10-24
 
 Status: Proposed
 
+Changed by [0007](0007-pilot-scope.md) on 2026-10-24: the pilot sends nothing itself. Coordinators copy links. Email, then text, then Slack come later in that order.
+
 ## Context
 
 The October 21 PRDs put text messages and Slack out of scope for the first public version. Offers travel as links the organizer copies.

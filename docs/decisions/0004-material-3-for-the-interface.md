@@ -4,6 +4,8 @@ Date: 2026-10-24
 
 Status: Accepted, decided by the owner on 2026-10-23
 
+Changed by [0007](0007-pilot-scope.md) on 2026-10-24: the pilot uses MUI, an existing Material component library, themed from the same seed color, instead of hand-built components.
+
 ## Context
 
 The first screen drafts used the Vloora design system's colors and type. The owner rejected them. This product should not use Vloora's colors, and it needs a real, established design system rather than a house style.

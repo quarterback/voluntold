@@ -19,7 +19,7 @@ Help coordinators turn a real need into clear opportunities, ask the right appro
 5. The organizer edits and approves each one. Approving it publishes it to its audience and drafts its first round of offers. The coordinator approves that round on the Review screen.
 6. Offers go out in rounds until it is full, as described below. A volunteer chooses whether to say yes.
 7. A volunteer who said yes sees what to do, who to find and any linked document. They can flag a blocker, step back, or for outcome work, mark it done early.
-8. The contribution becomes `done` when its time passes. No one confirms it ([0002](decisions/0002-the-schedule-is-the-record.md)).
+8. The contribution becomes `done` when its time passes. No one confirms it ([0002](../decisions/0002-the-schedule-is-the-record.md)).
 
 Every step works by hand with no model.
 
@@ -158,7 +158,7 @@ v0 shows these, newest decisions first:
 - New people waiting for approval
 - A blocked contribution
 - A suggested tier change
-- An action made offline that the server rejected, with the reason ([0003](decisions/0003-coordinator-app-works-offline.md))
+- An action made offline that the server rejected, with the reason ([0003](../decisions/0003-coordinator-app-works-offline.md))
 
 Below the list: this week's work and how full each piece is. When the list is empty, Today says "Nothing needs a decision" and when the next drafts arrive.
 

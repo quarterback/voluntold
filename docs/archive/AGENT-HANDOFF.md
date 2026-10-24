@@ -11,7 +11,7 @@ Build a production minded, end to end beta for volunteer activation. Read these 
 - [MOBILIZATION-PRD.md](MOBILIZATION-PRD.md)
 - [ARCHITECTURE.md](ARCHITECTURE.md)
 - [SHIP-TODAY.md](SHIP-TODAY.md)
-- every record in [decisions/](decisions/)
+- every record in [decisions/](../decisions/)
 
 The first user story: a coordinator imports approved volunteers, describes a need, approves an opportunity, and approves a round of drafted asks. A volunteer says yes from a phone with no account. The work becomes done when its time passes, with no one confirming it.
 
@@ -19,7 +19,7 @@ Build the exact slice in `SHIP-TODAY.md` and its tests. Do not add hour logging 
 
 ## Stack
 
-Cloudflare Workers, Hono, D1 and React with Vite, with versioned migrations. The coordinator client is a progressive web app with Dexie and an outbox ([0003](decisions/0003-coordinator-app-works-offline.md)). Material 3 components built on React Aria, with color roles from `@material/material-color-utilities` ([0004](decisions/0004-material-3-for-the-interface.md)). Use managed authentication for organizers, and never build a password system. Volunteers use narrowly scoped, hashed, revocable capability links. Model calls go through a server side adapter to an affordable open weight model. Validate its JSON output against a schema and keep a manual fallback. A missing model key must not break the core app.
+Cloudflare Workers, Hono, D1 and React with Vite, with versioned migrations. The coordinator client is a progressive web app with Dexie and an outbox ([0003](../decisions/0003-coordinator-app-works-offline.md)). Material 3 components built on React Aria, with color roles from `@material/material-color-utilities` ([0004](../decisions/0004-material-3-for-the-interface.md)). Use managed authentication for organizers, and never build a password system. Volunteers use narrowly scoped, hashed, revocable capability links. Model calls go through a server side adapter to an affordable open weight model. Validate its JSON output against a schema and keep a manual fallback. A missing model key must not break the core app.
 
 If another stack is clearly faster, write the tradeoff in a decision record in `docs/decisions/` before changing course. No provider credentials in commits.
 
