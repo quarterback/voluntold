@@ -1,126 +1,187 @@
-# Product requirements: volunteer activation and mobilization
+# Product requirements: volunteer activation
 
-**Status:** v0 planning | **Owner:** Vloora | **Date:** October 21, 2026  
+**Status:** v0 planning, revised October 24, 2026 | **Owner:** Vloora | **First written:** October 21, 2026
 **Working title:** Volunteer Mobilization (not the final product name)
+
+## What changed on October 24
+
+The October 21 version made intake the front door and ended each contribution with an organizer confirming it. Decisions made since then change both.
+
+- The product starts after a volunteer is approved. Recruiting and vetting stay outside it ([0001](decisions/0001-start-after-approval.md)).
+- The schedule is the record. There is no confirm step and no timesheet ([0002](decisions/0002-the-schedule-is-the-record.md)).
+- The coordinator's app works when the internet is down ([0003](decisions/0003-coordinator-app-works-offline.md)).
+- The interface follows Material 3 ([0004](decisions/0004-material-3-for-the-interface.md)).
+- Offers go out by email first, then by text, then by Slack ([0005](decisions/0005-email-first-then-text-then-slack.md)).
+- New: volunteer tiers, a Today screen of drafted asks, rounds of offers, a weekly limit on asks per person, and import from spreadsheets.
 
 ## Product outcome
 
-Help volunteer-run organizations turn willingness to help into completed contributions. Organizations should be able to mobilize a person who can spare 45 minutes this week as easily as someone who helps every month. A coordinator identifies what needs doing and offers a well-scoped opportunity. A volunteer controls whether to accept and when to participate.
+Help small organizations put the volunteers they have already approved to work, and keep them working.
 
-The system assists management judgment: asking organizers better questions, shaping tasks, checking capacity, and maintaining a record. It does not require formal role definitions, employee-style onboarding or mandatory volunteer accounts.
+A coordinator opens the app to a short list of decisions. Most are asks the app has drafted for people who have waited longest. The coordinator approves them, and they go out. Volunteers answer yes or no from a link, without an account. The app takes the routine asking, reminding and record keeping off the coordinator.
+
+It also helps organizers turn a vague need into work someone can say yes to. Most volunteer work is loosely defined and hard to scope. Finding a driver is the easy case.
 
 ## Terms
 
 - **Need:** what the organizer says is going on, in their own words.
-- **Opportunity:** a published piece of work with an outcome, effort or coverage window, and a number of slots.
-- **Offer:** an organizer's request to a specific volunteer to take an opportunity.
-- **Contribution:** the record created when a volunteer accepts. It runs from acceptance to confirmation or withdrawal. The code, database and API use this word, not "commitment" or "assignment".
-- **Availability:** a volunteer's stated window and capacity. It expires.
+- **Opportunity:** a published piece of work with an outcome, an effort estimate or a coverage window, and a number of slots.
+- **Offer:** a request to one volunteer to take an opportunity. Screens and messages call it an **ask**. The code, database and API say `offer`.
+- **Contribution:** the record created when a volunteer says yes. It ends `done`, `withdrawn`, `canceled` or `missed`.
+- **Availability:** the times a volunteer said they can help. A window can have an end date.
+- **Tier:** how much a volunteer wants to be asked: One time, Seasonal, Regular or Core.
+- **Round:** one batch of offers for the same opportunity.
+- **Wait:** time since a volunteer's last offer. Someone never offered anything counts as having waited longest ([MOBILIZATION-PRD.md](MOBILIZATION-PRD.md#choosing-who-gets-asked)).
 
 States for each are defined once, in [MOBILIZATION-PRD.md](MOBILIZATION-PRD.md#states).
 
-## Target users
+## Who it is for
 
-- **Organizer/coordinator:** A board member, chapter officer or volunteer director at a professional association, community group, member organization or small nonprofit. May be new to delegation and may not know how to specify tasks.
-- **Existing volunteer:** Someone already in the organization's orbit. May contribute once, seasonally, sporadically or on a recurring basis. Often using a mobile phone. May only have time for a small independent task.
-- **Prospective volunteer:** Someone who sees a public or privately shared opportunity and wants to help without registering on a platform.
-- **Organization admin:** Controls invitations, who can publish opportunities, contact permissions, and access to records.
+- **Coordinator:** A staff member or a volunteer who decides what volunteers do. Often the only person managing volunteers. In groups run by volunteers, the job often changes hands every year or two. Has minutes for this work, not hours.
+- **Approved volunteer:** Someone the organization has already accepted. May help once, for a season, regularly, or as a core volunteer. Mostly on a phone. Will not log in to a portal.
+- **Organization admin:** Controls who can coordinate, contact permissions and access to records. Every organization should have at least two.
+- **Organizations:** professional association chapters, community radio stations, food pantries, arts groups, clubs, mutual aid groups and small nonprofits. Many have no paid staff. Many run on spreadsheets, several email lists, Slack, or a volunteer tool used only to store contact details.
 
-Volunteer board seats and formal fiduciary/governance roles are different from temporary contributions. The tool must not conflate them.
+Standing roles, such as a radio show host or a board seat, are different from contributions. They come in a later release as roles with requirements. The tool must not treat them as contributions.
 
 ## Primary jobs
 
-1. Organizers describe actual work in their own language and receive clarifying questions and proposed task shapes.
-2. Organizers invite known people for lightweight intake or share a specific opportunity.
-3. Volunteers specify interests, practical skills, how much time they can contribute and during which period; they can decline or update this later.
-4. Matching suggests eligible volunteers for approved opportunities, with transparent reasons and missing information.
-5. Volunteers explicitly claim or accept work, receive a clear handoff, and can withdraw or flag a blocker.
-6. Organizations close out contributions and optionally confirm volunteered hours.
-7. Both sides retain a minimal, privacy-conscious record of the contribution.
+1. Bring in people the organization has already approved, by import or by private invitation.
+2. Describe work in the organizer's own words and get back clarifying questions and drafted opportunities.
+3. Draft asks for approved people who have waited longest. That includes suggesting new work for people whose skills fit no open opportunity.
+4. Let the coordinator approve drafts in one pass. Send approved asks in rounds until the work is full.
+5. Let volunteers answer yes or no from a link, take a break, change their tier and see their own record.
+6. Let the schedule stand as the record. Work is done when its time passes.
+7. Show who is active, what they hold and how long since each person was asked, over time.
 
-## North-star metric
+## North star metric
 
-**Completed contributions per active organization per 30 days**.
+**Completed contributions per active organization per 30 days.**
 
-Instrument the preceding funnel independently: organizations with an approved opportunity; shareable opportunities viewed; volunteer responses; accepted contributions; confirmed contributions; repeat opportunities and repeat contributors. Do not treat generated tasks, registered records or sent invitations as completed work.
+The product also shows each organization three activation measures:
 
-Adoption targets (aspirational; not projections):
+- time from approval to first offer, for each volunteer
+- wait, for each volunteer
+- share of approved volunteers with a contribution in the last 90 days
+
+Instrument the funnel separately: organizations with an approved opportunity, offers sent, offers answered, contributions accepted, contributions done, repeat opportunities and repeat contributors. Do not count drafts, records or sent offers as completed work.
+
+Adoption targets (aspirational, not projections):
+
 - First real pilot: 5 independent organizations complete at least one contribution.
 - Initial public proof: 100 independently active organizations.
 - Scale milestone: 1,000 independently active organizations with repeat use.
-- Publish aggregated, privacy-preserving service metrics and operating costs when sample sizes warrant.
+- Publish aggregated, privacy preserving service metrics and operating costs when sample sizes warrant.
 
 ## Product tenets
 
-- Organization-initiated activation: coordinators can initiate volunteer invites directly.
-- Volunteers are people helping, not employees: small asks, plain language, flexible participation.
-- Availability is temporal. It has a date/window and can expire.
-- A match is a recommendation; an offer is a request; a contribution exists only after explicit volunteer acceptance.
-- Some work requires fixed coverage. Model it honestly and allow a volunteer to request release so the organizer can find replacement coverage.
-- Help organizations discover the work they can delegate, including work they have not yet defined.
-- Default to free hosted use, low infrastructure cost and portable records.
-- An agent proposes, explains and asks questions. Coordinators approve publication and every outbound offer. No autonomous promises on behalf of volunteers.
-- Data about volunteers is private to the inviting organization and its authorized coordinators.
+- **Start after approval.** The tool records that a person is approved. It does not recruit or vet.
+- **Volunteers are people helping, not employees.** Small asks, plain language, flexible participation.
+- **Nobody chases.** The tool never sends "are you still available?" messages. An ask is how availability gets checked. Three unanswered asks in a row stop asks to that person until they answer anything. Volunteers can pause themselves.
+- **The schedule is the record.** No timesheets and no confirm step.
+- **A match is a recommendation, an offer is a request, and a contribution exists only after the volunteer says yes.** No AI action and no coordinator action can accept for a volunteer.
+- **A coordinator approves every drafted ask.** That covers round 1 of each opportunity and every ask from the weekly draft run. Rounds 2 and later of an opportunity, reminders and "already filled" replies go out on their own.
+- **Nobody is asked too often.** A weekly limit on asks per person holds across the whole organization. The default is 2 in any 7 days.
+- **Fixed coverage stays honest.** Model it as fixed. Let a volunteer drop out so the coordinator can find a replacement.
+- **Help organizations find work they can hand off,** including work they have not defined yet.
+- **It works when the internet is down,** for the coordinator.
+- **Free hosted use,** low infrastructure cost and portable records.
+- **Data about volunteers is private** to the organization and its coordinators.
 
-## v0 capabilities (must ship together as a vertical slice)
+## v0 capabilities (ship together as one working slice)
 
-**Organizer**
-- Create organization and establish owner authentication.
-- Describe a need; answer clarifying questions about outcome, deadline, time estimate, work type, access needs and reviewer.
-- Create or accept an agent-proposed task draft, edit it, approve it and make a shareable opportunity link.
-- Invite a known volunteer through a private link. Manual share/copy is sufficient at first.
-- View intake responses and suggested matches, with reasons.
-- Offer approved work to a volunteer or allow an eligible person to claim an open opportunity.
-- See each opportunity's state and each contribution's state, as defined in [MOBILIZATION-PRD.md](MOBILIZATION-PRD.md#states), with blocked and withdrawn contributions called out.
-- See volunteer response and contribution record; export CSV.
+**Coordinator**
+
+- Sign in, create an organization and add a second admin.
+- Add approved volunteers by hand, by CSV import, or by sending a private invitation to the intake.
+- Approve or decline people who arrived through a shared opportunity link.
+- Describe a need, answer clarifying questions, and approve drafted opportunities. Every field can be edited, and every step works without a model.
+- **Today:** a list of decisions, each opening one screen:
+  - draft asks to review
+  - an opportunity that is not filling
+  - new people waiting for approval
+  - a blocked contribution
+  - a suggested tier change
+  - an action made offline that the server rejected, with the reason
+  - when nothing needs a decision, Today says so and says when the next drafts arrive
+- **Review drafts:** each draft shows the person, the ask and one line on why it fits. The coordinator ticks the ones to send, edits any of them, and approves the selection.
+- **Rounds:** an approved opportunity goes out in rounds until it is full, as `MOBILIZATION-PRD.md` describes.
+- **Work:** opportunities with their open slots, lead and drafts waiting.
+- **Intake:** import, private invitations, and new people waiting for approval. Tier switches and waitlists come in a later release.
+- **People:** volunteers grouped by tier and sorted by wait. Each row says in a plain sentence where the person stands, for example "Taking a break until Nov 15" or "No reply to her last 3 asks, so asks stopped Oct 14."
+- Export contributions and volunteers as CSV.
+- **Offline:** the app opens and shows the last synced records with no connection. Approvals and edits made offline go out when the device reconnects.
 
 **Volunteer**
-- Use an organization invitation link without creating an account.
-- Answer short intake prompts: preferred name, interest/skills, current availability window, task preferences, preferred contact method and consent to be contacted.
-- See an opportunity description including estimated effort, due date, specific outcome, location/remote requirement, point of contact, constraints and whether it requires fixed coverage.
-- Accept, decline, or signal a different availability window.
-- Access agreed instructions, flag a blocker, withdraw, and mark done with an optional note/hours.
-- Reopen a valid private link to update availability or stop further invitations.
+
+- Open a private link from the organization, with no account.
+- Answer a short intake: at most five prompts, as `ACTIVATION-PRD.md` lists.
+- Read an ask: what to do, when, where, what it needs, and who to find. Answer Yes or No.
+- On their own page: see what is coming up and say "I can't make it," see past work, see open slots they are eligible for and take one, take a break until a date, change tier, and stop all contact.
+- Flag a blocker with a note.
+- For outcome work, mark it done early if they want. Otherwise it is done at its due date.
+
+Notes of unscheduled hours come with roles, in a later release.
 
 **AI assistance**
-- Transform a vague organizational need into suggested tasks and specific follow-up questions.
-- Produce structured outputs validated against JSON schemas; explain uncertainty instead of fabricating scope.
-- Suggest volunteer matches using skill and time compatibility with deterministic exclusions. Do not infer sensitive traits or expose contact details in prompts when not required.
-- Provide a fully usable manual path whenever model APIs are down or the budget cap is reached.
 
-**Distribution**
-- Publicly shareable opportunity pages with no volunteer login.
-- Mobile-first UI and copyable links for email, Slack, Discord and websites.
-- A clear distinction between open opportunities and private invitations.
-- First-party events to measure completed real work; no invasive analytics required.
+- Turn a vague need into drafted opportunities and specific follow up questions.
+- Write the wording of each drafted ask, and its one line reason.
+- For an approved person who has waited a long time and fits no open opportunity, suggest a piece of work drawn from their skills and the organization's needs. The coordinator accepts, edits or skips it.
+- Produce structured output validated against JSON schemas. Name what is uncertain instead of inventing scope.
+- Never receive a volunteer's name, email or phone number. Prompts use internal IDs, skill tags and availability.
+- Provide a fully usable manual path whenever the model is down or the budget cap is reached.
 
-## Out of scope for the first public version
+**Delivery**
 
-- Public nationwide volunteer marketplace, search index and organization discovery.
-- Complete CRM, donor management, fundraising and payment handling.
-- Employee scheduling, clock-in/clock-out enforcement, performance reviews or mandatory timesheets.
-- Bylaw drafting, legal advice, board-election management, background checks or certification systems.
-- Native Slack or Discord bots, SMS and calendar integrations.
-- Paid plans, subscription billing or elaborate tenant-level analytics.
+- Asks go out by email when an email provider is configured. Otherwise the coordinator copies each link, as [MOBILIZATION-PRD.md](MOBILIZATION-PRD.md#copied-link-mode) describes.
+- Opportunity links can be shared in the organization's own Slack, Discord, email or website. People who answer arrive as `new`, waiting for approval.
+
+**Interface**
+
+- Material 3, built for phones first, as [0004](decisions/0004-material-3-for-the-interface.md) sets out.
+- Screen copy in plain language. Buttons say what they do ("Approve 3," "Send round 3 now," "I can't make it"). No arrows in labels, no status tags, and no internal names such as `offer` on screen.
+
+## Planned releases after v0
+
+In order. Each must work without the ones after it.
+
+1. **Text messages:** asks, answers and reminders by text, once a number is registered ([0005](decisions/0005-email-first-then-text-then-slack.md)). STOP and HELP replies work.
+2. **Intake and waitlist by tier:** a switch per tier. When a tier is off, new volunteers join its waitlist and hear when to expect an ask. Everyone who joins hears from the organization within 3 days.
+3. **Urgent asks:** what, when, how many and where. The ask goes first to a lead who has led before, then to everyone who opted into urgent asks within the set distance.
+4. **Roles with requirements:** a role such as show host can carry yearly requirements, such as 24 hours outside the show, two meetings and a training. Requirements fill in from contributions, RSVPs and one line notes of unscheduled hours, which this release adds. People short on hours get drafts first. Renewal goes to the host with their status, and the coordinator sees a list grouped by status. The coordinator decides each renewal.
+5. **Slack:** asks as direct messages with Yes and No buttons.
+6. **Spreadsheets and docs:** connect Google Drive. Read old signup tabs as history, and ask what colors mean. Draft work from documents such as a run of show. Write a roster tab and a schedule tab back into the organization's own sheet, protected, without touching any other tab.
+7. **Several coordinators:** each owns their own work and sees only their own decisions on Today. The weekly limit still holds across all of them.
+
+## Out of scope
+
+- Recruiting, screening, references and background checks.
+- Verifying hours, timesheets and confirm steps.
+- Public volunteer marketplace, search and discovery across organizations.
+- Records shared across organizations.
+- CRM, donor management, fundraising and payments.
+- Employee scheduling, clock in and clock out, performance reviews.
+- Bylaw drafting, legal advice, board elections and certification.
+- Paid plans and billing.
 - A fully autonomous volunteer director.
-
-These may become separate releases. The initial product must work without them.
 
 ## Business and deployment model
 
-Core hosted product: free during adoption period with transparent fair-use protections for abuse or AI consumption. No volunteer-seat billing. Larger organizations could eventually pay for advanced controls, multi-chapter reporting, managed integrations or higher service guarantees. Self-hosted deployment is a future capability, supported by an exportable data model; don't delay launch for it.
+Core hosted product: free during adoption, with transparent fair use limits for abuse and AI use. No billing per volunteer. Larger organizations could later pay for advanced controls, reports across chapters, managed integrations or service guarantees. Self hosting is a future capability, supported by an exportable data model. Do not delay launch for it.
 
 ## Risks and countermeasures
 
-- **Wrong work proposed:** Tasks require organizer editing and approval. Keep a human reviewer on every task.
-- **Volunteer overload:** Availability and maximum time are explicit; do not infer consent from a matching score.
-- **Sensitive information:** Do not expose full volunteer details on public opportunity pages or another tenant's workspace.
-- **Casual participants can't onboard:** Intake must be link-first, mobile-friendly and short; never gate acceptance behind volunteer account registration.
-- **One coordinator becomes a bottleneck:** Surface blockers and show when a task is unclaimed or the promised handoff is missing.
-- **No real tasks:** Provide seeded demo fixtures for self-testing; pilot with genuine organizations to measure real work.
-- **High AI bills:** Trigger inference on an explicit user action, cache generated task drafts, enforce per-tenant and global budgets.
-- **Spam:** Throttle invitations and publicly reachable endpoints; require proof of permission to contact recipients.
+- **Drafts read as busywork:** coordinators stop approving and volunteers stop saying yes. Each draft shows why it fits, every word can be edited, and person first suggestions come from the organization's own needs.
+- **Asking too often:** the weekly limit, a pause any volunteer can set, and three unanswered asks stopping further asks.
+- **Wrong work proposed:** opportunities need organizer editing and approval.
+- **Sensitive information:** public opportunity pages never show volunteer details. Model prompts never carry contact details.
+- **Coordinator turnover:** two admins from the start. The full history stays with the organization.
+- **Offline conflicts:** actions replay in order through the server's rules, and a rejected action shows on Today with its reason.
+- **Texting held up by registration:** email ships first, and registration starts the day v0 ships.
+- **High AI bills:** inference only on an explicit action or a scheduled draft run, with drafts cached, and budgets per organization and globally.
+- **Spam:** throttle offers and public endpoints, and require permission to contact each person.
 
 ## Release acceptance
 
-A first-time coordinator can complete the full transaction from an empty organization in under 10 minutes using sample data. An invited volunteer can complete intake and accept an opportunity on mobile without an account. All state persists on reload. The system can show accepted and completed contributions and produce a CSV export. Tenant isolation, scoped-link expiry/revocation, authorization, form validation, spam controls and basic monitoring pass automated tests. Public release with real volunteer information waits until these gates pass.
+A first time coordinator imports 20 approved volunteers from a CSV, publishes one opportunity and approves a set of drafts in under 15 minutes, using sample data. A volunteer answers an ask on a phone without an account. The opportunity fills, a late yes gets an "already filled" message, and the contribution becomes `done` when its window ends with no one confirming it. The coordinator can approve a draft with the device offline, and the ask goes out after reconnecting. All state persists on reload. Tenant isolation, scoped link expiry and revocation, authorization, form validation, spam controls and basic monitoring pass automated tests. Public release with real volunteer information waits until these gates pass.

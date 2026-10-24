@@ -1,107 +1,170 @@
-# Technical architecture: low-cost, scalable volunteer mobilization
+# Technical architecture: volunteer activation
 
-**Date:** October 21, 2026 | **Decision status:** proposed implementation; validate before provision/deploy
+**Revised:** October 24, 2026 | **First written:** October 21, 2026 | **Decision status:** proposed implementation; validate before provisioning or deploying
 
 ## Design target
 
-A small team using coding agents can ship one persistent end-to-end transaction quickly. The design must support many separate organizations without turning each volunteer into a paid user seat or requiring volunteer authentication. It should have a clear path from tens to thousands of active tenants, with a low floor for operating cost.
+A small team using coding agents can ship one persistent, working slice quickly. It must serve many separate organizations without making each volunteer a paid seat or requiring volunteers to log in. It needs a clear path from tens to thousands of active organizations, a low floor for operating cost, and a coordinator app that keeps working when the connection drops ([0003](decisions/0003-coordinator-app-works-offline.md)).
 
 ## Proposed stack
 
-- **App/API:** TypeScript, Hono on Cloudflare Workers, static React/Vite client served through Workers static assets (or equivalent same-origin configuration).
-- **Database:** Cloudflare D1 with versioned SQL migrations and tenant-aware repository layer. Keep SQL dialect conventional; a move to managed PostgreSQL is possible.
-- **Organizer identity:** use a proven managed authentication service (email OTP or OAuth) rather than implementing credentials or homegrown sessions. Verify signed auth tokens server-side; store org membership and permissions locally.
-- **Volunteer access:** one-time and reusable **scoped capability links**. Store only hash digests of random tokens; enforce org, volunteer, task, scope, expiration, revocation and usage limits server-side.
-- **AI calls:** separate adapter/gateway (Qwen or DeepSeek via hosted inference provider initially). Structured JSON-schema output, input minimization, per-request token limits, rate limiting, deadlines and budget caps. Manual editing always possible.
-- **Model provider requirement:** use only a provider whose terms say prompts and outputs are not used for training and are not retained beyond short-term abuse monitoring. Record the provider, the terms and the date checked in an ADR before any real volunteer text is sent. Send volunteer intake text only for the call that needs it; task drafting needs the organizer's need, not volunteer profiles.
-- **Async events:** Cloudflare Queues later for outbound messages, retries, reminders and provider rate limits. Launch can share URLs manually to avoid a deliverability dependency; organizer sign-in may still require a configured auth email service.
-- **Files:** avoid uploads in v0. Defer object storage until materials and export attachments justify it.
-- **Monitoring:** structured events, request IDs and error logging without leaking volunteer intake text or token URLs; basic uptime checks.
+- **App and API:** TypeScript, Hono on Cloudflare Workers, with a static React and Vite client served through Workers static assets (or an equivalent same origin setup).
+- **Coordinator client:** a progressive web app. A service worker caches the app. Dexie (over IndexedDB) holds a copy of the organization's records the coordinator can see, and an outbox of actions taken offline. See "Offline" below.
+- **Database:** Cloudflare D1 with versioned SQL migrations and a repository layer that enforces the organization on every query. Keep the SQL conventional so a move to managed PostgreSQL stays possible. D1 is the system of record.
+- **Scheduled jobs:** Workers Cron Triggers run every few minutes to expire offers, send next rounds, send reminders, and move `accepted` contributions to `done`. A weekly trigger runs the draft run for each organization. Cloudflare Queues come later for retries and provider rate limits.
+- **Organizer identity:** a proven managed authentication service (email one time code or OAuth). Never build passwords or sessions from scratch. Verify signed tokens on the server, and store membership and permissions locally. The client keeps a session it can use offline for reading and queuing.
+- **Volunteer access:** scoped capability links. Store only hashes of random tokens. Enforce organization, volunteer, opportunity, scope, expiry, revocation and use limits on the server.
+- **Email:** a transactional email provider behind a narrow adapter, called over HTTP from Workers. Each offer email carries a Yes link and a No link that need no login, plus a link to the volunteer's page.
+- **Text messages (release after v0):** Twilio behind the same adapter. See "Text messages" below.
+- **Slack (later release):** a Slack app that sends direct messages with Yes and No buttons through interactive messages ([Slack](https://api.slack.com/messaging/interactivity)). Slack is a delivery channel only. It never holds its own copy of offers or contributions.
+- **AI calls:** a separate adapter to an open weight model through a hosted inference provider (Qwen or DeepSeek to start). Structured JSON schema output, input minimization, token limits per request, rate limits, deadlines and budget caps. Manual editing always works.
+- **Model provider requirement:** use only a provider whose terms say prompts and outputs are not used for training and are not kept beyond short term abuse monitoring. Record the provider, the terms and the date checked in a decision record before any real volunteer text is sent.
+- **Interface:** Material 3 components built in React on React Aria, with color roles generated by `@material/material-color-utilities` ([0004](decisions/0004-material-3-for-the-interface.md)).
+- **Files:** no uploads in v0. CSV import is parsed in the browser and sent as rows.
+- **Monitoring:** structured events, request IDs and error logs that never contain volunteer intake text or token URLs. Basic uptime checks.
 
-This stack is a recommendation, not a claim that provider pricing or self-hosting costs are fixed. Keep external providers behind narrow interfaces.
+This stack is a recommendation. Provider pricing and self hosting costs are not fixed. Keep external providers behind narrow interfaces.
+
+## Offline
+
+- On every load with a connection, the client pulls the organization's current records into Dexie: volunteers, opportunities, offers, contributions and settings. Contact details are kept on the device only for people who hold or were offered work in the next 7 days, so they can be reached offline. Others' contact details load when the coordinator opens them.
+- With no connection, every screen reads from Dexie. A banner says the app is offline and how many actions are waiting.
+- Each action taken offline (approve drafts, edit an opportunity, approve a new person, change a tier) goes into the outbox with a client generated `client_op_id`. The server stores each `client_op_id` it has applied and ignores repeats, so a replay never applies an action twice.
+- On reconnect, the outbox replays in order through the normal API. The server applies each action through the same rules as an online action. A rejected action comes back with a reason, and shows on Today.
+- Nothing is sent to volunteers from the device. Messages go out from the server after the approval reaches it.
+- With no data at all, the coordinator can open the phone's own texting app from the page of anyone whose number is on the device, with the message filled in (an `sms:` link). That message is not recorded as an offer.
+- Safari deletes a site's stored data after 7 days without interaction, unless the site is added to the home screen ([WebKit](https://webkit.org/tracking-prevention/)). The app asks coordinators to install it. D1 holds everything that has synced.
+
+## Text messages
+
+United States carriers require registration before an application sends texts:
+
+- Twilio blocks messages from a 10 digit long code number not tied to an approved A2P 10DLC campaign ([Twilio error 30034](https://www.twilio.com/docs/api/errors/30034)).
+- Toll free numbers must be verified. Messages from unverified toll free numbers have been blocked since January 31, 2024 ([Twilio support](https://support.twilio.com/hc/en-us/articles/20212966914075-Toll-Free-Verification-and-Developers-Navigating-the-New-Restrictions)).
+
+So text messages ship in the release after v0 ([0005](decisions/0005-email-first-then-text-then-slack.md)). Requirements for that release:
+
+- Only volunteers who agreed to texts get them. Imported people without recorded consent get email.
+- Replies are matched to the newest open offer for that phone number. YES and NO are read case insensitively, with common variants. Anything else gets a short reply with the volunteer's page link.
+- STOP turns off `text_permission` at once. Email permission and status are unchanged. HELP gets the organization's name and contact.
+- Open: whether each organization registers its own brand, or the product registers as a platform for them, and who pays per message.
 
 ## Data model (minimum)
 
-`organizations(id, name, created_at, plan)`  
-`organization_members(id, org_id, auth_subject, role, created_at)`  
-`volunteers(id, org_id, preferred_name, contact_email_nullable, status, consent_at, contact_preference, created_at)`  
-`volunteer_profiles(volunteer_id, interests_json, skill_tags_json, preferences_json, updated_at)`  
-`availability(id, org_id, volunteer_id, starts_at, ends_at, capacity_minutes, recurring_rule_nullable, last_confirmed_at)`  
-`needs(id, org_id, author_member_id, description, status, created_at)`  
-`opportunities(id, org_id, need_id, title, description, outcome, task_type, estimate_minutes, start_at, deadline_at, capacity, status, visibility, reviewer_member_id)`  
-`offers(id, org_id, opportunity_id, volunteer_id, status, expires_at, created_at)`  
-`contributions(id, org_id, opportunity_id, volunteer_id, offer_id_nullable, status, accepted_at, submitted_at, confirmed_at, withdrawn_at, blocker_note_nullable, hours_minutes_nullable)`  
-`capabilities(id, org_id, volunteer_id_nullable, opportunity_id_nullable, token_hash, permission_scope, expires_at, revoked_at, uses)`  
-`events(id, org_id, actor_kind, actor_id_nullable, verb, object_type, object_id, timestamp, metadata_json)`  
+`organizations(id, name, timezone, created_at, plan)`
+`organization_members(id, org_id, auth_subject, role, created_at)`
+`settings(org_id, weekly_offer_limit default 2, wait_days_one_time default 90, wait_days_seasonal default 28, wait_days_regular default 14, wait_days_core default 7, draft_run_weekday default 1, draft_run_hour default 7, coverage_offer_hours default 24, coverage_offer_lead_hours default 6, outcome_offer_hours default 48, not_filling_hours default 48, inactive_after_unanswered default 3)`
+`volunteers(id, org_id, preferred_name, contact_email_nullable, contact_phone_nullable, contact_channel, email_permission, text_permission, status, tier, paused_until_nullable, approved_at_nullable, last_helped_at_nullable, last_offered_at_nullable, unanswered_in_a_row default 0, created_at)`
+`volunteer_profiles(volunteer_id, interests_json, skill_tags_json, preferences_json, updated_at)`
+`availability(id, org_id, volunteer_id, starts_at_nullable, ends_at_nullable, weekly_pattern_json, capacity_minutes_nullable, updated_at)`
+`imports(id, org_id, member_id, file_name, row_count, created_count, merged_count, no_contact_count, created_at)`
+`needs(id, org_id, author_member_id, description, status, created_at)`
+`opportunities(id, org_id, public_id, need_id_nullable, title, description, outcome, task_type, estimate_minutes, start_at, end_at_nullable, due_at_nullable, location_text_nullable, remote, splittable default false, capacity, status, visibility, help_member_id, doc_url_nullable, suggested_skills_json, prerequisites_json, created_at)`
+`offers(id, org_id, opportunity_id, volunteer_id, round, status, reason_text, reason_facts_json, channel, sent_at_nullable, expires_at_nullable, answered_at_nullable, created_at)`
+`contributions(id, org_id, opportunity_id, volunteer_id, offer_id_nullable, status, accepted_at, done_at_nullable, withdrawn_at_nullable, missed_at_nullable, blocker_note_nullable, extra_minutes_nullable, extra_note_nullable)`
+`capabilities(id, org_id, volunteer_id_nullable, opportunity_id_nullable, token_hash, permission_scope, expires_at, revoked_at, uses)`
+`applied_ops(org_id, client_op_id, member_id, applied_at, result)`
+`events(id, org_id, actor_kind, actor_id_nullable, verb, object_type, object_id, timestamp, metadata_json)`
 `ai_usage(id, org_id, provider, model, purpose, input_tokens, output_tokens, cost_usd_estimate, created_at)`
 
-All organization-scoped read/write paths require tenant membership or a valid narrowly scoped volunteer capability. Never trust `org_id` supplied by the client without server-side authorization.
+Every read and write scoped to an organization needs membership in it, or a valid narrowly scoped volunteer capability. Never trust an `org_id` sent by the client without checking it on the server.
+
+Yes rate is computed from `offers`, not stored. `last_offered_at` is updated whenever an offer is sent, so wait can be sorted quickly. `extra_minutes` and `extra_note` on contributions stay empty until the roles release.
 
 ## API contract (first cut)
 
 Organizer (authenticated):
-- `POST /api/orgs`, `GET /api/orgs/:orgId`
+
+- `POST /api/orgs`, `GET /api/orgs/:orgId`, `PATCH /api/orgs/:orgId/settings`
+- `GET /api/orgs/:orgId/sync` returns the records the client keeps in Dexie
+- `POST /api/orgs/:orgId/ops` applies a batch of outbox actions, each with a `client_op_id`, and returns a result for each
+- `POST /api/orgs/:orgId/members` adds a coordinator or admin (the second admin)
+- `POST /api/orgs/:orgId/imports` takes parsed CSV rows and the contact confirmation, and returns created and no contact counts, plus likely duplicate pairs
+- `POST /api/orgs/:orgId/imports/:id/merge` merges a duplicate pair; `PATCH /api/orgs/:orgId/imports/:id/no-contact/:row` fills in or drops a row with no contact information
+- `POST /api/orgs/:orgId/volunteers` adds a volunteer by hand
+- `POST /api/orgs/:orgId/volunteers/:id/approve`, `POST /api/orgs/:orgId/volunteers/:id/decline`, `PATCH /api/orgs/:orgId/volunteers/:id`
+- `POST /api/orgs/:orgId/offers/:id/retract`
+- `POST /api/orgs/:orgId/contributions/:id/missed`, `POST /api/orgs/:orgId/contributions/:id/done` (for a blocked contribution), `POST /api/orgs/:orgId/contributions/:id/clear-blocker`
+- `POST /api/orgs/:orgId/drafts/run` runs the weekly draft run now ("Draft asks now")
 - `POST /api/orgs/:orgId/needs`, `POST /api/orgs/:orgId/needs/:needId/suggest`
 - `POST /api/orgs/:orgId/opportunities`, `PATCH /api/orgs/:orgId/opportunities/:id`
-- `POST /api/orgs/:orgId/invitations`, `GET /api/orgs/:orgId/volunteers`
-- `POST /api/orgs/:orgId/offers`, `GET /api/orgs/:orgId/contributions/export`
+- `GET /api/orgs/:orgId/today`
+- `POST /api/orgs/:orgId/drafts/approve` takes a list of proposed offer IDs
+- `POST /api/orgs/:orgId/opportunities/:id/next-round`
+- `POST /api/orgs/:orgId/invitations`
+- `GET /api/orgs/:orgId/export/contributions.csv`, `GET /api/orgs/:orgId/export/volunteers.csv`
 
 Scoped volunteer:
-- `GET /v/:token` exchanges the token for a scoped session and redirects to the intake or opportunity its scope allows (see token handling below)
-- `POST /api/volunteer/intake` (scoped session required)
-- `POST /api/volunteer/offer-response` (scoped session required)
-- `POST /api/volunteer/contribution` (scoped session required)
-- `POST /api/volunteer/availability` and `POST /api/volunteer/opt-out` (scoped session required)
+
+- `GET /v/:token` exchanges the token for a scoped session and redirects to the page its scope allows
+- `GET /api/volunteer/me` returns the volunteer's page: coming up, past work, open slots they are eligible for, and settings
+- `POST /api/volunteer/intake`
+- `POST /api/volunteer/offer-response` (yes or no)
+- `POST /api/volunteer/contribution` (blocker, step back, mark outcome work done)
+- `POST /api/volunteer/take` (take an open slot from their page)
+- `POST /api/volunteer/pause`, `POST /api/volunteer/tier`, `POST /api/volunteer/opt-out`, `POST /api/volunteer/opt-in`
+
+Email answer links (`/a/:token/yes`, `/a/:token/no`) use a single use capability scoped to one offer, then redirect to the volunteer's page.
 
 Open opportunity:
-- `GET /o/:publicId` sanitized opportunity page
-- `POST /api/opportunities/:publicId/interest` rate limited, Turnstile as needed. Creates a new volunteer record in the opportunity's organization with status `responded` and returns a scoped capability for the next step. It never attaches the response to an existing record by email; see ACTIVATION-PRD.md.
+
+- `GET /o/:publicId` shows a cleaned opportunity page
+- `POST /api/opportunities/:publicId/interest` is rate limited, with Turnstile as needed. It creates a volunteer record with status `new` and returns a scoped capability for the intake. It never attaches the response to an existing record by email.
 
 Token handling (required for launch):
-- Each time a `/v/:token` link is opened, the server checks the token, sets a short-lived `HttpOnly`, `Secure`, `SameSite=Lax` session cookie limited to that capability's scope, and redirects to a URL without the token. Later requests use the cookie.
-- Serve `/v/*` with `Referrer-Policy: no-referrer` and no third-party scripts, so the token cannot leak through the Referer header.
-- Request logging, error reporting and analytics redact the `/v/:token` path segment.
-- Revoking or expiring the capability also ends sessions created from it.
 
-## Matching contract
+- Each time a `/v/:token` or `/a/:token` link is opened, the server checks the token, sets a short lived `HttpOnly`, `Secure`, `SameSite=Lax` session cookie limited to that capability's scope, and redirects to a URL without the token.
+- Serve those paths with `Referrer-Policy: no-referrer` and no third party scripts.
+- Request logs, error reports and analytics redact the token path segment.
+- Revoking or expiring a capability also ends sessions created from it.
 
-The agent converts a need into validated `TaskDraft[]` and `OpenQuestion[]`, never a direct DB mutation. It may help normalize free-text volunteer interests and task tags.
+## Matching and drafting contract
 
-Deterministic filters exclude volunteers whose explicit window is incompatible, whose capacity is insufficient, who lack required prerequisites, or who have opted out. Ranking uses explainable overlap from self-disclosed interests/skills and preferred task shapes. Every recommendation stores reasons and relevant eligibility facts; do not expose a numerical "trust" score or infer protected attributes.
+Eligibility, ranking and rounds follow [MOBILIZATION-PRD.md](MOBILIZATION-PRD.md#choosing-who-gets-asked). They are plain TypeScript functions with no provider code, shared by the Worker and tested on their own.
+
+The model is called only for:
+
+- turning a need into `TaskDraft[]` and `OpenQuestion[]`
+- writing the wording and the one line reason of a drafted offer, from stored facts
+- suggesting a new piece of work for a person no open opportunity fits
+- suggesting skill tags, tiers and availability windows from free text during import and intake
+
+Model output is validated and stored as a draft. It never changes a record directly. Prompts carry internal IDs, skill tags, availability and the organization's need text. They never carry names, emails or phone numbers. Messages are assembled from templates after the model returns, and the volunteer's name is filled in then.
 
 ## Authorization and abuse controls
 
-- Organizer admin / organizer member permissions; deny-by-default per organization.
-- SHA-256/HMAC of cryptographically strong invitation token (server secret held outside repository); rotate/revoke; sensible expiry. Hash comparison not plain-text token storage.
-- Random opaque public IDs; no sequential volunteer identifiers in shareable URLs.
-- CSRF protections for cookie-authenticated state-changing endpoints; CORS default-deny; parameterized SQL; per-route request limits.
-- Double-claim protection: an atomic conditional write so the count of slot-holding contributions (see [MOBILIZATION-PRD.md](MOBILIZATION-PRD.md#states)) never exceeds the opportunity's capacity; test concurrency.
-- Contact consent, self-service opt-out, admin deletion/export, modest retention defaults, no model training on volunteer profiles by default.
-- Admins can see only their org; volunteers can see only their own scoped information and published opportunity details.
-- Keep test data synthetic and visibly labeled in test/demo environment, never pass it off as completed volunteer activity.
+- Admin and coordinator permissions, denied by default for each organization.
+- SHA-256 HMAC of strong random tokens, with the server secret outside the repository. Rotate, revoke and expire.
+- Random opaque public IDs. No sequential IDs in shared URLs.
+- CSRF protection for cookie authenticated changes, CORS denied by default, parameterized SQL, request limits per route.
+- Last slot protection: a conditional write so the count of slot holding contributions never goes over capacity. Test it with concurrent requests.
+- Weekly offer limit enforced on the server at send time, not only when drafting. A person over the limit is skipped and the next ranked person is used.
+- Contact consent, self service opt out, admin deletion and export, modest retention defaults, no model training on volunteer data.
+- Test data is made up and visibly labeled in test and demo environments. It never counts as volunteer activity.
 
 ## Growth path
 
-0–100 orgs: Workers + D1, only human-triggered inference, manual sharing of URLs, CSV export.
+0 to 100 organizations: Workers and D1, cron triggers, inference only on explicit actions and the weekly run, email delivery, CSV export.
 
-100–1,000 orgs: stronger rate-limits, background jobs, abuse monitoring, observability dashboards, event processing, database query/index review, provider costs metered by org.
+100 to 1,000: stronger rate limits, queues for message retries, abuse monitoring, dashboards, query and index review, provider costs metered by organization.
 
-1,000–10,000+ orgs: partition tenancy where appropriate; evaluate D1 size and read/write throughput constraints, or managed PostgreSQL. Maintain migration tests and verify actual p95 latency and queue processing under load; no ungrounded claim of throughput.
-
-The volunteer does not need a hosted identity account, so volunteer *records* and monthly *active participants* should be modeled separately. Adapter contracts keep Slack/Discord/email as delivery channels rather than parallel stores of contributions.
+1,000 to 10,000 or more: partition where needed, and check D1 size and throughput limits against managed PostgreSQL. Keep migration tests, and measure real p95 latency and queue processing under load before claiming throughput.
 
 ## Service cost controls
 
-Log model tokens and estimated cost per purpose, org and month. Default ceiling per org; globally configured emergency cutoff. AI work runs only on explicit intent (new task, refresh suggestions, intake classification). No inference on every page load or task state change. Cache accepted task drafts. Fall back to manual entry on provider outage. Email, background processing and storage costs are separately accounted for. Do not assume inference is the main cost of growth; include support, uptime, backup, abuse and maintenance in ops reporting.
+Log model tokens and estimated cost by purpose, organization and month. A default ceiling per organization and a global emergency cutoff. AI runs only on an explicit action or the weekly draft run, never on a page load or a state change. Cache accepted drafts. Fall back to manual entry during an outage. Account separately for email, text messages, background jobs and storage. Report support, uptime, backup, abuse and maintenance costs with the rest.
 
 ## Baseline performance and tests
 
-Measure API p50/p95, error rate, completed transaction rate, model spend per completed contribution, token misuse attempts, and jobs/retries once queues exist. Load test concurrent task views and last-slot claims; verify tenant boundaries with two seeded orgs. Automated unit, API integration, authorization and browser mobile flows must pass before live pilot data is accepted.
+Measure API p50 and p95, error rate, completed contributions, model spend per completed contribution, token misuse attempts, and cron job duration. Load test concurrent last slot answers. Check tenant boundaries with two seeded organizations. Unit, API, authorization, offline replay and phone browser tests must pass before live pilot data is accepted.
 
-## Integration roadmap
+## Open questions
 
-V0: web URL + copy to Slack/Discord/email manually.  
-V1: Slack install, event cards and interactive claim or respond; Discord bot commands and interaction cards; each calls the same API and preserves volunteer consent.  
-V2: managed exports, richer community integrations, optional federated discovery and self-hosting packaging.
-
-Integration credentials never appear in public repo. Avoid integrations as first-launch blockers.
+| Question | Answer by |
+|---|---|
+| Email provider | Before the first offer email |
+| Managed authentication service, and how its session behaves offline | Before organizer sign in is built |
+| Inference provider that meets the no training, no retention rule | Before real volunteer text is sent |
+| Who registers for text messages, each organization or the product as a platform, and who pays per message | Before the text message release |
+| Whether the outbox is enough when two coordinators work offline at once, or a sync engine is needed | After the several coordinators release |
+| License | Before the first public release |
