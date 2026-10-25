@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Box, Button, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Card, CardContent, Stack, TextField, Typography } from '@mui/material';
 import { api } from '../api';
 import { errorText } from './common';
 
@@ -41,7 +41,9 @@ export function Login() {
   }
 
   return (
-    <Box sx={{ maxWidth: 420, mx: 'auto', px: 2, py: 6 }}>
+    <Box sx={{ maxWidth: 400, mx: 'auto', px: 2, py: { xs: 6, md: 12 } }}>
+      <Typography sx={{ fontWeight: 700, fontSize: '1.125rem', letterSpacing: '-0.02em', mb: 3, textAlign: 'center' }}>Volunteers</Typography>
+      <Card><CardContent sx={{ p: 3 }}>
       <Typography variant="h1" component="h1" gutterBottom>Sign in</Typography>
       <Typography color="text.secondary" sx={{ mb: 2 }}>
         Volunteers don't sign in. They answer from their link.
@@ -51,13 +53,13 @@ export function Login() {
         <form onSubmit={start}>
           <Stack spacing={2}>
             <TextField label="Email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-            <Button type="submit" variant="contained" disabled={busy}>Send code</Button>
+            <Button type="submit" variant="contained" size="large" disabled={busy}>Send code</Button>
           </Stack>
         </form>
       ) : (
         <form onSubmit={verify}>
           <Stack spacing={2}>
-            <Typography>Code sent to {email}.</Typography>
+            <Typography variant="body2" color="text.secondary">We sent a code to {email}</Typography>
             {devCode && <Alert severity="info">Test mode code: <strong>{devCode}</strong></Alert>}
             <TextField
               label="Code"
@@ -67,11 +69,12 @@ export function Login() {
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
             />
-            <Button type="submit" variant="contained" disabled={busy || code.length !== 6}>Sign in</Button>
+            <Button type="submit" variant="contained" size="large" disabled={busy || code.length !== 6}>Sign in</Button>
             <Button onClick={() => { setSent(false); setCode(''); }}>Use another email</Button>
           </Stack>
         </form>
       )}
+      </CardContent></Card>
     </Box>
   );
 }

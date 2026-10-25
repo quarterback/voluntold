@@ -4,7 +4,7 @@ import { must, mustManageTeam } from '../auth';
 import { loadFields, loadOrg, logEvent, publicOrg } from '../db';
 import { cleanText, fail, newId, normalizeEmail, optionalText } from '../util';
 import { connectAccount, disconnectAccount, syncTask } from '../atproto';
-import type { FieldType } from '../../shared/types';
+import type { FieldType, Requirement } from '../../shared/types';
 
 export const STARTER_FIELDS: { label: string; type: FieldType; options: string[] }[] = [
   { label: 'Skills', type: 'many', options: [] },
@@ -206,9 +206,29 @@ orgRoutes.patch('/fields/:fieldId', async (c) => {
 orgRoutes.delete('/fields/:fieldId', async (c) => {
   const actor = c.get('actor');
   must(actor, 'manage_people');
-  await c.env.DB.prepare('DELETE FROM fields WHERE id = ? AND org_id = ?').bind(c.req.param('fieldId'), actor.orgId).run();
+  const id = c.req.param('fieldId');
+  await c.env.DB.batch([
+    ...(await dropRequirements(c.env.DB, actor.orgId, (r) => r.kind === 'field' && r.fieldId === id)),
+    c.env.DB.prepare('DELETE FROM fields WHERE id = ? AND org_id = ?').bind(id, actor.orgId),
+  ]);
   return c.json({ ok: true });
 });
+
+/**
+ * A requirement that names a deleted detail or team would match no one, so
+ * deleting either also takes it out of every unfinished task.
+ */
+async function dropRequirements(db: D1Database, orgId: string, gone: (r: Requirement) => boolean): Promise<D1PreparedStatement[]> {
+  const { results } = await db
+    .prepare("SELECT id, requirements_json FROM tasks WHERE org_id = ? AND status IN ('draft', 'open', 'filled')")
+    .bind(orgId)
+    .all<{ id: string; requirements_json: string }>();
+  return results.flatMap((t) => {
+    const reqs: Requirement[] = JSON.parse(t.requirements_json);
+    const kept = reqs.filter((r) => !gone(r));
+    return kept.length === reqs.length ? [] : [db.prepare('UPDATE tasks SET requirements_json = ? WHERE id = ?').bind(JSON.stringify(kept), t.id)];
+  });
+}
 
 // Teams: groups inside the organization. Leads manage their own team's members.
 
@@ -260,6 +280,7 @@ orgRoutes.delete('/teams/:teamId', async (c) => {
     c.env.DB.prepare('DELETE FROM team_members WHERE team_id = ? AND org_id = ?').bind(id, actor.orgId),
     c.env.DB.prepare('DELETE FROM team_leads WHERE team_id = ? AND org_id = ?').bind(id, actor.orgId),
     c.env.DB.prepare('UPDATE tasks SET team_id = NULL WHERE team_id = ? AND org_id = ?').bind(id, actor.orgId),
+    ...(await dropRequirements(c.env.DB, actor.orgId, (r) => r.kind === 'team' && r.teamId === id)),
     c.env.DB.prepare('DELETE FROM teams WHERE id = ? AND org_id = ?').bind(id, actor.orgId),
   ]);
   return c.json({ ok: true });

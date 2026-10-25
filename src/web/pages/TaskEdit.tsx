@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  Alert, Box, Button, FormControl, FormControlLabel, IconButton, InputLabel, MenuItem, Select, Stack, Switch,
+  Alert, Box, Button, FormControl, FormControlLabel, FormHelperText, IconButton, InputLabel, MenuItem, Select, Stack, Switch,
   TextField, ToggleButton, ToggleButtonGroup, Typography,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/DeleteOutlined';
 import AddIcon from '@mui/icons-material/Add';
 import { api } from '../api';
 import { useOrg } from './OrgShell';
-import { Loading, Page, errorText } from './common';
+import { Loading, Page, Section, errorText } from './common';
+import BackIcon from '@mui/icons-material/ArrowBack';
 import { toLocalDate, toLocalInput } from '../format';
 import type { Field, Requirement, RequirementOp } from '../../shared/types';
 
@@ -46,7 +47,6 @@ interface Form {
   publish: boolean;
 }
 
-const shrink = { inputLabel: { shrink: true } };
 
 export function TaskEdit() {
   const { taskId } = useParams();
@@ -132,49 +132,62 @@ export function TaskEdit() {
 
   const visibleTeams = teams.filter((t) => !leadOnly || me.leadTeamIds.includes(t.id));
 
+  const label = (text: string) => <Typography component="p" sx={{ fontSize: '0.8125rem', fontWeight: 500, mb: 0.75 }}>{text}</Typography>;
+
   return (
-    <Page title={taskId ? 'Edit task' : 'New task'}>
+    <Page
+      title={taskId ? 'Edit task' : 'New task'}
+      width={760}
+      back={<Button size="small" startIcon={<BackIcon fontSize="small" />} onClick={() => navigate(-1)} sx={{ color: 'text.secondary', ml: -1 }}>Back</Button>}
+    >
       <Stack spacing={2}>
         {error && <Alert severity="error">{error}</Alert>}
-        <TextField label="Title" required value={form.title} placeholder="Registration desk" onChange={(e) => set('title', e.target.value)} slotProps={shrink} />
-        <TextField label="What to do" multiline minRows={2} value={form.description} onChange={(e) => set('description', e.target.value)} />
-
-        <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', flexWrap: 'wrap', rowGap: 1 }}>
-          <ToggleButtonGroup exclusive size="small" value={form.timing} onChange={(_, v) => v && set('timing', v)} aria-label="When">
-            <ToggleButton value="at_time">Set time</ToggleButton>
-            <ToggleButton value="by_date">Due date</ToggleButton>
-            <ToggleButton value="none">No date</ToggleButton>
-          </ToggleButtonGroup>
-        </Stack>
-        {form.timing === 'at_time' && (
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-            <TextField label="Starts" type="datetime-local" value={form.startsAt} onChange={(e) => set('startsAt', e.target.value)} slotProps={shrink} />
-            <TextField label="Ends" type="datetime-local" value={form.endsAt} onChange={(e) => set('endsAt', e.target.value)} slotProps={shrink} />
+        <Section title="Task">
+          <Stack spacing={2}>
+            <TextField label="Title" required value={form.title} placeholder="Registration desk" onChange={(e) => set('title', e.target.value)} />
+            <TextField label="What to do" multiline minRows={2} placeholder="Greet people and check them in" value={form.description} onChange={(e) => set('description', e.target.value)} />
+            <Box>
+              {label('When')}
+              <ToggleButtonGroup exclusive size="small" value={form.timing} onChange={(_, v) => v && set('timing', v)} aria-label="When">
+                <ToggleButton value="at_time">Set time</ToggleButton>
+                <ToggleButton value="by_date">Due date</ToggleButton>
+                <ToggleButton value="none">No date</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+            {form.timing === 'at_time' && (
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                <TextField label="Starts" type="datetime-local" value={form.startsAt} onChange={(e) => set('startsAt', e.target.value)} />
+                <TextField label="Ends" type="datetime-local" value={form.endsAt} onChange={(e) => set('endsAt', e.target.value)} />
+              </Stack>
+            )}
+            {form.timing === 'by_date' && (
+              <TextField label="Due" type="date" value={form.dueAt} onChange={(e) => set('dueAt', e.target.value)} sx={{ maxWidth: 220 }} />
+            )}
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <TextField label="Place" placeholder="Downtown library" value={form.placePublic} onChange={(e) => set('placePublic', e.target.value)} helperText="Shown if you post the task" />
+              <TextField label="Address" placeholder="120 Main St, Room 2" value={form.placePrivate} onChange={(e) => set('placePrivate', e.target.value)} helperText="Only people you ask see it" />
+            </Stack>
+            <Stack direction="row" spacing={2}>
+              <TextField label="People" type="number" value={form.peopleNeeded} onChange={(e) => set('peopleNeeded', Number(e.target.value))}
+                slotProps={{ htmlInput: { min: 1, max: 500 } }} sx={{ width: 110, flexShrink: 0 }} />
+              <TextField label="Who to find" placeholder="Priya, at the front door" value={form.contact} onChange={(e) => set('contact', e.target.value)} />
+            </Stack>
           </Stack>
-        )}
-        {form.timing === 'by_date' && (
-          <TextField label="Due" type="date" value={form.dueAt} onChange={(e) => set('dueAt', e.target.value)} slotProps={shrink} sx={{ maxWidth: 200 }} />
-        )}
+        </Section>
 
-        <Stack direction="row" spacing={1.5}>
-          <TextField label="Place" placeholder="Downtown library" value={form.placePublic} onChange={(e) => set('placePublic', e.target.value)} slotProps={shrink} />
-          <TextField label="Address" placeholder="Only people you ask see it" value={form.placePrivate} onChange={(e) => set('placePrivate', e.target.value)} slotProps={shrink} />
-        </Stack>
-        <Stack direction="row" spacing={1.5}>
-          <TextField label="People" type="number" value={form.peopleNeeded} onChange={(e) => set('peopleNeeded', Number(e.target.value))}
-            slotProps={{ htmlInput: { min: 1, max: 500 } }} sx={{ width: 110, flexShrink: 0 }} />
-          <TextField label="Who to find" placeholder="Priya, at the front door" value={form.contact} onChange={(e) => set('contact', e.target.value)} slotProps={shrink} />
-        </Stack>
-
-        <Box>
-          <Typography variant="h3" component="h2">Requirements</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>People must meet all of them.</Typography>
-          <Stack spacing={1}>
+        <Section title="Requirements" note="People must meet all of them">
+          <Stack spacing={1.5}>
             {form.requirements.map((r, i) => {
               const field = r.kind === 'field' ? fields.find((f) => f.id === r.fieldId) : undefined;
               return (
-                <Stack key={i} direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                  <FormControl fullWidth>
+                <Box key={i} sx={{
+                  display: 'grid', gap: 1, alignItems: 'end',
+                  // On a phone the detail gets its own line, with the rule and value under it.
+                  gridTemplateColumns: { xs: '1fr 1fr auto', sm: 'minmax(0, 2fr) minmax(0, 1fr) minmax(0, 2fr) auto' },
+                  '& > .req-detail': { gridColumn: { xs: '1 / 3', sm: 'auto' } },
+                  '& > .req-remove': { gridColumn: { xs: 3, sm: 4 }, gridRow: { xs: 1, sm: 'auto' } },
+                }}>
+                  <FormControl fullWidth className="req-detail">
                     <InputLabel id={`req-${i}`}>Detail</InputLabel>
                     <Select labelId={`req-${i}`} label="Detail" value={reqTarget(r)} onChange={(e) => changeTarget(i, e.target.value)}>
                       {fields.map((f) => <MenuItem key={f.id} value={`field:${f.id}`}>{f.label}</MenuItem>)}
@@ -184,7 +197,7 @@ export function TaskEdit() {
                   {r.kind === 'field' && field && (
                     <>
                       {OPS[field.type].length > 1 && (
-                        <FormControl sx={{ minWidth: 104 }}>
+                        <FormControl fullWidth>
                           <InputLabel id={`op-${i}`}>Rule</InputLabel>
                           <Select labelId={`op-${i}`} label="Rule" value={r.op} onChange={(e) => changeReq(i, { op: e.target.value as RequirementOp })}>
                             {OPS[field.type].map((o) => <MenuItem key={o.op} value={o.op}>{o.label}</MenuItem>)}
@@ -201,63 +214,64 @@ export function TaskEdit() {
                           </FormControl>
                         ) : (
                           <TextField label="Value" type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'} value={r.value ?? ''}
-                            onChange={(e) => changeReq(i, { value: field.type === 'number' ? Number(e.target.value) : e.target.value })} slotProps={shrink} />
+                            onChange={(e) => changeReq(i, { value: field.type === 'number' ? Number(e.target.value) : e.target.value })} />
                         ))}
                     </>
                   )}
-                  <IconButton aria-label="Remove requirement" size="small" onClick={() => set('requirements', form.requirements.filter((_, j) => j !== i))}><DeleteIcon fontSize="small" /></IconButton>
-                </Stack>
+                  <IconButton className="req-remove" aria-label="Remove requirement" onClick={() => set('requirements', form.requirements.filter((_, j) => j !== i))} sx={{ mb: 0.25 }}><DeleteIcon fontSize="small" /></IconButton>
+                </Box>
               );
             })}
             <Box>
-              <Button size="small" startIcon={<AddIcon />} disabled={fields.length === 0 && teams.length === 0} onClick={() => {
+              <Button variant="outlined" size="small" startIcon={<AddIcon />} disabled={fields.length === 0 && teams.length === 0} onClick={() => {
                 const f = fields[0];
                 set('requirements', [...form.requirements, f ? { kind: 'field', fieldId: f.id, op: OPS[f.type][0].op, value: f.options[0] ?? '' } : { kind: 'team', teamId: teams[0].id }]);
               }}>Add requirement</Button>
             </Box>
           </Stack>
-        </Box>
+        </Section>
 
-        <Box>
-          <Stack direction="row" spacing={1.5}>
-            <FormControl fullWidth>
-              <InputLabel id="ask-mode">How to ask</InputLabel>
-              <Select labelId="ask-mode" label="How to ask" value={form.askMode} onChange={(e) => set('askMode', e.target.value as Form['askMode'])}>
-                {Object.entries(ASK_MODES).map(([k, m]) => <MenuItem key={k} value={k}>{m.label}</MenuItem>)}
-              </Select>
-            </FormControl>
-            {(visibleTeams.length > 0 || leadOnly) && (
+        <Section title="Asking">
+          <Stack spacing={2}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <FormControl fullWidth>
-                <InputLabel id="team">Team</InputLabel>
-                <Select labelId="team" label="Team" value={form.teamId} onChange={(e) => set('teamId', e.target.value)}>
-                  {!leadOnly && <MenuItem value="">No team</MenuItem>}
-                  {visibleTeams.map((t) => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
+                <InputLabel id="ask-mode">How to ask</InputLabel>
+                <Select labelId="ask-mode" label="How to ask" value={form.askMode} onChange={(e) => set('askMode', e.target.value as Form['askMode'])}>
+                  {Object.entries(ASK_MODES).map(([k, m]) => <MenuItem key={k} value={k}>{m.label}</MenuItem>)}
                 </Select>
+                <FormHelperText>{ASK_MODES[form.askMode].hint}</FormHelperText>
               </FormControl>
-            )}
-          </Stack>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>{ASK_MODES[form.askMode].hint}</Typography>
-          {form.askMode === 'few' && (
-            <Stack direction="row" spacing={1.5} sx={{ mt: 1.5 }}>
-              <TextField label="Group size" type="number" value={form.askBatch} placeholder={String(form.peopleNeeded * 2)} onChange={(e) => set('askBatch', e.target.value)} slotProps={shrink} />
-              <TextField label="Hours between groups" type="number" value={form.askWaitHours} onChange={(e) => set('askWaitHours', Number(e.target.value))} />
+              {(visibleTeams.length > 0 || leadOnly) && (
+                <FormControl fullWidth>
+                  <InputLabel id="team">Team</InputLabel>
+                  <Select labelId="team" label="Team" value={form.teamId} displayEmpty onChange={(e) => set('teamId', e.target.value)}>
+                    {!leadOnly && <MenuItem value="">No team</MenuItem>}
+                    {visibleTeams.map((t) => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
+                  </Select>
+                </FormControl>
+              )}
             </Stack>
-          )}
-        </Box>
-
-        <Box>
-          <FormControlLabel control={<Switch size="small" checked={form.publish} onChange={(e) => set('publish', e.target.checked)} />} label="Post on AT Protocol" />
-          <Typography variant="body2" color="text.secondary">
-            {org.atproto
-              ? `Posts the task, never the people, to ${org.atproto.handle}.`
-              : atprotoReady ? 'Connect an account in Settings first.' : 'Not set up on this server.'}
-          </Typography>
-        </Box>
+            {form.askMode === 'few' && (
+              <Stack direction="row" spacing={2}>
+                <TextField label="Group size" type="number" value={form.askBatch} placeholder={String(form.peopleNeeded * 2)} onChange={(e) => set('askBatch', e.target.value)} />
+                <TextField label="Hours between groups" type="number" value={form.askWaitHours} onChange={(e) => set('askWaitHours', Number(e.target.value))} />
+              </Stack>
+            )}
+            <Box>
+              <FormControlLabel control={<Switch checked={form.publish} onChange={(e) => set('publish', e.target.checked)} />} label="Post on AT Protocol" />
+              <Typography variant="body2" color="text.secondary">
+                {org.atproto
+                  ? `Posts the task, never the people, to ${org.atproto.handle}`
+                  : atprotoReady ? 'Connect an account in Settings first' : 'Not set up on this server'}
+              </Typography>
+            </Box>
+          </Stack>
+        </Section>
 
         <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end' }}>
-          <Button onClick={() => navigate(-1)}>Cancel</Button>
+          <Button variant="outlined" onClick={() => navigate(-1)}>Cancel</Button>
           {status === 'draft' && <Button variant="outlined" disabled={busy} onClick={() => save(false)}>Save draft</Button>}
-          <Button variant="contained" disabled={busy} onClick={() => save(true)}>{status === 'draft' ? 'Save and open' : 'Save'}</Button>
+          <Button variant="contained" disabled={busy} onClick={() => save(true)}>{status === 'draft' ? 'Save and open' : 'Save changes'}</Button>
         </Stack>
       </Stack>
     </Page>

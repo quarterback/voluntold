@@ -4,6 +4,8 @@ Date: 2026-10-24
 
 Status: Accepted, decided by the owner on 2026-10-23
 
+Changed by [0009](0009-saas-look-and-adobe-content.md) on 2026-10-25: a custom SaaS theme replaces the Material 3 look. MUI stays.
+
 Changed by [0007](0007-pilot-scope.md) on 2026-10-24: the pilot uses MUI, an existing Material component library, themed from the same seed color, instead of hand-built components.
 
 ## Context

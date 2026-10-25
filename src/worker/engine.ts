@@ -19,6 +19,7 @@ import {
 import { loadFields, loadOrg, loadTask, loadVolunteers, logEvent, toTask } from './db';
 import { fail, hashToken, newId, newToken } from './util';
 import { syncTask } from './atproto';
+import { day, timeRange } from '../shared/time';
 
 export interface Candidate {
   volunteer: Volunteer;
@@ -88,12 +89,10 @@ export function askMessage(name: string, task: Task, orgName: string, link: stri
 }
 
 export function describeWhen(task: Pick<Task, 'timing' | 'startsAt' | 'endsAt' | 'dueAt'>, timeZone?: string): string {
-  const day = (ms: number) => new Date(ms).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone });
-  const time = (ms: number) => new Date(ms).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone });
   if (task.timing === 'at_time' && task.startsAt && task.endsAt) {
-    return `on ${day(task.startsAt)}, ${time(task.startsAt)} to ${time(task.endsAt)}`;
+    return `on ${day(task.startsAt, timeZone, true)}, ${timeRange(task.startsAt, task.endsAt, timeZone)}`;
   }
-  if (task.timing === 'by_date' && task.dueAt) return `by ${day(task.dueAt)}`;
+  if (task.timing === 'by_date' && task.dueAt) return `by ${day(task.dueAt, timeZone, true)}`;
   return '';
 }
 

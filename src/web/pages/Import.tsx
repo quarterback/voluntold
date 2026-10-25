@@ -111,7 +111,7 @@ export function Import() {
   const showRows = table?.rows.slice(0, 10) ?? [];
 
   return (
-    <Page title="Import">
+    <Page title="Import volunteers" width={760}>
       <Stack spacing={2}>
         {error && <Alert severity="error">{error}</Alert>}
 
@@ -135,7 +135,7 @@ export function Import() {
             <CardContent>
               <Typography variant="h2" component="h2" gutterBottom>Match columns</Typography>
               {table.via === 'model' && (
-                <Alert severity="info" sx={{ mb: 2 }}>A model read this file. Check every row.{table.notes ? ` Notes: ${table.notes}` : ''}</Alert>
+                <Alert severity="info" sx={{ mb: 2 }}>A model read this file, so check every row before you import.{table.notes ? ` Notes: ${table.notes}` : ''}</Alert>
               )}
               <Stack spacing={1} sx={{ mb: 1.5 }}>
                 {table.columns.map((col) => (
@@ -164,8 +164,8 @@ export function Import() {
                   </TableBody>
                 </Table>
               </TableContainer>
-              {!hasName && <Alert severity="warning" sx={{ mb: 2 }}>Pick the name column.</Alert>}
-              {!preview && <Button variant="contained" disabled={busy || !hasName} onClick={check}>Check duplicates</Button>}
+              {!hasName && <Alert severity="warning" sx={{ mb: 2 }}>Choose which column holds names</Alert>}
+              {!preview && <Button variant="contained" disabled={busy || !hasName} onClick={check}>Find duplicates</Button>}
             </CardContent>
           </Card>
         )}
@@ -174,9 +174,9 @@ export function Import() {
           <Card>
             <CardContent>
               <Typography variant="h2" component="h2" gutterBottom>Review</Typography>
-              {dupes.length === 0 ? <Typography variant="body2" sx={{ mb: 1.5 }}>No duplicates found.</Typography> : (
+              {dupes.length === 0 ? <Typography variant="body2" sx={{ mb: 1.5 }}>No duplicates found</Typography> : (
                 <Stack spacing={2} sx={{ mb: 2 }}>
-                  <Typography variant="body2">Same email or phone:</Typography>
+                  <Typography variant="body2">These rows share an email or phone</Typography>
                   {dupes.map((d) => {
                     const row = table!.rows[d.index];
                     const other = d.duplicateOf ? `${d.duplicateOf.name} (already saved)` : `${joined(table!.rows[d.duplicateOfRow!], 'name')} (row ${d.duplicateOfRow! + 2} of this file)`;
@@ -199,7 +199,7 @@ export function Import() {
               )}
               <FormControlLabel control={<Checkbox checked={consent} onChange={(e) => setConsent(e.target.checked)} />} label="They agreed to be contacted" />
               <Box sx={{ mt: 2 }}>
-                <Button variant="contained" disabled={busy || !consent} onClick={commit}>Import {table!.rows.length - problems.length}</Button>
+                <Button variant="contained" disabled={busy || !consent} onClick={commit}>Import {table!.rows.length - problems.length} people</Button>
               </Box>
             </CardContent>
           </Card>
@@ -208,8 +208,8 @@ export function Import() {
         {result && (
           <Alert severity="success" action={
             <Stack direction="row" spacing={1}>
-              <Button color="inherit" onClick={() => { setFile(null); setTable(null); setPreview(null); setResult(null); setConsent(false); }}>Import another</Button>
-              <Button color="inherit" onClick={() => navigate('../people', { relative: 'path' })}>See people</Button>
+              <Button color="inherit" onClick={() => { setFile(null); setTable(null); setPreview(null); setResult(null); setConsent(false); }}>Import another file</Button>
+              <Button color="inherit" onClick={() => navigate('../people', { relative: 'path' })}>View people</Button>
             </Stack>
           }>
             Added {result.added} · merged {result.merged}{result.setAside.length ? ` · set aside ${result.setAside.length}` : ''}
@@ -227,7 +227,7 @@ export function Import() {
                     {imp.set_aside.length > 0 && (
                       <>
                         <Typography color="text.secondary" variant="body2">Set aside: {imp.set_aside.map((s: any) => `${Object.values(s.cells).filter(Boolean).slice(0, 2).join(' ') || `row ${s.row + 2}`} (${s.reason.toLowerCase()})`).join('; ')}</Typography>
-                        <Button size="small" onClick={() => api(path(`/imports/${imp.id}/clear`), { body: {} }).then(recent.reload)}>Clear</Button>
+                        <Button size="small" onClick={() => api(path(`/imports/${imp.id}/clear`), { body: {} }).then(recent.reload)}>Clear rows</Button>
                       </>
                     )}
                   </CardContent>

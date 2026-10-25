@@ -41,9 +41,20 @@ linkRoute.get('/:token', async (c) => {
 export function page(title: string, body: string): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer"><title>${escapeHtml(title)}</title>
-<style>body{font-family:Roboto,system-ui,sans-serif;max-width:560px;margin:0 auto;padding:24px 16px;line-height:1.5;color:#191c1c;background:#f4fbf9}
-h1{font-size:1.5rem;font-weight:500}a{color:#006a62}.meta{color:#3f4947}@media (prefers-color-scheme:dark){body{background:#0e1514;color:#dde4e2}a{color:#53dbc9}.meta{color:#bec9c6}}</style>
-</head><body><h1>${escapeHtml(title)}</h1>${body}</body></html>`;
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#F6F8FA;--surface:#fff;--border:#E3E8EE;--text:#1A1F36;--text2:#5B6474;--accent:#0E7C74;--soft:#E6F5F3}
+@media (prefers-color-scheme:dark){:root{--bg:#0E1217;--surface:#151B22;--border:#28313C;--text:#E7EBF0;--text2:#A4AEBB;--accent:#3CC9BA;--soft:#12312E}}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:520px;margin:0 auto;padding:40px 16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px;box-shadow:0 1px 2px rgba(26,31,54,.06)}
+h1{font-size:1.25rem;font-weight:600;letter-spacing:-.01em;margin:0 0 12px}
+.meta{color:var(--text2);font-size:.875rem;margin:0 0 4px}
+.row{margin:6px 0}.row b{font-weight:500}
+.status{display:inline-block;background:var(--soft);color:var(--accent);border-radius:6px;padding:2px 8px;font-size:.8125rem;font-weight:500;margin:12px 0}
+ul{padding-left:20px;margin:4px 0}a{color:var(--accent)}
+.foot{color:var(--text2);font-size:.875rem;margin-top:16px}
+</style></head><body><main><div class="card"><h1>${escapeHtml(title)}</h1>${body}</div></main></body></html>`;
 }
 
 export function escapeHtml(s: string): string {

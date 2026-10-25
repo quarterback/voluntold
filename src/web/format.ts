@@ -1,10 +1,9 @@
+import { day, timeRange } from '../shared/time';
 export { ago, shortDate, standing } from '../shared/sentences';
 
 export function when(t: { timing: string; startsAt: number | null; endsAt: number | null; dueAt: number | null }): string {
-  const day = (ms: number) => new Date(ms).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-  const time = (ms: number) => new Date(ms).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-  if (t.timing === 'at_time' && t.startsAt && t.endsAt) return `${day(t.startsAt)}, ${time(t.startsAt)} to ${time(t.endsAt)}`;
-  if (t.timing === 'by_date' && t.dueAt) return `By ${day(t.dueAt)}`;
+  if (t.timing === 'at_time' && t.startsAt && t.endsAt) return `${day(t.startsAt)}, ${timeRange(t.startsAt, t.endsAt)}`;
+  if (t.timing === 'by_date' && t.dueAt) return `Due ${day(t.dueAt)}`;
   return 'No date';
 }
 

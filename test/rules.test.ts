@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { askExpiry, batchSize, byLongestWait, meetsRequirement, whyNotFit, DAY, HOUR } from '../src/shared/rules';
 import type { Field, Task, Volunteer } from '../src/shared/types';
+import { time, timeRange } from '../src/shared/time';
 
 const fields: Field[] = [
   { id: 'skills', label: 'Skills', type: 'many', options: ['Audio', 'Design'], position: 0 },
@@ -133,5 +134,17 @@ describe('timing', () => {
     expect(askExpiry(task({ startsAt: now + 10 * DAY }), now)).toBe(now + 48 * HOUR);
     expect(askExpiry(task({ startsAt: now + 24 * HOUR }), now)).toBe(now + 18 * HOUR);
     expect(askExpiry(task({ timing: 'by_date', startsAt: null }), now)).toBe(now + 48 * HOUR);
+  });
+});
+
+describe('times in Adobe style', () => {
+  const at = (h: number, m = 0) => Date.UTC(2026, 9, 29, h, m);
+  it('drops :00 and uses lowercase am and pm with no space', () => {
+    expect(time(at(12), 'UTC')).toBe('12pm');
+    expect(time(at(9, 30), 'UTC')).toBe('9:30am');
+  });
+  it('writes a range with "to", sharing am or pm when both match', () => {
+    expect(timeRange(at(12), at(14), 'UTC')).toBe('12 to 2pm');
+    expect(timeRange(at(11, 30), at(13), 'UTC')).toBe('11:30am to 1pm');
   });
 });

@@ -346,6 +346,27 @@ describe('roles', () => {
   });
 });
 
+describe('deleting a detail or a team', () => {
+  it('takes it out of task requirements, so the task still matches people', async () => {
+    const org = await newOrg();
+    const team = (await org.client.post(org.api('/teams'), { name: 'Desk' })).body.id;
+    await addVolunteer(org, 'Sam', { [org.fields.Experience]: 'New' });
+    const task = await newTask(org, {
+      peopleNeeded: 1,
+      requirements: [
+        { kind: 'field', fieldId: org.fields.Experience, op: 'is', value: 'Can lead' },
+        { kind: 'team', teamId: team },
+      ],
+    });
+    expect((await org.client.get(org.api(`/tasks/${task}`))).body.nextGroup).toHaveLength(0);
+    await org.client.del(org.api(`/fields/${org.fields.Experience}`));
+    await org.client.del(org.api(`/teams/${team}`));
+    const detail = (await org.client.get(org.api(`/tasks/${task}`))).body;
+    expect(detail.task.requirements).toEqual([]);
+    expect(detail.nextGroup).toHaveLength(1);
+  });
+});
+
 describe('export', () => {
   it('exports CSV with formula-looking cells made safe', async () => {
     const org = await newOrg();

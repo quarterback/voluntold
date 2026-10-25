@@ -44,7 +44,7 @@ export function Start() {
   }
 
   return (
-    <Box sx={{ maxWidth: 520, mx: 'auto', px: 2, py: 6 }}>
+    <Box sx={{ maxWidth: 480, mx: 'auto', px: 2, py: { xs: 6, md: 10 } }}>
       <Typography variant="h1" component="h1" gutterBottom>Your organizations</Typography>
       {problem && <Alert severity="error" sx={{ mb: 2 }}>{problem}</Alert>}
       <Stack spacing={1.5} sx={{ mb: 4 }}>
@@ -64,7 +64,7 @@ export function Start() {
         <Stack spacing={2}>
           <Typography variant="h2" component="h2">New organization</Typography>
           <TextField label="Organization name" required value={name} onChange={(e) => setName(e.target.value)} />
-          <Button type="submit" variant="contained" disabled={busy || !name.trim()}>Create</Button>
+          <Button type="submit" variant="contained" disabled={busy || !name.trim()}>Create organization</Button>
           <Button onClick={sample} disabled={busy}>Try sample data</Button>
         </Stack>
       </form>

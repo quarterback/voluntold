@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  Alert, Box, Button, Card, CardContent, Chip, FormControl, FormControlLabel, IconButton, InputLabel, Link, List, ListItem,
+  Alert, Box, Button, Chip, FormControl, FormControlLabel, IconButton, InputLabel, Link, List, ListItem,
   ListItemText, MenuItem, Select, Stack, Switch, TextField, Typography,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/DeleteOutlined';
 import { api } from '../api';
 import { useOrg } from './OrgShell';
-import { Page, errorText, useLoad } from './common';
+import { Page, Section, errorText, useDialogs, useLoad } from './common';
 import type { FieldType } from '../../shared/types';
 
 const TYPE_TEXT: Record<FieldType, string> = {
@@ -20,18 +20,6 @@ const TYPE_TEXT: Record<FieldType, string> = {
 };
 
 const ROLE: Record<string, string> = { admin: 'Admin', coordinator: 'Coordinator', lead: 'Team lead' };
-
-function Section({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {
-  return (
-    <Card>
-      <CardContent>
-        <Typography variant="h2" component="h2">{title}</Typography>
-        {note && <Typography variant="body2" color="text.secondary">{note}</Typography>}
-        <Box sx={{ mt: 1.5 }}>{children}</Box>
-      </CardContent>
-    </Card>
-  );
-}
 
 function useAction() {
   const [error, setError] = useState<string | null>(null);
@@ -72,16 +60,16 @@ function OrgSection() {
     <Section title="Organization">
       <Stack spacing={1.5}>
         {error && <Alert severity="error">{error}</Alert>}
-        {saved && <Alert severity="success">Saved.</Alert>}
+        {saved && <Alert severity="success">Changes saved</Alert>}
         <Stack direction="row" spacing={1.5}>
           <TextField label="Name" value={form.name} disabled={!admin} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <TextField label="Asks per week" type="number" disabled={!admin} value={form.weeklyAskLimit} sx={{ width: 140, flexShrink: 0 }}
             onChange={(e) => setForm({ ...form, weeklyAskLimit: Number(e.target.value) })} slotProps={{ htmlInput: { min: 1, max: 14 } }} />
         </Stack>
         <TextField label="Sign-up link" placeholder="https://" disabled={!admin} value={form.signupUrl} onChange={(e) => setForm({ ...form, signupUrl: e.target.value })}
-          helperText="For new people who find a public task." />
+          helperText="For new people who find a public task" />
         <FormControlLabel control={<Switch size="small" disabled={!admin} checked={form.publishDefault} onChange={(e) => setForm({ ...form, publishDefault: e.target.checked })} />} label="Post new tasks on AT Protocol" />
-        {admin && <Box><Button variant="contained" onClick={async () => { if (await run(() => api(path(''), { method: 'PATCH', body: form }))) { setSaved(true); reload(); } }}>Save</Button></Box>}
+        {admin && <Box><Button variant="contained" onClick={async () => { if (await run(() => api(path(''), { method: 'PATCH', body: form }))) { setSaved(true); reload(); } }}>Save changes</Button></Box>}
       </Stack>
     </Section>
   );
@@ -89,6 +77,7 @@ function OrgSection() {
 
 function FieldsSection() {
   const { fields, path, reload, me } = useOrg();
+  const dialogs = useDialogs();
   const [label, setLabel] = useState('');
   const [type, setType] = useState<FieldType>('one');
   const { error, run } = useAction();
@@ -102,7 +91,7 @@ function FieldsSection() {
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
               <Typography variant="h3" sx={{ flex: 1 }}>{f.label}</Typography>
               <Typography variant="body2" color="text.secondary">{TYPE_TEXT[f.type]}</Typography>
-              {canEdit && <IconButton size="small" aria-label={`Delete ${f.label}`} onClick={() => confirm(`Delete ${f.label}?`) && run(() => api(path(`/fields/${f.id}`), { method: 'DELETE' })).then(reload)}><DeleteIcon fontSize="small" /></IconButton>}
+              {canEdit && <IconButton size="small" aria-label={`Delete ${f.label}`} onClick={async () => (await dialogs.confirm({ title: `Delete ${f.label}?`, body: 'People lose this detail, and tasks stop requiring it.', confirm: 'Delete detail', destructive: true })) && run(() => api(path(`/fields/${f.id}`), { method: 'DELETE' })).then(reload)}><DeleteIcon fontSize="small" /></IconButton>}
             </Stack>
             {(f.type === 'one' || f.type === 'many') && (
               <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap', mt: 0.5, alignItems: 'center' }}>
@@ -123,7 +112,7 @@ function FieldsSection() {
                 {Object.entries(TYPE_TEXT).map(([k, v]) => <MenuItem key={k} value={k}>{v}</MenuItem>)}
               </Select>
             </FormControl>
-            <Button variant="outlined" disabled={!label.trim()} onClick={async () => { if (await run(() => api(path('/fields'), { body: { label, type } }))) { setLabel(''); reload(); } }}>Add</Button>
+            <Button variant="outlined" disabled={!label.trim()} onClick={async () => { if (await run(() => api(path('/fields'), { body: { label, type } }))) { setLabel(''); reload(); } }}>Add detail</Button>
           </Stack>
         )}
       </Stack>
@@ -133,6 +122,7 @@ function FieldsSection() {
 
 function TeamsSection({ members }: { members: { id: string; email: string; role: string }[] }) {
   const { teams, path, reload, me } = useOrg();
+  const dialogs = useDialogs();
   const [name, setName] = useState('');
   const { error, run } = useAction();
   const canEdit = me.role !== 'lead';
@@ -141,7 +131,7 @@ function TeamsSection({ members }: { members: { id: string; email: string; role:
       {error && <Alert severity="error" sx={{ mb: 1.5 }}>{error}</Alert>}
       <List disablePadding>
         {teams.map((t) => (
-          <ListItem key={t.id} disableGutters secondaryAction={canEdit && <IconButton size="small" aria-label={`Delete ${t.name}`} onClick={() => confirm(`Delete the ${t.name} team?`) && run(() => api(path(`/teams/${t.id}`), { method: 'DELETE' })).then(reload)}><DeleteIcon fontSize="small" /></IconButton>}>
+          <ListItem key={t.id} disableGutters secondaryAction={canEdit && <IconButton size="small" aria-label={`Delete ${t.name}`} onClick={async () => (await dialogs.confirm({ title: `Delete the ${t.name} team?`, body: 'Tasks stop requiring this team.', confirm: 'Delete team', destructive: true })) && run(() => api(path(`/teams/${t.id}`), { method: 'DELETE' })).then(reload)}><DeleteIcon fontSize="small" /></IconButton>}>
             <ListItemText
               primary={`${t.name} · ${t.volunteerIds.length} ${t.volunteerIds.length === 1 ? 'person' : 'people'}`}
               secondary={
@@ -166,7 +156,7 @@ function TeamsSection({ members }: { members: { id: string; email: string; role:
       {canEdit && (
         <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
           <TextField label="New team" value={name} onChange={(e) => setName(e.target.value)} />
-          <Button variant="outlined" disabled={!name.trim()} onClick={async () => { if (await run(() => api(path('/teams'), { body: { name } }))) { setName(''); reload(); } }}>Add</Button>
+          <Button variant="outlined" disabled={!name.trim()} onClick={async () => { if (await run(() => api(path('/teams'), { body: { name } }))) { setName(''); reload(); } }}>Add team</Button>
         </Stack>
       )}
     </Section>
@@ -197,16 +187,17 @@ function MembersSection({ members, reloadMembers }: { members: { id: string; ema
             <MenuItem value="coordinator">Coordinator</MenuItem>
             <MenuItem value="lead">Team lead</MenuItem>
           </Select>
-          <Button variant="outlined" disabled={!email.includes('@')} onClick={async () => { if (await run(() => api(path('/members'), { body: { email, role } }))) { setEmail(''); reloadMembers(); } }}>Add</Button>
+          <Button variant="outlined" disabled={!email.includes('@')} onClick={async () => { if (await run(() => api(path('/members'), { body: { email, role } }))) { setEmail(''); reloadMembers(); } }}>Add member</Button>
         </Stack>
       )}
-      {admin && members.filter((m) => m.role === 'admin').length < 2 && <Alert severity="info" sx={{ mt: 1.5 }}>Add a second admin.</Alert>}
+      {admin && members.filter((m) => m.role === 'admin').length < 2 && <Alert severity="info" sx={{ mt: 1.5 }}>Add a second admin so you're not the only one who can change settings</Alert>}
     </Section>
   );
 }
 
 function AtprotoSection() {
   const { org, path, reload, me, atprotoReady } = useOrg();
+  const dialogs = useDialogs();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const { error, run } = useAction();
@@ -214,11 +205,11 @@ function AtprotoSection() {
   return (
     <Section title="AT Protocol" note="Posts tasks to your account. Never names, contact details or answers.">
       {error && <Alert severity="error" sx={{ mb: 1.5 }}>{error}</Alert>}
-      {!atprotoReady && <Alert severity="info" sx={{ mb: 1.5 }}>Not set up on this server.</Alert>}
+      {!atprotoReady && <Alert severity="info" sx={{ mb: 1.5 }}>Posting isn't set up on this server</Alert>}
       {org.atproto ? (
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           <Typography sx={{ flex: 1 }}>Connected as <strong>{org.atproto.handle}</strong></Typography>
-          <Button color="error" onClick={() => confirm('Disconnect? Posted tasks are taken down first.') && run(() => api(path('/atproto'), { method: 'DELETE' })).then(reload)}>Disconnect</Button>
+          <Button color="error" onClick={async () => (await dialogs.confirm({ title: 'Disconnect this account?', body: 'Posted tasks are taken down first.', confirm: 'Disconnect account', destructive: true })) && run(() => api(path('/atproto'), { method: 'DELETE' })).then(reload)}>Disconnect account</Button>
         </Stack>
       ) : (
         <Stack spacing={1.5}>
@@ -229,7 +220,7 @@ function AtprotoSection() {
           <Typography variant="body2" color="text.secondary">
             Not your main password. <Link href="https://bsky.app/settings/app-passwords" target="_blank" rel="noopener">Make an app password in Bluesky</Link>.
           </Typography>
-          <Box><Button variant="contained" disabled={!atprotoReady || !identifier || !password} onClick={async () => { if (await run(() => api(path('/atproto'), { body: { identifier, appPassword: password } }))) { setPassword(''); reload(); } }}>Connect</Button></Box>
+          <Box><Button variant="contained" disabled={!atprotoReady || !identifier || !password} onClick={async () => { if (await run(() => api(path('/atproto'), { body: { identifier, appPassword: password } }))) { setPassword(''); reload(); } }}>Connect account</Button></Box>
         </Stack>
       )}
     </Section>
@@ -243,9 +234,9 @@ export function Settings() {
   const { data, reload } = useLoad(() => api(path('/members')), [path]);
   const members = data?.members ?? [];
   return (
-    <Page title="Settings">
-      <Stack spacing={1.5}>
-        {params.has('welcome') && <Alert severity="success">Ready. Check the volunteer details below, then import your list.</Alert>}
+    <Page title="Settings" width={760}>
+      <Stack spacing={2}>
+        {params.has('welcome') && <Alert severity="success">Your organization is ready. Check the volunteer details below, then import your list.</Alert>}
         {me.role !== 'lead' && (
           <Section title="Import volunteers" note="CSV, Excel, XML, JSON, text, Word or PDF.">
             <Button variant="contained" onClick={() => navigate('../import', { relative: 'path' })}>Import file</Button>
@@ -259,8 +250,8 @@ export function Settings() {
         {me.role === 'admin' && (
           <Section title="Export" note="The JSON file keeps IDs, so other tools can import it.">
             <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
-              {['volunteers', 'tasks', 'asks', 'spots'].map((k) => <Button key={k} size="small" variant="outlined" href={path(`/export/${k}.csv`)}>{k[0].toUpperCase() + k.slice(1)} CSV</Button>)}
-              <Button size="small" variant="outlined" href={path('/export.json')}>All as JSON</Button>
+              {['volunteers', 'tasks', 'asks', 'spots'].map((k) => <Button key={k} size="small" variant="outlined" href={path(`/export/${k}.csv`)}>Export {k} (CSV)</Button>)}
+              <Button size="small" variant="outlined" href={path('/export.json')}>Export all as JSON</Button>
             </Stack>
           </Section>
         )}

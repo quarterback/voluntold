@@ -36,12 +36,12 @@ publicRoutes.get('/:taskId', async (c) => {
     page(
       task.title,
       `<p class="meta">${escapeHtml(org.name)}</p>
-       ${when ? `<p><strong>When:</strong> ${escapeHtml(when.replace(/^on /, ''))}</p>` : ''}
-       ${task.placePublic ? `<p><strong>Where:</strong> ${escapeHtml(task.placePublic)}</p>` : ''}
+       ${when ? `<p class="row"><b>When</b> · ${escapeHtml(when.replace(/^on /, ''))}</p>` : ''}
+       ${task.placePublic ? `<p class="row"><b>Where</b> · ${escapeHtml(task.placePublic)}</p>` : ''}
        ${task.description ? `<p>${escapeHtml(task.description).replace(/\n/g, '<br>')}</p>` : ''}
-       ${reqs ? `<p><strong>What it needs:</strong></p><ul>${reqs}</ul>` : ''}
-       <p><strong>${escapeHtml(status)}</strong></p>
-       <p>Already volunteer with ${escapeHtml(org.name)}? Watch for your link. ${signup}</p>`,
+       ${reqs ? `<p class="row"><b>What it needs</b></p><ul>${reqs}</ul>` : ''}
+       <span class="status">${escapeHtml(status)}</span>
+       <p class="foot">Already volunteer with ${escapeHtml(org.name)}? Watch for your link. ${signup}</p>`,
     ),
   );
 });

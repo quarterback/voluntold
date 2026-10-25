@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { CssBaseline, ThemeProvider, useMediaQuery } from '@mui/material';
 import { makeTheme } from './theme';
 import { App } from './App';
+import { DialogProvider } from './pages/common';
 
 function Root() {
   const dark = useMediaQuery('(prefers-color-scheme: dark)');
@@ -12,7 +13,9 @@ function Root() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <BrowserRouter>
-        <App />
+        <DialogProvider>
+          <App />
+        </DialogProvider>
       </BrowserRouter>
     </ThemeProvider>
   );

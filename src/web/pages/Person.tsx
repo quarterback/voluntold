@@ -6,7 +6,8 @@ import {
 } from '@mui/material';
 import { api } from '../api';
 import { useOrg } from './OrgShell';
-import { Loading, Page, errorText, useLoad } from './common';
+import { Loading, Page, Section, errorText, useDialogs, useLoad } from './common';
+import BackIcon from '@mui/icons-material/ArrowBack';
 import { ago, when } from '../format';
 import type { Field, FieldValue } from '../../shared/types';
 
@@ -52,6 +53,7 @@ export function Person() {
   const { volunteerId } = useParams();
   const { path, fields, teams, me, reload: reloadOrg } = useOrg();
   const navigate = useNavigate();
+  const dialogs = useDialogs();
   const { data, error, reload } = useLoad(() => api(path(`/volunteers/${volunteerId}`)), [volunteerId]);
   const [form, setForm] = useState<any>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -81,18 +83,31 @@ export function Person() {
     }
   }
 
-  return (
-    <Page title={v.name}>
-      <Stack spacing={1.5}>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: -1 }}>{v.standing}</Typography>
-        {problem && <Alert severity="error">{problem}</Alert>}
-        {saved && <Alert severity="success" onClose={() => setSaved(false)}>Saved.</Alert>}
+  async function stopAsks() {
+    const ok = await dialogs.confirm({ title: `Stop asks to ${v.name}?`, body: "They won't get new asks. You can resume asks later.", confirm: 'Stop asks', destructive: true });
+    if (ok) run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { status: 'stopped' } }));
+  }
+  async function deletePerson() {
+    const ok = await dialogs.confirm({ title: `Delete ${v.name}?`, body: "This also deletes their history. You can't undo this.", confirm: 'Delete person', destructive: true });
+    if (ok) run(() => api(path(`/volunteers/${v.id}`), { method: 'DELETE' }), () => navigate('..', { relative: 'path' }));
+  }
+  const ANSWER: Record<string, string> = { waiting: 'No answer yet', yes: 'Said yes', no: 'Said no', expired: "Didn't answer", closed: 'Filled first' };
 
-        <Card>
-          <CardContent>
-            <Stack spacing={1.5}>
+  return (
+    <Page
+      title={v.name}
+      subtitle={v.standing}
+      back={<Button size="small" startIcon={<BackIcon fontSize="small" />} onClick={() => navigate('..', { relative: 'path' })} sx={{ color: 'text.secondary', ml: -1 }}>People</Button>}
+      action={canEdit && <Button variant="contained" onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: form }), () => { setSaved(true); reloadOrg(); })}>Save changes</Button>}
+    >
+      <Stack spacing={2}>
+        {problem && <Alert severity="error">{problem}</Alert>}
+        {saved && <Alert severity="success" onClose={() => setSaved(false)}>Changes saved</Alert>}
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '3fr 2fr' }, gap: 2, alignItems: 'start' }}>
+          <Section title="Details">
+            <Stack spacing={2}>
               <TextField label="Name" value={form.name} disabled={!canEdit} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-              <Stack direction="row" spacing={1.5}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <TextField label="Email" value={form.email} disabled={!canEdit} onChange={(e) => setForm({ ...form, email: e.target.value })} />
                 <TextField label="Phone" value={form.phone} disabled={!canEdit} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               </Stack>
@@ -100,75 +115,67 @@ export function Person() {
                 <FieldInput key={f.id} field={f} value={form.values[f.id]} onChange={(val) => setForm({ ...form, values: { ...form.values, [f.id]: val } })} />
               ))}
               {v.contactOkAt === null && canEdit && (
-                <Button variant="outlined" onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { contactOk: true } }))}>Mark as agreed to be contacted</Button>
-              )}
-              {canEdit && (
-                <Box>
-                  <Button variant="contained" onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: form }), () => { setSaved(true); reloadOrg(); })}>Save</Button>
-                </Box>
+                <Alert severity="warning" action={<Button color="inherit" size="small" onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { contactOk: true } }))}>Mark as agreed</Button>}>
+                  Not yet agreed to be contacted
+                </Alert>
               )}
             </Stack>
-          </CardContent>
-        </Card>
+          </Section>
 
-        {myTeams.length > 0 && (
-          <Box>
-            <Typography variant="h2" component="h2">Teams</Typography>
-            <FormGroup>
-              {myTeams.map((t) => (
-                <FormControlLabel key={t.id} label={t.name} control={
-                  <Checkbox checked={teamIds.includes(t.id)} onChange={(e) => {
-                    const on = e.target.checked;
-                    setTeamIds(on ? [...teamIds, t.id] : teamIds.filter((x) => x !== t.id));
-                    run(() => on
-                      ? api(path(`/teams/${t.id}/members`), { body: { volunteerId: v.id } })
-                      : api(path(`/teams/${t.id}/members/${v.id}`), { method: 'DELETE' }), reloadOrg);
-                  }} />
-                } />
-              ))}
-            </FormGroup>
-          </Box>
-        )}
+          <Stack spacing={2}>
+            {myTeams.length > 0 && (
+              <Section title="Teams">
+                <FormGroup>
+                  {myTeams.map((t) => (
+                    <FormControlLabel key={t.id} label={t.name} control={
+                      <Checkbox size="small" checked={teamIds.includes(t.id)} onChange={(e) => {
+                        const on = e.target.checked;
+                        setTeamIds(on ? [...teamIds, t.id] : teamIds.filter((x) => x !== t.id));
+                        run(() => on
+                          ? api(path(`/teams/${t.id}/members`), { body: { volunteerId: v.id } })
+                          : api(path(`/teams/${t.id}/members/${v.id}`), { method: 'DELETE' }), reloadOrg);
+                      }} />
+                    } />
+                  ))}
+                </FormGroup>
+              </Section>
+            )}
 
-        {canEdit && (
-          <Box>
-            <Typography variant="h2" component="h2" sx={{ mb: 1 }}>Asks</Typography>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'center' } }}>
-              {v.status !== 'active' && <Button variant="outlined" onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { status: 'active' } }))}>Resume asks</Button>}
-              {v.status === 'active' && (
-                <>
-                  <TextField size="small" type="date" label="Pause until" value={pauseUntil} onChange={(e) => setPauseUntil(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} sx={{ maxWidth: 200 }} />
-                  <Button disabled={!pauseUntil} onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { status: 'paused', pausedUntil: `${pauseUntil}T00:00` } }))}>Pause</Button>
-                </>
+            {canEdit && (
+              <Section title="Asks">
+                <Stack spacing={1.5}>
+                  {v.status !== 'active' && <Box><Button variant="outlined" onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { status: 'active' } }))}>Resume asks</Button></Box>}
+                  {v.status === 'active' && (
+                    <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-end' }}>
+                      <TextField type="date" label="Pause until" value={pauseUntil} onChange={(e) => setPauseUntil(e.target.value)} />
+                      <Button variant="outlined" disabled={!pauseUntil} onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { status: 'paused', pausedUntil: `${pauseUntil}T00:00` } }))}>Pause asks</Button>
+                    </Stack>
+                  )}
+                  {v.status !== 'stopped' && <Box><Button color="error" onClick={stopAsks}>Stop asks</Button></Box>}
+                </Stack>
+              </Section>
+            )}
+
+            <Section title="History">
+              {data.asks.length === 0 ? <Typography variant="body2" color="text.secondary">Never asked</Typography> : (
+                <List disablePadding>
+                  {data.asks.map((a: any) => (
+                    <ListItem key={a.id} disableGutters>
+                      <ListItemText primary={a.title} secondary={`${ANSWER[a.status]} · asked ${ago(a.created_at, Date.now())}`} />
+                    </ListItem>
+                  ))}
+                </List>
               )}
-              {v.status !== 'stopped' && <Button color="error" onClick={() => confirm(`Stop asking ${v.name}?`) && run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { status: 'stopped' } }))}>Stop asks</Button>}
-            </Stack>
-          </Box>
-        )}
+              {data.spots.filter((s: any) => s.status === 'done').length > 0 && (
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  Done: {data.spots.filter((s: any) => s.status === 'done').map((s: any) => `${s.task.title} (${when(s.task)})`).join('; ')}
+                </Typography>
+              )}
+            </Section>
 
-        <Box>
-          <Typography variant="h2" component="h2">History</Typography>
-          {data.asks.length === 0 ? <Typography color="text.secondary">Never asked.</Typography> : (
-            <List dense disablePadding>
-              {data.asks.map((a: any) => (
-                <ListItem key={a.id} disableGutters>
-                  <ListItemText primary={a.title} secondary={`Asked ${ago(a.created_at, Date.now())}: ${({ waiting: 'no answer yet', yes: 'said yes', no: 'said no', expired: "didn't answer", closed: 'filled first' } as Record<string, string>)[a.status]}`} />
-                </ListItem>
-              ))}
-            </List>
-          )}
-          {data.spots.filter((s: any) => s.status === 'done').length > 0 && (
-            <Typography color="text.secondary" sx={{ mt: 1 }}>
-              Done: {data.spots.filter((s: any) => s.status === 'done').map((s: any) => `${s.task.title} (${when(s.task)})`).join('; ')}
-            </Typography>
-          )}
+            {me.role === 'admin' && <Box><Button color="error" onClick={deletePerson}>Delete person</Button></Box>}
+          </Stack>
         </Box>
-
-        {me.role === 'admin' && (
-          <Box>
-            <Button color="error" onClick={() => confirm(`Delete ${v.name} and their history? This can't be undone.`) && run(() => api(path(`/volunteers/${v.id}`), { method: 'DELETE' }), () => navigate('..', { relative: 'path' }))}>Delete person</Button>
-          </Box>
-        )}
       </Stack>
     </Page>
   );

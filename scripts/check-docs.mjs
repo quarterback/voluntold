@@ -37,6 +37,21 @@ if (!ui.ok) {
   process.stdout.write(ui.out);
   failed = true;
 }
+// Adobe Spectrum grammar rules that a machine can check (EDITORIAL.md).
+const ADOBE = [
+  [/!/, 'no exclamation marks'],
+  [/ & /, 'write "and", not "&"'],
+  [/\bclick\b/i, 'name the action, not "click"'],
+  [/\bplease\b/i, 'leave out "please"'],
+];
+for (const c of copy) {
+  for (const [re, rule] of ADOBE) {
+    if (re.test(c.text)) {
+      console.log(`interface rule (${rule}): ${c.file}:${c.line} ${c.text}`);
+      failed = true;
+    }
+  }
+}
 for (const c of copy.filter((c) => c.text.split(/\s+/).length > MAX_WORDS)) {
   console.log(`too long (${c.text.split(/\s+/).length} words, limit ${MAX_WORDS}): ${c.file}:${c.line} ${c.text}`);
   failed = true;
