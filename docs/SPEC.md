@@ -138,7 +138,7 @@ Buttons say what they do: "Ask 6 people", "Copy all", "I can't make it". Status 
 Tasks are the only thing that goes on AT Protocol. Nothing about volunteers ever does. See [decision 0006](decisions/0006-only-tasks-go-on-at-protocol.md).
 
 - An organization can connect its AT Protocol account, such as its Bluesky account. Once it's connected, open tasks are posted publicly by default. Any task can be switched to private.
-- A posted task is a record in the organization's own account. It holds the title, the description, when, the public part of the place, how many people are needed, the requirements as text, the status, and a link to the task's public page.
+- A posted task is a record in the organization's own account. It holds the title, the description, when, and the public part of the place. It also holds how many people are needed, the requirements as text, the status, and a link to the task's public page.
 - A task set for a time is also written in the shared calendar format, `community.lexicon.calendar.event`, so calendar apps that read AT Protocol can show it.
 - When the task fills, is canceled or is done, the record's status changes. If a coordinator switches the task to private, the record is deleted.
 - The public page shows the task and says: "Already volunteer with us? Watch for your link. New? Sign up here", linking to the organization's own sign-up page.
@@ -152,7 +152,7 @@ An admin can download everything as CSV: volunteers with their fields, tasks, as
 
 ## For the coding agent
 
-**Stack:** Cloudflare Workers and D1. A React web app using MUI, themed from the Material 3 seed color `#00B8A9`, with dark mode from the same seed. Sign-in uses 6 digit email codes sent through an email provider (Resend in the pilot). There are no passwords. Posting to AT Protocol uses an app password the organization makes in its Bluesky settings. AT Protocol OAuth, and "Log in with Bluesky", replace it only after the OAuth client passes a one-day test on Workers ([decision 0008](decisions/0008-pilot-build-choices.md)).
+**Stack:** Cloudflare Workers and D1. A React web app using MUI, themed from the Material 3 seed color `#00B8A9`, with dark mode from the same seed. Sign-in uses 6 digit email codes sent through an email provider (Resend in the pilot). There are no passwords. Posting to AT Protocol uses an app password the organization makes in its Bluesky settings. AT Protocol OAuth and "Log in with Bluesky" come later. They replace the app password once the OAuth client passes a one-day test on Workers ([decision 0008](decisions/0008-pilot-build-choices.md)).
 
 **Model for imports:** used only to pull rows out of text, Word and PDF files. Its output must be checked against a schema. Use a provider whose terms say it doesn't train on prompts or keep them. Record which provider and the date it was checked in a decision record before any real file goes through it.
 

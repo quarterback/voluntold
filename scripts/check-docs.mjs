@@ -1,5 +1,5 @@
 // Checks the docs with the owner's own tools:
-// - prosekeep: house style and plain language (Vloora profile)
+// - prosekeep: house style and plain language, with the settings in .editorial.json
 // - closedtab: every Agent Action Record covers all six parts
 // plain-language-default is left out: its sentence check counts a Markdown
 // heading and the line after it as one sentence. Run it by hand with
@@ -17,7 +17,7 @@ const run = (bin, args) => {
   }
 };
 
-const style = run('prosekeep', ['check', 'README.md', 'docs', 'samples', '--profile', 'vloora']);
+const style = run('prosekeep', ['check']);
 process.stdout.write(style.out);
 if (!style.ok) failed = true;
 
