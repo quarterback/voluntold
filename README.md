@@ -1,38 +1,75 @@
-# Volunteer Mobilization (working title)
+# Volunteer tool (working title)
 
-Vloora product proposal, October 21, 2026. Product name and public brand are undecided.
+A Vloora product. The product name is undecided.
 
-## What the product does
-
-A volunteer-run organization can describe work it needs done, prepare useful short- or long-term opportunities, reach people it already knows, and get an explicit yes without making volunteers join another management platform. Volunteers can share skills, interests and temporary availability, accept work, and record a contribution from a link. Organizations get a durable record and a way to mobilize people again when new work appears.
-
-The core unit is a **contribution**, rather than a volunteer's job title or shift. Fixed coverage remains available where the work genuinely requires it. Participation is opt-in; organizer proposals and agent matches bind no one until a person accepts.
-
-## Why this product
-
-Organizations often know people willing to help but cannot translate unfinished work into achievable requests. Many volunteers are available sporadically, for two hours, a month, or a season. Existing volunteer administration can make them behave like employees and require more overhead than the contribution warrants.
-
-Vloora's goal is broad adoption and evidence of a working zero-to-one product. A free hosted experience is the default. Future premium capabilities for larger organizations are possible, but subscription revenue is not the first-release success metric.
+Organizations already have volunteers but don't know how to put them to work, so people who said they'd help are never asked. This tool organizes the volunteers an organization has, by the details it cares about. It helps the organization ask the right people for each task, and records the work as done when its time passes. Volunteers answer from a link on their phone, with no account. Tasks an organization posts live in its own AT Protocol account.
 
 ## Read first
 
-- [Product PRD](docs/PRODUCT-PRD.md): outcomes, users, behaviors, constraints and acceptance criteria.
-- [Activation PRD](docs/ACTIVATION-PRD.md): organizer-initiated invites, lightweight intake and time-bound availability.
-- [Mobilization PRD](docs/MOBILIZATION-PRD.md): task shaping, matching, offers, claims and completion.
-- [Architecture](docs/ARCHITECTURE.md): data model, security, AI gateway, providers and scaling.
-- [Ship-today plan](docs/SHIP-TODAY.md): exact vertical slice, test fixtures, gates and sequencing.
-- [Agent implementation handoff](docs/AGENT-HANDOFF.md): build instructions for a coding agent.
+- [Spec](docs/SPEC.md): what the pilot does, the building blocks, and the check before inviting pilot organizations.
+- [Later](docs/LATER.md): ideas not in the pilot, one line each.
+- [Decisions](docs/decisions/): what was decided, when, and why.
+- [Research](docs/research/): existing volunteer tools and their gaps, and how AT Protocol fits.
+- [Archive](docs/archive/): the October 21 to 24 planning documents. Where they disagree with the spec, the spec wins.
 
-## Launch definition
+## What's built
 
-The first releasable transaction is: create an organization → describe a need → approve a task → share an invitation or opportunity link → volunteer completes intake → organizer sees a suggested match → volunteer explicitly accepts → volunteer marks work done → organization records completion.
+The pilot in [SPEC.md](docs/SPEC.md):
 
-Use a real persistent database. Two organizations' data must remain isolated. Volunteer accounts are not required. Hosted preview and seeded examples are fine, but don't solicit real personal data until authorization and private-link tests pass.
+- organizations, members and roles (admin, coordinator, team lead)
+- details defined by each organization, and teams
+- import from CSV, Excel, XML, JSON, text, Word and PDF files, with duplicate merging
+- tasks with requirements, and the three ways to ask
+- private links and the volunteer's page
+- work marked done when its time passes
+- the Today list and export
+- posting tasks to AT Protocol
 
-## Distribution
+It runs on Cloudflare Workers and D1, with a React and MUI web app.
 
-An organizer can create and share a useful opportunity before importing a membership list. Opportunities travel as URLs in Discord, Slack, email and websites. Native Slack and Discord integrations follow after the browser workflow works. Future self-hosting requires exportable data and migration scripts.
+| Folder | What's in it |
+|---|---|
+| `src/shared` | The building blocks and the rules for who fits, who goes first, and when asks expire |
+| `src/worker` | The API, the sweep that runs as time passes, AT Protocol posting, and import reading |
+| `src/web` | The coordinator's screens and the volunteer's page |
+| `migrations` | The database schema |
+| `lexicons` | The AT Protocol record format for a task |
+| `test` | Rule tests, API tests for the launch checks, and AT Protocol tests |
+| `e2e` | A walk through the spec's pilot check on a phone-sized screen |
+| `samples` | Made-up volunteer lists for trying the import |
+
+## Run it locally
+
+Needs Node 22 or newer.
+
+```sh
+npm install
+cp .dev.vars.example .dev.vars        # sets dev mode: sign-in codes appear on screen
+npm run build
+npm run db:migrate:local
+npx wrangler dev                      # http://localhost:8787
+```
+
+Sign in with any email. In dev mode the code shows on the screen. "Try it with sample data" sets up a sample organization. You can also import `samples/volunteers.csv`.
+
+## Check it
+
+```sh
+npm run check                         # type checks, tests, build
+npm run check:docs                    # prosekeep style check, closedtab check on every record
+node e2e/smoke.mjs                    # with wrangler dev running: the pilot check in a browser
+```
+
+## Deploy
+
+1. `npx wrangler d1 create voluntold`, then put the database id in `wrangler.toml`.
+2. `npm run db:migrate:remote`
+3. Set the secrets: `npx wrangler secret put APP_SECRET` (a long random string), `RESEND_API_KEY` and `EMAIL_FROM` for sign-in email, and optionally `MODEL_PROVIDER=anthropic` with `MODEL_API_KEY` for text, Word and PDF imports.
+4. In `wrangler.toml`, set `APP_URL` to the public address and `ATPROTO_TASK_NSID` to the record name under your domain. Keep `DEV_MODE = "0"`.
+5. `npm run build && npx wrangler deploy`
+
+Before real volunteer data goes in, read the "Must pass" list in the spec and [decision 0008](docs/decisions/0008-pilot-build-choices.md).
 
 ## Repository status
 
-The application is built here, in `quarterback/voluntold`. These planning documents were first drafted in `quarterback/vloora` (PR #105) and moved here so the specs and the code live together. The Vloora company website is not the application backend, and unreleased features are not Vloora website product claims.
+The application is built here, in `quarterback/voluntold`. The Vloora company website is not the application backend, and unreleased features are not Vloora website product claims.

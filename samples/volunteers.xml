@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<volunteers>
+  <volunteer id="1"><name>Femi Adeyemi</name><email>femi@example.com</email><skill>Audio</skill><experience>Can lead</experience></volunteer>
+  <volunteer id="2"><name>Lena Vogel</name><email>lena@example.com</email><skill>Design</skill><experience>New</experience></volunteer>
+  <volunteer id="3"><name>Raj Patel</name><phone>555-010-3003</phone><skill>Events</skill><skill>Writing</skill><experience>Has done it before</experience></volunteer>
+</volunteers>

@@ -1,0 +1,88 @@
+// Checks the docs with the owner's own tools:
+// - prosekeep: house style and plain language, with the settings in .editorial.json
+// - closedtab: every Agent Action Record covers all six parts
+// - the words on the app's screens, pulled out by ui-copy.mjs, get the same
+//   prosekeep check, and no single string may run past 20 words
+// plain-language-default is left out: its sentence check counts a Markdown
+// heading and the line after it as one sentence. Run it by hand with
+// `npx plain-language-default check FILE`.
+
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { collect } from './ui-copy.mjs';
+
+let failed = false;
+const run = (bin, args) => {
+  try {
+    return { ok: true, out: execFileSync('npx', ['--no-install', bin, ...args], { encoding: 'utf8' }) };
+  } catch (e) {
+    return { ok: false, out: `${e.stdout ?? ''}${e.stderr ?? ''}` };
+  }
+};
+
+const style = run('prosekeep', ['check']);
+process.stdout.write(style.out);
+if (!style.ok) failed = true;
+
+// The app's screens.
+const MAX_WORDS = 20;
+const copy = collect(['src/web', 'src/worker', 'src/shared']);
+const copyFile = join(mkdtempSync(join(tmpdir(), 'ui-copy-')), 'interface-copy.md');
+writeFileSync(copyFile, `# Interface copy\n\n${copy.map((c) => `- ${c.text} (${c.file}:${c.line})`).join('\n')}\n`);
+const ui = run('prosekeep', ['check', copyFile]);
+process.stdout.write(`interface copy (${copy.length} strings): ${ui.out.trim().split('\n').pop()}\n`);
+if (!ui.ok) {
+  process.stdout.write(ui.out);
+  failed = true;
+}
+// Adobe Spectrum grammar rules that a machine can check (EDITORIAL.md).
+const ADOBE = [
+  [/!/, 'no exclamation marks'],
+  [/ & /, 'write "and", not "&"'],
+  [/\bclick\b/i, 'name the action, not "click"'],
+  [/\bplease\b/i, 'leave out "please"'],
+];
+for (const c of copy) {
+  for (const [re, rule] of ADOBE) {
+    if (re.test(c.text)) {
+      console.log(`interface rule (${rule}): ${c.file}:${c.line} ${c.text}`);
+      failed = true;
+    }
+  }
+}
+// No helper text, hints or explanations on screens: labels, buttons, data,
+// status and errors only (owner, October 25, 2026). Server error messages are
+// exempt. Buttons and labels use the standard wording in EDITORIAL.md.
+const SCREEN_MAX_WORDS = 8;
+// Wording replaced by standard terms on October 25, 2026. Keep it from coming back.
+const NOT_STANDARD = [/\bsaid (yes|no)\b/i, /\bgive up\b/i, /stop asking me/i, /\bkeep (my|task)\b/i, /who to find/i, /can't make it/i, /already filled/i, /can't be undone/i, /\btake a break\b/i, /\bset aside\b/i];
+for (const c of copy.filter((c) => c.file.includes('src/web'))) {
+  const words = c.text.split(/\s+/).length;
+  if (words > SCREEN_MAX_WORDS) {
+    console.log(`screen text too long (${words} words, limit ${SCREEN_MAX_WORDS}): ${c.file}:${c.line} ${c.text}`);
+    failed = true;
+  } else if (/[.?]\s*$/.test(c.text) && words >= 3 && !/\?$/.test(c.text)) {
+    console.log(`explanatory sentence on a screen: ${c.file}:${c.line} ${c.text}`);
+    failed = true;
+  }
+  const off = NOT_STANDARD.find((re) => re.test(c.text));
+  if (off) {
+    console.log(`not standard wording (${off}): ${c.file}:${c.line} ${c.text}`);
+    failed = true;
+  }
+}
+for (const c of copy.filter((c) => c.text.split(/\s+/).length > MAX_WORDS)) {
+  console.log(`too long (${c.text.split(/\s+/).length} words, limit ${MAX_WORDS}): ${c.file}:${c.line} ${c.text}`);
+  failed = true;
+}
+
+for (const file of readdirSync('docs').filter((f) => /^aar-.*\.md$/.test(f)).sort()) {
+  const res = run('closedtab', ['check', `docs/${file}`]);
+  const score = res.out.match(/score:\s*(\d)\/6/);
+  console.log(`closedtab docs/${file}: ${score ? `${score[1]}/6` : 'no score'}`);
+  if (!score || score[1] !== '6') failed = true;
+}
+
+process.exit(failed ? 1 : 0);

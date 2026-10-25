@@ -1,0 +1,13 @@
+# Copy to .dev.vars for local development. Never commit .dev.vars.
+DEV_MODE=1
+# 32 or more random bytes, base64. Used to hash link tokens and encrypt the
+# organization's AT Protocol app password.
+APP_SECRET=change-me-to-a-long-random-string
+# Optional: email for sign-in codes (Resend). Without it, DEV_MODE shows the code.
+RESEND_API_KEY=
+EMAIL_FROM=
+# Optional: model for reading text, Word and PDF imports.
+MODEL_PROVIDER=
+MODEL_API_KEY=
+MODEL_NAME=
+MODEL_BASE_URL=
