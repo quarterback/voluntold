@@ -56,6 +56,7 @@ Sign in with any email. In dev mode the code shows on the screen. "Try it with s
 
 ```sh
 npm run check                         # type checks, tests, build
+npm run check:docs                    # prosekeep style check, closedtab check on every record
 node e2e/smoke.mjs                    # with wrangler dev running: the pilot check in a browser
 ```
 

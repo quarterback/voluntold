@@ -19,10 +19,10 @@ The October 24 planning set was about 11,000 words across six documents. Its fir
 - **Owner:** use an existing Material component library (MUI) instead of building Material 3 components by hand. This changes [0004](0004-material-3-for-the-interface.md).
 - **Owner:** working offline moves to later. This changes [0003](0003-coordinator-app-works-offline.md).
 - **Agent:** the three ready-made ways to ask (a few at a time, everyone who fits, pick by hand), with a few at a time as the default.
-- **Agent:** teams with leads who add and remove their own members, so a team decides who can do its work. Added because organizations and teams approve people for work that has requirements, and the research found no tool that documents team leads doing this ([research](../research/volunteer-tools-landscape-2026-10.md)).
+- **Agent:** teams with leads who add and remove their own members, so a team decides who can do its work. Added because organizations and teams approve people for work that has requirements. The research found no tool that documents team leads doing this ([research](../research/volunteer-tools-landscape-2026-10.md)).
 - **Agent:** kept the weekly ask limit (2 in 7 days), the pause after three unanswered asks, and "done when its time passes" ([0002](0002-the-schedule-is-the-record.md)).
 - **Agent:** asks expire after 48 hours, or 6 hours before the task starts.
-- **Agent:** a model reads text, Word and PDF files for import. That means the file's contents, including contact details, go to the model provider, so the provider must not train on prompts or keep them.
+- **Agent:** a model reads text, Word and PDF files for import. That means the file's contents, including contact details, go to the model provider. The provider must not train on prompts or keep them.
 - **Agent:** posted tasks are on by default once an organization connects its AT Protocol account, and each task can be switched to private.
 
 ## Consequences

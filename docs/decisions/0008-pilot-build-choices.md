@@ -10,8 +10,8 @@ The spec left some technical details open, and a few of its assumptions didn't h
 
 ## Decision
 
-- **Sign-in.** Coordinators sign in with a 6 digit code sent by email. The app sends the code through Resend and keeps its own sessions, stored as hashes. There are no passwords. The spec asked for a managed sign-in service. This is smaller than adding one, and it can be swapped for one later without changing anything else.
-- **AT Protocol posting.** The organization connects with an app password it makes in its Bluesky settings. The app stores it encrypted. AT Protocol OAuth replaces it once the one-day test on Workers passes. App passwords are a standard Bluesky feature, and the organization can revoke one at any time.
+- **Sign-in.** Coordinators sign in with a 6 digit code sent by email. The app sends the code through Resend and keeps its own sessions, stored as hashes. There are no passwords. The spec asked for a managed sign-in service. This is smaller than adding one. It can be swapped for one later without changing anything else.
+- **AT Protocol posting.** The organization connects with an app password it makes in its Bluesky settings. The app stores it encrypted. AT Protocol OAuth replaces it once the one-day test on Workers passes. App passwords are a standard Bluesky feature. The organization can revoke one at any time.
 - **The record name.** Until the owner picks a domain, the task record uses the placeholder `com.example.volunteer.task`. Posting stays off on any server where `ATPROTO_TASK_NSID` isn't set.
 - **Model for imports.** The adapter calls Claude through the Anthropic SDK, with `claude-opus-5-5` as the default and `MODEL_NAME` to change it. It runs only for text, Word and PDF imports. With no key set, those imports show a clear message and CSV, Excel, XML and JSON still work. The owner still decides the provider and records its data terms before any real file goes through.
 - **Excel.** Only .xlsx files are read, using `read-excel-file`. The `xlsx` package on npm is stuck at a version with known security problems, so it isn't used.

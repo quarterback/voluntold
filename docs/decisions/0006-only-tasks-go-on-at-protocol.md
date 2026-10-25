@@ -10,7 +10,7 @@ The owner wants to be able to say the product is AT Protocol native, without put
 
 Everything stored in an AT Protocol account is public. Private storage, called Spaces, has been in alpha since August 20, 2026, and Bluesky says not to use it for real data yet ([research](../research/atproto-native-2026-10.md)). Volunteer contact details, approvals and checks can't go there.
 
-VarsityApex already uses AT Protocol in a similar way. A school's results live in the school's own account, in a shared open format, so the school can move hosts and keep them, and other services can follow new results without a custom connection ([post](https://blog.ronbronson.dev/3msnpahn5r22k)).
+VarsityApex already uses AT Protocol in a similar way. A school's results live in the school's own account, in a shared open format. The school can move hosts and keep them. Other services can follow new results without a custom connection ([post](https://blog.ronbronson.dev/3msnpahn5r22k)).
 
 ## Decision
 
