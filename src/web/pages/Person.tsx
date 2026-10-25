@@ -84,25 +84,25 @@ export function Person() {
   }
 
   async function stopAsks() {
-    const ok = await dialogs.confirm({ title: `Stop asks to ${v.name}?`, confirm: 'Stop asks', destructive: true });
+    const ok = await dialogs.confirm({ title: `Unsubscribe ${v.name}?`, confirm: 'Unsubscribe', destructive: true });
     if (ok) run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { status: 'stopped' } }));
   }
   async function deletePerson() {
-    const ok = await dialogs.confirm({ title: `Delete ${v.name}?`, body: "This can't be undone.", confirm: 'Delete person', destructive: true });
+    const ok = await dialogs.confirm({ title: `Delete ${v.name}?`, confirm: 'Delete person', destructive: true });
     if (ok) run(() => api(path(`/volunteers/${v.id}`), { method: 'DELETE' }), () => navigate('..', { relative: 'path' }));
   }
-  const ANSWER: Record<string, string> = { waiting: 'No answer yet', yes: 'Said yes', no: 'Said no', expired: "Didn't answer", closed: 'Filled first' };
+  const ANSWER: Record<string, string> = { waiting: 'Pending', yes: 'Accepted', no: 'Declined', expired: 'Expired', closed: 'Task filled' };
 
   return (
     <Page
       title={v.name}
       subtitle={v.standing}
       back={<Button size="small" startIcon={<BackIcon fontSize="small" />} onClick={() => navigate('..', { relative: 'path' })} sx={{ color: 'text.secondary', ml: -1 }}>People</Button>}
-      action={canEdit && <Button variant="contained" onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: form }), () => { setSaved(true); reloadOrg(); })}>Save changes</Button>}
+      action={canEdit && <Button variant="contained" onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: form }), () => { setSaved(true); reloadOrg(); })}>Save</Button>}
     >
       <Stack spacing={2}>
         {problem && <Alert severity="error">{problem}</Alert>}
-        {saved && <Alert severity="success" onClose={() => setSaved(false)}>Changes saved</Alert>}
+        {saved && <Alert severity="success" onClose={() => setSaved(false)}>Saved</Alert>}
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '3fr 2fr' }, gap: 2, alignItems: 'start' }}>
           <Section title="Details">
             <Stack spacing={2}>
@@ -115,8 +115,8 @@ export function Person() {
                 <FieldInput key={f.id} field={f} value={form.values[f.id]} onChange={(val) => setForm({ ...form, values: { ...form.values, [f.id]: val } })} />
               ))}
               {v.contactOkAt === null && canEdit && (
-                <Alert severity="warning" action={<Button color="inherit" size="small" onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { contactOk: true } }))}>Mark as agreed</Button>}>
-                  Hasn't agreed to be contacted
+                <Alert severity="warning" action={<Button color="inherit" size="small" onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { contactOk: true } }))}>Record consent</Button>}>
+                  No consent
                 </Alert>
               )}
             </Stack>
@@ -144,14 +144,14 @@ export function Person() {
             {canEdit && (
               <Section title="Asks">
                 <Stack spacing={1.5}>
-                  {v.status !== 'active' && <Box><Button variant="outlined" onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { status: 'active' } }))}>Resume asks</Button></Box>}
+                  {v.status !== 'active' && <Box><Button variant="outlined" onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { status: 'active' } }))}>Resume</Button></Box>}
                   {v.status === 'active' && (
                     <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-end' }}>
                       <TextField type="date" label="Pause until" value={pauseUntil} onChange={(e) => setPauseUntil(e.target.value)} />
-                      <Button variant="outlined" disabled={!pauseUntil} onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { status: 'paused', pausedUntil: `${pauseUntil}T00:00` } }))}>Pause asks</Button>
+                      <Button variant="outlined" disabled={!pauseUntil} onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { status: 'paused', pausedUntil: `${pauseUntil}T00:00` } }))}>Pause</Button>
                     </Stack>
                   )}
-                  {v.status !== 'stopped' && <Box><Button color="error" onClick={stopAsks}>Stop asks</Button></Box>}
+                  {v.status !== 'stopped' && <Box><Button color="error" onClick={stopAsks}>Unsubscribe</Button></Box>}
                 </Stack>
               </Section>
             )}
@@ -168,7 +168,7 @@ export function Person() {
               )}
               {data.spots.filter((s: any) => s.status === 'done').length > 0 && (
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  Done: {data.spots.filter((s: any) => s.status === 'done').map((s: any) => `${s.task.title} (${when(s.task)})`).join('; ')}
+                  Attended: {data.spots.filter((s: any) => s.status === 'done').map((s: any) => `${s.task.title} (${when(s.task)})`).join('; ')}
                 </Typography>
               )}
             </Section>

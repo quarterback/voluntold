@@ -45,7 +45,7 @@ accountRoutes.get('/me', async (c) => {
 accountRoutes.post('/orgs', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const name = cleanText(body.name, 120);
-  if (!name) fail(400, 'Give the organization a name.');
+  if (!name) fail(400, 'Enter an organization name.');
   const now = c.get('now');
   const orgId = newId();
   const db = c.env.DB;
@@ -81,11 +81,11 @@ orgRoutes.patch('/', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const org = (await loadOrg(c.env.DB, actor.orgId))!;
   const name = body.name === undefined ? org.name : cleanText(body.name, 120);
-  if (!name) fail(400, 'Give the organization a name.');
+  if (!name) fail(400, 'Enter an organization name.');
   let limit = org.weekly_ask_limit;
   if (body.weeklyAskLimit !== undefined) {
     limit = Number(body.weeklyAskLimit);
-    if (!Number.isInteger(limit) || limit < 1 || limit > 14) fail(400, 'Asks per week must be 1 to 14.');
+    if (!Number.isInteger(limit) || limit < 1 || limit > 14) fail(400, 'Weekly ask limit must be 1 to 14.');
   }
   let signup = org.signup_url;
   if (body.signupUrl !== undefined) {
@@ -176,10 +176,10 @@ orgRoutes.post('/fields', async (c) => {
   must(actor, 'manage_people');
   const body = await c.req.json().catch(() => ({}));
   const label = cleanText(body.label, 80);
-  if (!label) fail(400, 'Give the detail a name.');
+  if (!label) fail(400, 'Enter a field name.');
   if (!FIELD_TYPES.includes(body.type)) fail(400, 'Choose a type.');
   const fields = await loadFields(c.env.DB, actor.orgId);
-  if (fields.length >= 60) fail(400, 'An organization can track up to 60 details.');
+  if (fields.length >= 60) fail(400, 'You can add up to 60 fields.');
   const id = newId();
   await c.env.DB.prepare('INSERT INTO fields (id, org_id, label, type, options_json, position, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
     .bind(id, actor.orgId, label, body.type, JSON.stringify(cleanOptions(body.options)), fields.length, c.get('now'))
@@ -194,7 +194,7 @@ orgRoutes.patch('/fields/:fieldId', async (c) => {
   const row = await c.env.DB.prepare('SELECT * FROM fields WHERE id = ? AND org_id = ?').bind(c.req.param('fieldId'), actor.orgId).first<Record<string, string>>();
   if (!row) fail(404, 'Not found');
   const label = body.label === undefined ? row.label : cleanText(body.label, 80);
-  if (!label) fail(400, 'Give the detail a name.');
+  if (!label) fail(400, 'Enter a field name.');
   const options = body.options === undefined ? row.options_json : JSON.stringify(cleanOptions(body.options));
   const position = Number.isInteger(body.position) ? body.position : row.position;
   await c.env.DB.prepare('UPDATE fields SET label = ?, options_json = ?, position = ? WHERE id = ? AND org_id = ?')
@@ -253,7 +253,7 @@ orgRoutes.post('/teams', async (c) => {
   must(actor, 'manage_people');
   const body = await c.req.json().catch(() => ({}));
   const name = cleanText(body.name, 80);
-  if (!name) fail(400, 'Give the team a name.');
+  if (!name) fail(400, 'Enter a team name.');
   const id = newId();
   await c.env.DB.prepare('INSERT INTO teams (id, org_id, name, created_at) VALUES (?, ?, ?, ?)').bind(id, actor.orgId, name, c.get('now')).run();
   return c.json({ id }, 201);
@@ -264,7 +264,7 @@ orgRoutes.patch('/teams/:teamId', async (c) => {
   must(actor, 'manage_people');
   const body = await c.req.json().catch(() => ({}));
   const name = cleanText(body.name, 80);
-  if (!name) fail(400, 'Give the team a name.');
+  if (!name) fail(400, 'Enter a team name.');
   const res = await c.env.DB.prepare('UPDATE teams SET name = ? WHERE id = ? AND org_id = ?').bind(name, c.req.param('teamId'), actor.orgId).run();
   if (res.meta.changes === 0) fail(404, 'Not found');
   return c.json({ ok: true });
@@ -354,7 +354,7 @@ orgRoutes.post('/lists', async (c) => {
   const actor = c.get('actor');
   const body = await c.req.json().catch(() => ({}));
   const name = cleanText(body.name, 80);
-  if (!name) fail(400, 'Give the list a name.');
+  if (!name) fail(400, 'Enter a list name.');
   const filter = JSON.stringify(body.filter ?? {});
   if (filter.length > 5000) fail(400, 'That filter is too large.');
   const id = newId();

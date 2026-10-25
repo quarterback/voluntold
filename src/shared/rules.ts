@@ -156,9 +156,9 @@ export function finishedAt(task: Pick<Task, 'timing' | 'endsAt' | 'dueAt'>): num
 }
 
 export function requirementText(requirement: Requirement, fields: Field[], teamName: (id: string) => string): string {
-  if (requirement.kind === 'team') return `On the ${teamName(requirement.teamId)} team`;
+  if (requirement.kind === 'team') return `Team: ${teamName(requirement.teamId)}`;
   const field = fields.find((f) => f.id === requirement.fieldId);
-  const label = field?.label ?? 'Unknown detail';
+  const label = field?.label ?? 'Unknown field';
   switch (requirement.op) {
     case 'isYes':
       return label;

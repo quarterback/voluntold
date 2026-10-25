@@ -39,7 +39,7 @@ async function readTaskInput(db: D1Database, orgId: string, body: Record<string,
   const startsAt = toMs(pick('startsAt', body.startsAt));
   const endsAt = toMs(pick('endsAt', body.endsAt));
   const dueAt = toMs(pick('dueAt', body.dueAt));
-  if (timing === 'at_time' && (startsAt === null || endsAt === null || endsAt <= startsAt)) fail(400, 'Set a start and an end after it.');
+  if (timing === 'at_time' && (startsAt === null || endsAt === null || endsAt <= startsAt)) fail(400, 'End must be after start.');
   if (timing === 'by_date' && dueAt === null) fail(400, 'Set a due date.');
   const peopleNeeded = Number(pick('peopleNeeded', body.peopleNeeded));
   if (!Number.isInteger(peopleNeeded) || peopleNeeded < 1 || peopleNeeded > 500) fail(400, 'People must be 1 to 500.');
@@ -51,17 +51,17 @@ async function readTaskInput(db: D1Database, orgId: string, body: Record<string,
   const askWaitHours = Number(pick('askWaitHours', body.askWaitHours) ?? 24);
   if (!Number.isInteger(askWaitHours) || askWaitHours < 1 || askWaitHours > 336) fail(400, 'Hours between groups must be 1 to 336.');
   const teamId = (pick('teamId', body.teamId) as string | null) || null;
-  if (teamId && !teamIds.has(teamId)) fail(400, 'That team does not exist.');
+  if (teamId && !teamIds.has(teamId)) fail(400, "That team doesn't exist.");
 
   const rawReqs = pick('requirements', body.requirements);
   if (!Array.isArray(rawReqs) || rawReqs.length > 20) fail(400, 'A task can have up to 20 requirements.');
   const requirements: Requirement[] = rawReqs.map((r: Record<string, unknown>) => {
     if (r?.kind === 'team') {
-      if (!teamIds.has(String(r.teamId))) fail(400, 'A requirement names a team that does not exist.');
+      if (!teamIds.has(String(r.teamId))) fail(400, "A requirement uses a team that doesn't exist.");
       return { kind: 'team', teamId: String(r.teamId) };
     }
     const field = fields.find((f) => f.id === r?.fieldId);
-    if (!field) fail(400, 'A requirement names a detail that does not exist.');
+    if (!field) fail(400, "A requirement uses a field that doesn't exist.");
     const op = r.op as RequirementOp;
     if (!OPS_BY_TYPE[field.type].includes(op)) fail(400, `That rule does not work for ${field.label}.`);
     if (op === 'isYes') return { kind: 'field', fieldId: field.id, op };
@@ -136,7 +136,7 @@ taskRoutes.post('/tasks', async (c) => {
 
 async function openTask(env: AppBindings['Bindings'], orgId: string, id: string, now: number) {
   const res = await env.DB.prepare("UPDATE tasks SET status = 'open', updated_at = ? WHERE id = ? AND org_id = ? AND status = 'draft'").bind(now, id, orgId).run();
-  if (res.meta.changes === 0) fail(409, 'Only a draft can be opened.');
+  if (res.meta.changes === 0) fail(409, 'Only drafts can be published.');
   await syncTask(env, orgId, id);
 }
 
@@ -274,7 +274,7 @@ taskRoutes.post('/spots/:spotId/missed', async (c) => {
   mustManageTask(actor, task.teamId);
   const body = await c.req.json().catch(() => ({}));
   const next = body.missed === false ? 'done' : 'missed';
-  if (spot.status !== 'done' && spot.status !== 'missed') fail(409, 'Only finished work can be marked missed.');
+  if (spot.status !== 'done' && spot.status !== 'missed') fail(409, 'Only completed tasks can have no-shows.');
   await c.env.DB.batch([
     c.env.DB.prepare('UPDATE spots SET status = ?, updated_at = ? WHERE id = ? AND org_id = ?').bind(next, c.get('now'), c.req.param('spotId'), actor.orgId),
     logEvent(c.env.DB, { orgId: actor.orgId, actorKind: 'member', actorId: actor.memberId, verb: `marked_${next}`, objectType: 'spot', objectId: c.req.param('spotId'), at: c.get('now') }),

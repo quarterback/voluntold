@@ -77,9 +77,9 @@ A coordinator can also add one person by hand. Nothing is saved until the coordi
 
 Each task uses one ready-made way to ask. The coordinator picks it when writing the task and can change the numbers.
 
-- **A few at a time** (the default). Ask the people who fit and have waited longest, twice as many as the spots. If the task isn't full after 24 hours, Today says to ask the next group.
-- **Everyone who fits.** Ask every eligible person at once. The first people to say yes get the spots.
-- **Pick by hand.** The coordinator ticks people from the list of who fits.
+- **In batches** (the default). Ask the people who fit and have waited longest, twice as many as the spots. If the task isn't full after 24 hours, Today says to ask the next group.
+- **All eligible.** Ask every eligible person at once. The first people to accept get the spots.
+- **Manual.** The coordinator selects people from the list of who fits.
 
 **Who fits.** A volunteer can be asked about a task only if they:
 - meet every requirement
@@ -105,11 +105,11 @@ An ask expires after 48 hours, or 6 hours before the task starts, whichever come
 No account. No app. A private link opens a page on their phone with:
 
 - the task: what, when, the place, what it needs, and who to find
-- **Yes** and **No**
-- the work they've said yes to, each with **I can't make it**, which reopens the spot
-- **Pause until** a date, and **Stop asking me**
+- **Accept** and **Decline**
+- the work they've accepted, each with **Cancel spot**, which reopens the spot
+- **Pause** until a date, and **Unsubscribe**
 
-A yes takes a spot if one is open. If the task is already full, they see "This one's already filled. Thank you." When the task fills, the other waiting asks close.
+Accepting takes a spot if one is open. If the task is already full, they see "This task is full". When the task fills, the other waiting asks close.
 
 ## Work is done when its time passes
 
@@ -127,11 +127,11 @@ Built for phones first. Navigation: Today, Tasks, People, Settings.
   - import rows set aside
 
   When there's nothing to do, it says so.
-- **Tasks:** open tasks with how full they are, and **New task**. A task's page shows who said yes, who's waiting, and the next group to ask.
-- **People:** everyone, with a filter for any field, team or status, sorted by longest since asked. A filter can be saved as a list ("Spanish speakers who can lead"). Each person's row says in a sentence where they stand: "Asked 3 weeks ago, said yes", "Never asked", "Paused until Nov 15".
+- **Tasks:** open tasks with how full they are, and **New task**. A task's page shows who accepted, who hasn't replied, and the next group to ask.
+- **People:** everyone, with a filter for any field, team or status, sorted by longest since asked. A filter can be saved as a list ("Spanish speakers who can lead"). Each person's row says in a sentence where they stand: "Asked 3 weeks ago, accepted", "Never asked", "Paused until Nov 15".
 - **Settings:** fields, teams, members, the weekly ask limit, the sign-up link, the AT Protocol account, import, and export.
 
-Buttons say what they do: "Ask 6 people", "Copy all", "I can't make it". Status shows as a sentence, never a code.
+Buttons and labels use the standard wording common SaaS and consumer apps use (see `EDITORIAL.md`): "Ask 6 people", "Copy all", "Cancel spot", "Publish", "Save". Status shows as a word, never a code.
 
 ## Tasks on AT Protocol
 
@@ -174,8 +174,8 @@ Using sample data on a phone-sized screen:
 2. Import a 20-row CSV and a PDF list. Map the columns. Merge one duplicate. One row with no contact details is set aside.
 3. Create a team, "Desk crew". Its lead adds 4 people.
 4. Write a task: "Registration desk", Thursday 12:00 to 14:00, 2 people. It requires "Experience is Can lead" and "on Desk crew". Only people who meet both appear, ordered by longest wait.
-5. Use "A few at a time". Copy all. Open two links in two other browsers and say yes. The task shows 2 of 2. A third person says yes and sees "already filled".
-6. One person taps "I can't make it". Today says to ask the next group.
+5. Use "In batches". Copy all. Open two links in two other browsers and accept. The task shows 2 of 2. A third person opens their link and sees "This task is full".
+6. One person taps "Cancel spot". Today says to ask the next group.
 7. Connect an AT Protocol test account. The task appears in that account with no volunteer details. Switch it to private, and the record is gone.
 8. Move the clock past Thursday 14:00. Both spots are done, and nobody confirmed anything.
 9. A second organization can't see or reach any of the first one's data. Export works. Reloading keeps everything.

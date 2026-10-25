@@ -153,7 +153,7 @@ describe('asking people', () => {
     const reasons = Object.fromEntries(detail.candidates.map((c: any) => [c.name, c.reason]));
     expect(reasons).toMatchObject({ Priya: null, Jordan: null, Omar: 'requirements', Ben: 'requirements' });
     expect(detail.nextGroup).toEqual([priya, jordan]);
-    expect(detail.requirementLines).toEqual(['Experience is Can lead', 'On the Desk crew team']);
+    expect(detail.requirementLines).toEqual(['Experience is Can lead', 'Team: Desk crew']);
 
     // A person who doesn't fit is skipped on the server, whatever the browser sends.
     const asked = await org.client.post(org.api(`/tasks/${task}/ask`), { volunteerIds: [priya, omar] });
@@ -262,7 +262,7 @@ describe('time passing', () => {
     }
     const person = (await org.client.get(org.api(`/volunteers/${sam}`))).body.volunteer;
     expect(person.status).toBe('paused');
-    expect(person.standing).toBe('Paused: no answer to 3 asks');
+    expect(person.standing).toBe('Paused: 3 unanswered asks');
 
     const phone = await openLink(links[0].link, org.client.now);
     expect((await phone.post(`/api/v/asks/${links[0].askId}/answer`, { answer: 'no' })).body.result).toBe('no');

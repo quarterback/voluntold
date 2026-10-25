@@ -26,7 +26,7 @@ linkRoute.get('/:token', async (c) => {
     : null;
   if (!ask || ask.revoked_at || ask.link_expires_at <= now) {
     return c.html(
-      page('This link no longer works', '<p>It may have expired or been replaced by a newer link. Ask the organization to send you a new one.</p>'),
+      page('Link expired', ''),
       410,
     );
   }
@@ -139,7 +139,7 @@ volunteerApi.get('/me', async (c) => {
 volunteerApi.post('/asks/:askId/answer', async (c) => {
   const { orgId, volunteerId } = c.get('volunteer');
   const body = await c.req.json().catch(() => ({}));
-  if (body.answer !== 'yes' && body.answer !== 'no') fail(400, 'Answer yes or no.');
+  if (body.answer !== 'yes' && body.answer !== 'no') fail(400, 'Accept or decline.');
   const result = await answerAsk(c.env, orgId, volunteerId, c.req.param('askId'), body.answer, c.get('now'));
   return c.json({ result });
 });

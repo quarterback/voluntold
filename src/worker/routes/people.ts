@@ -127,9 +127,9 @@ peopleRoutes.get('/volunteers/:volunteerId', async (c) => {
 
 function contactFrom(body: Record<string, unknown>) {
   const email = body.email ? normalizeEmail(body.email) : null;
-  if (body.email && !email) fail(400, 'That email address does not look right.');
+  if (body.email && !email) fail(400, 'Enter a valid email address.');
   const phone = body.phone ? normalizePhone(body.phone) : null;
-  if (body.phone && !phone) fail(400, 'That phone number does not look right.');
+  if (body.phone && !phone) fail(400, 'Enter a valid phone number.');
   return { email, phone };
 }
 
@@ -297,7 +297,7 @@ peopleRoutes.post('/import/commit', async (c) => {
   const actor = c.get('actor');
   must(actor, 'manage_people');
   const body = await c.req.json().catch(() => ({}));
-  if (body.contactConfirmed !== true) fail(400, 'Confirm that these people agreed to be contacted.');
+  if (body.contactConfirmed !== true) fail(400, 'Confirm these people consented to contact.');
   const rows: CommitRow[] = Array.isArray(body.rows) ? body.rows : [];
   if (rows.length === 0) fail(400, 'There are no rows to import.');
   if (rows.length > MAX_ROWS) fail(400, `Import up to ${MAX_ROWS} rows at a time.`);

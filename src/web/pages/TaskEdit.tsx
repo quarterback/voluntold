@@ -19,13 +19,13 @@ const OPS: Record<Field['type'], { op: RequirementOp; label: string }[]> = {
   date: [{ op: 'atLeast', label: 'on or after' }, { op: 'atMost', label: 'on or before' }],
   one: [{ op: 'is', label: 'is' }, { op: 'atLeast', label: 'at least' }, { op: 'atMost', label: 'at most' }],
   many: [{ op: 'includes', label: 'includes' }],
-  yesno: [{ op: 'isYes', label: 'is yes' }],
+  yesno: [{ op: 'isYes', label: 'is Yes' }],
 };
 
 const ASK_MODES = {
-  few: { label: 'A few at a time' },
-  everyone: { label: 'Everyone who fits' },
-  hand: { label: 'Pick by hand' },
+  few: { label: 'In batches' },
+  everyone: { label: 'All eligible' },
+  hand: { label: 'Manual' },
 };
 
 interface Form {
@@ -142,35 +142,35 @@ export function TaskEdit() {
     >
       <Stack spacing={2}>
         {error && <Alert severity="error">{error}</Alert>}
-        <Section title="Task">
+        <Section title="Details">
           <Stack spacing={2}>
             <TextField label="Title" required value={form.title} onChange={(e) => set('title', e.target.value)} />
-            <TextField label="What to do" multiline minRows={2}  value={form.description} onChange={(e) => set('description', e.target.value)} />
+            <TextField label="Description" multiline minRows={2}  value={form.description} onChange={(e) => set('description', e.target.value)} />
             <Box>
               {label('When')}
               <ToggleButtonGroup exclusive size="small" value={form.timing} onChange={(_, v) => v && set('timing', v)} aria-label="When">
-                <ToggleButton value="at_time">Set time</ToggleButton>
+                <ToggleButton value="at_time">Date and time</ToggleButton>
                 <ToggleButton value="by_date">Due date</ToggleButton>
                 <ToggleButton value="none">No date</ToggleButton>
               </ToggleButtonGroup>
             </Box>
             {form.timing === 'at_time' && (
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField label="Starts" type="datetime-local" value={form.startsAt} onChange={(e) => set('startsAt', e.target.value)} />
-                <TextField label="Ends" type="datetime-local" value={form.endsAt} onChange={(e) => set('endsAt', e.target.value)} />
+                <TextField label="Start" type="datetime-local" value={form.startsAt} onChange={(e) => set('startsAt', e.target.value)} />
+                <TextField label="End" type="datetime-local" value={form.endsAt} onChange={(e) => set('endsAt', e.target.value)} />
               </Stack>
             )}
             {form.timing === 'by_date' && (
-              <TextField label="Due" type="date" value={form.dueAt} onChange={(e) => set('dueAt', e.target.value)} sx={{ maxWidth: 220 }} />
+              <TextField label="Due date" type="date" value={form.dueAt} onChange={(e) => set('dueAt', e.target.value)} sx={{ maxWidth: 220 }} />
             )}
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <TextField label="Place" value={form.placePublic} onChange={(e) => set('placePublic', e.target.value)} />
+              <TextField label="Location" value={form.placePublic} onChange={(e) => set('placePublic', e.target.value)} />
               <TextField label="Address" value={form.placePrivate} onChange={(e) => set('placePrivate', e.target.value)} />
             </Stack>
             <Stack direction="row" spacing={2}>
-              <TextField label="People" type="number" value={form.peopleNeeded} onChange={(e) => set('peopleNeeded', Number(e.target.value))}
-                slotProps={{ htmlInput: { min: 1, max: 500 } }} sx={{ width: 110, flexShrink: 0 }} />
-              <TextField label="Who to find" value={form.contact} onChange={(e) => set('contact', e.target.value)} />
+              <TextField label="Volunteers needed" type="number" value={form.peopleNeeded} onChange={(e) => set('peopleNeeded', Number(e.target.value))}
+                slotProps={{ htmlInput: { min: 1, max: 500 } }} sx={{ width: 170, flexShrink: 0 }} />
+              <TextField label="Contact" value={form.contact} onChange={(e) => set('contact', e.target.value)} />
             </Stack>
           </Stack>
         </Section>
@@ -188,18 +188,18 @@ export function TaskEdit() {
                   '& > .req-remove': { gridColumn: { xs: 3, sm: 4 }, gridRow: { xs: 1, sm: 'auto' } },
                 }}>
                   <FormControl fullWidth className="req-detail">
-                    <InputLabel id={`req-${i}`}>Detail</InputLabel>
-                    <Select labelId={`req-${i}`} label="Detail" value={reqTarget(r)} onChange={(e) => changeTarget(i, e.target.value)}>
+                    <InputLabel id={`req-${i}`}>Field</InputLabel>
+                    <Select labelId={`req-${i}`} label="Field" value={reqTarget(r)} onChange={(e) => changeTarget(i, e.target.value)}>
                       {fields.map((f) => <MenuItem key={f.id} value={`field:${f.id}`}>{f.label}</MenuItem>)}
-                      {teams.map((t) => <MenuItem key={t.id} value={`team:${t.id}`}>On the {t.name} team</MenuItem>)}
+                      {teams.map((t) => <MenuItem key={t.id} value={`team:${t.id}`}>Team: {t.name}</MenuItem>)}
                     </Select>
                   </FormControl>
                   {r.kind === 'field' && field && (
                     <>
                       {OPS[field.type].length > 1 && (
                         <FormControl fullWidth>
-                          <InputLabel id={`op-${i}`}>Rule</InputLabel>
-                          <Select labelId={`op-${i}`} label="Rule" value={r.op} onChange={(e) => changeReq(i, { op: e.target.value as RequirementOp })}>
+                          <InputLabel id={`op-${i}`}>Condition</InputLabel>
+                          <Select labelId={`op-${i}`} label="Condition" value={r.op} onChange={(e) => changeReq(i, { op: e.target.value as RequirementOp })}>
                             {OPS[field.type].map((o) => <MenuItem key={o.op} value={o.op}>{o.label}</MenuItem>)}
                           </Select>
                         </FormControl>
@@ -231,12 +231,12 @@ export function TaskEdit() {
           </Stack>
         </Section>
 
-        <Section title="Asking">
+        <Section title="Asks">
           <Stack spacing={2}>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <FormControl fullWidth>
-                <InputLabel id="ask-mode">How to ask</InputLabel>
-                <Select labelId="ask-mode" label="How to ask" value={form.askMode} onChange={(e) => set('askMode', e.target.value as Form['askMode'])}>
+                <InputLabel id="ask-mode">Method</InputLabel>
+                <Select labelId="ask-mode" label="Method" value={form.askMode} onChange={(e) => set('askMode', e.target.value as Form['askMode'])}>
                   {Object.entries(ASK_MODES).map(([k, m]) => <MenuItem key={k} value={k}>{m.label}</MenuItem>)}
                 </Select>
               </FormControl>
@@ -252,8 +252,8 @@ export function TaskEdit() {
             </Stack>
             {form.askMode === 'few' && (
               <Stack direction="row" spacing={2}>
-                <TextField label="Group size" type="number" value={form.askBatch} placeholder={String(form.peopleNeeded * 2)} onChange={(e) => set('askBatch', e.target.value)} />
-                <TextField label="Hours between groups" type="number" value={form.askWaitHours} onChange={(e) => set('askWaitHours', Number(e.target.value))} />
+                <TextField label="Batch size" type="number" value={form.askBatch} placeholder={String(form.peopleNeeded * 2)} onChange={(e) => set('askBatch', e.target.value)} />
+                <TextField label="Hours between batches" type="number" value={form.askWaitHours} onChange={(e) => set('askWaitHours', Number(e.target.value))} />
               </Stack>
             )}
             <FormControlLabel
@@ -267,7 +267,7 @@ export function TaskEdit() {
         <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end' }}>
           <Button variant="outlined" onClick={() => navigate(-1)}>Cancel</Button>
           {status === 'draft' && <Button variant="outlined" disabled={busy} onClick={() => save(false)}>Save draft</Button>}
-          <Button variant="contained" disabled={busy} onClick={() => save(true)}>{status === 'draft' ? 'Save and open' : 'Save changes'}</Button>
+          <Button variant="contained" disabled={busy} onClick={() => save(true)}>{status === 'draft' ? 'Publish' : 'Save'}</Button>
         </Stack>
       </Stack>
     </Page>

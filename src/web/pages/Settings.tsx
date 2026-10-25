@@ -60,15 +60,15 @@ function OrgSection() {
     <Section title="Organization">
       <Stack spacing={1.5}>
         {error && <Alert severity="error">{error}</Alert>}
-        {saved && <Alert severity="success">Changes saved</Alert>}
+        {saved && <Alert severity="success">Saved</Alert>}
         <Stack direction="row" spacing={1.5}>
           <TextField label="Name" value={form.name} disabled={!admin} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <TextField label="Asks per week" type="number" disabled={!admin} value={form.weeklyAskLimit} sx={{ width: 140, flexShrink: 0 }}
+          <TextField label="Weekly ask limit" type="number" disabled={!admin} value={form.weeklyAskLimit} sx={{ width: 160, flexShrink: 0 }}
             onChange={(e) => setForm({ ...form, weeklyAskLimit: Number(e.target.value) })} slotProps={{ htmlInput: { min: 1, max: 14 } }} />
         </Stack>
         <TextField label="Sign-up link" placeholder="https://" disabled={!admin} value={form.signupUrl} onChange={(e) => setForm({ ...form, signupUrl: e.target.value })} />
         <FormControlLabel control={<Switch size="small" disabled={!admin} checked={form.publishDefault} onChange={(e) => setForm({ ...form, publishDefault: e.target.checked })} />} label="Post new tasks on AT Protocol" />
-        {admin && <Box><Button variant="contained" onClick={async () => { if (await run(() => api(path(''), { method: 'PATCH', body: form }))) { setSaved(true); reload(); } }}>Save changes</Button></Box>}
+        {admin && <Box><Button variant="contained" onClick={async () => { if (await run(() => api(path(''), { method: 'PATCH', body: form }))) { setSaved(true); reload(); } }}>Save</Button></Box>}
       </Stack>
     </Section>
   );
@@ -82,7 +82,7 @@ function FieldsSection() {
   const { error, run } = useAction();
   const canEdit = me.role !== 'lead';
   return (
-    <Section title="Volunteer details">
+    <Section title="Custom fields">
       {error && <Alert severity="error" sx={{ mb: 1.5 }}>{error}</Alert>}
       <Stack spacing={1.5}>
         {fields.map((f) => (
@@ -90,28 +90,28 @@ function FieldsSection() {
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
               <Typography variant="h3" sx={{ flex: 1 }}>{f.label}</Typography>
               <Typography variant="body2" color="text.secondary">{TYPE_TEXT[f.type]}</Typography>
-              {canEdit && <IconButton size="small" aria-label={`Delete ${f.label}`} onClick={async () => (await dialogs.confirm({ title: `Delete ${f.label}?`, confirm: 'Delete detail', destructive: true })) && run(() => api(path(`/fields/${f.id}`), { method: 'DELETE' })).then(reload)}><DeleteIcon fontSize="small" /></IconButton>}
+              {canEdit && <IconButton size="small" aria-label={`Delete ${f.label}`} onClick={async () => (await dialogs.confirm({ title: `Delete ${f.label}?`, confirm: 'Delete field', destructive: true })) && run(() => api(path(`/fields/${f.id}`), { method: 'DELETE' })).then(reload)}><DeleteIcon fontSize="small" /></IconButton>}
             </Stack>
             {(f.type === 'one' || f.type === 'many') && (
               <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap', mt: 0.5, alignItems: 'center' }}>
                 {f.options.map((o) => (
                   <Chip key={o} size="small" label={o} onDelete={canEdit ? () => run(() => api(path(`/fields/${f.id}`), { method: 'PATCH', body: { options: f.options.filter((x) => x !== o) } })).then(reload) : undefined} />
                 ))}
-                {canEdit && <AddOnEnter label="Add choice" onAdd={(v) => run(() => api(path(`/fields/${f.id}`), { method: 'PATCH', body: { options: [...f.options, v] } })).then(reload)} />}
+                {canEdit && <AddOnEnter label="Add option" onAdd={(v) => run(() => api(path(`/fields/${f.id}`), { method: 'PATCH', body: { options: [...f.options, v] } })).then(reload)} />}
               </Stack>
             )}
           </Box>
         ))}
         {canEdit && (
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'flex-end' } }}>
-            <TextField label="New detail" value={label} onChange={(e) => setLabel(e.target.value)} />
+            <TextField label="Field name" value={label} onChange={(e) => setLabel(e.target.value)} />
             <FormControl sx={{ minWidth: 140 }} fullWidth>
               <InputLabel id="new-type">Type</InputLabel>
               <Select labelId="new-type" label="Type" value={type} onChange={(e) => setType(e.target.value as FieldType)}>
                 {Object.entries(TYPE_TEXT).map(([k, v]) => <MenuItem key={k} value={k}>{v}</MenuItem>)}
               </Select>
             </FormControl>
-            <Button variant="outlined" disabled={!label.trim()} onClick={async () => { if (await run(() => api(path('/fields'), { body: { label, type } }))) { setLabel(''); reload(); } }}>Add detail</Button>
+            <Button variant="outlined" disabled={!label.trim()} onClick={async () => { if (await run(() => api(path('/fields'), { body: { label, type } }))) { setLabel(''); reload(); } }}>Add field</Button>
           </Stack>
         )}
       </Stack>
@@ -130,7 +130,7 @@ function TeamsSection({ members }: { members: { id: string; email: string; role:
       {error && <Alert severity="error" sx={{ mb: 1.5 }}>{error}</Alert>}
       <List disablePadding>
         {teams.map((t) => (
-          <ListItem key={t.id} disableGutters secondaryAction={canEdit && <IconButton size="small" aria-label={`Delete ${t.name}`} onClick={async () => (await dialogs.confirm({ title: `Delete the ${t.name} team?`, confirm: 'Delete team', destructive: true })) && run(() => api(path(`/teams/${t.id}`), { method: 'DELETE' })).then(reload)}><DeleteIcon fontSize="small" /></IconButton>}>
+          <ListItem key={t.id} disableGutters secondaryAction={canEdit && <IconButton size="small" aria-label={`Delete ${t.name}`} onClick={async () => (await dialogs.confirm({ title: `Delete ${t.name}?`, confirm: 'Delete team', destructive: true })) && run(() => api(path(`/teams/${t.id}`), { method: 'DELETE' })).then(reload)}><DeleteIcon fontSize="small" /></IconButton>}>
             <ListItemText
               primary={`${t.name} · ${t.volunteerIds.length} ${t.volunteerIds.length === 1 ? 'person' : 'people'}`}
               secondary={
@@ -154,7 +154,7 @@ function TeamsSection({ members }: { members: { id: string; email: string; role:
       </List>
       {canEdit && (
         <Stack direction="row" spacing={1} sx={{ mt: 1, alignItems: 'flex-end' }}>
-          <TextField label="New team" value={name} onChange={(e) => setName(e.target.value)} />
+          <TextField label="Team name" value={name} onChange={(e) => setName(e.target.value)} />
           <Button variant="outlined" disabled={!name.trim()} onClick={async () => { if (await run(() => api(path('/teams'), { body: { name } }))) { setName(''); reload(); } }}>Add team</Button>
         </Stack>
       )}
@@ -203,7 +203,7 @@ function AtprotoSection() {
   return (
     <Section title="AT Protocol">
       {error && <Alert severity="error" sx={{ mb: 1.5 }}>{error}</Alert>}
-      {!atprotoReady && <Alert severity="info" sx={{ mb: 1.5 }}>Unavailable on this server</Alert>}
+      {!atprotoReady && <Alert severity="info" sx={{ mb: 1.5 }}>Not available</Alert>}
       {org.atproto ? (
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           <Typography sx={{ flex: 1 }}>Connected as <strong>{org.atproto.handle}</strong></Typography>

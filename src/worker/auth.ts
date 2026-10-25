@@ -90,10 +90,10 @@ export async function finishLogin(c: Context<AppBindings>, rawEmail: unknown, ra
     attempts: number;
   }>();
   const now = c.get('now');
-  if (!row || row.expires_at < now || row.attempts >= MAX_CODE_ATTEMPTS) fail(401, 'That code has expired. Ask for a new one.');
+  if (!row || row.expires_at < now || row.attempts >= MAX_CODE_ATTEMPTS) fail(401, 'Code expired. Request a new code.');
   if (row.code_hash !== (await hashToken(c.env, `code:${email}:${code}`))) {
     await c.env.DB.prepare('UPDATE login_codes SET attempts = attempts + 1 WHERE email = ?').bind(email).run();
-    fail(401, 'That code is not right.');
+    fail(401, 'Incorrect code.');
   }
   await c.env.DB.prepare('DELETE FROM login_codes WHERE email = ?').bind(email).run();
 
@@ -124,13 +124,13 @@ export async function logout(c: Context<AppBindings>) {
 
 export const requireUser: MiddlewareHandler<AppBindings> = async (c, next) => {
   const token = getCookie(c, SESSION_COOKIE);
-  if (!token) fail(401, 'Sign in first.');
+  if (!token) fail(401, 'Sign in to continue.');
   const row = await c.env.DB.prepare(
     'SELECT u.id, u.email, s.expires_at FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id_hash = ?',
   )
     .bind(await hashToken(c.env, token))
     .first<{ id: string; email: string; expires_at: number }>();
-  if (!row || row.expires_at < c.get('now')) fail(401, 'Sign in first.');
+  if (!row || row.expires_at < c.get('now')) fail(401, 'Sign in to continue.');
   c.set('userId', row.id);
   c.set('email', row.email);
   await next();
@@ -164,19 +164,19 @@ export type Permission = 'manage_org' | 'manage_people' | 'export';
 export function must(actor: Actor, permission: Permission) {
   const ok =
     actor.role === 'admin' || (actor.role === 'coordinator' && permission === 'manage_people');
-  if (!ok) fail(403, 'You do not have permission to do that.');
+  if (!ok) fail(403, "You don't have permission to do that.");
 }
 
 /** Admins and coordinators manage every task. Team leads manage their own team's tasks. */
 export function mustManageTask(actor: Actor, teamId: string | null) {
   if (actor.role === 'admin' || actor.role === 'coordinator') return;
   if (actor.role === 'lead' && teamId && actor.leadTeamIds.includes(teamId)) return;
-  fail(403, 'You do not have permission to do that.');
+  fail(403, "You don't have permission to do that.");
 }
 
 /** Admins and coordinators manage every team. A lead manages their own team's members. */
 export function mustManageTeam(actor: Actor, teamId: string) {
   if (actor.role === 'admin' || actor.role === 'coordinator') return;
   if (actor.leadTeamIds.includes(teamId)) return;
-  fail(403, 'You do not have permission to do that.');
+  fail(403, "You don't have permission to do that.");
 }

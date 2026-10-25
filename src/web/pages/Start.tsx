@@ -64,7 +64,7 @@ export function Start() {
           <Typography variant="h2" component="h2">New organization</Typography>
           <TextField label="Organization name" required value={name} onChange={(e) => setName(e.target.value)} />
           <Button type="submit" variant="contained" disabled={busy || !name.trim()}>Create organization</Button>
-          <Button onClick={sample} disabled={busy}>Try sample data</Button>
+          <Button onClick={sample} disabled={busy}>Use sample data</Button>
         </Stack>
       </form>
     </Box>

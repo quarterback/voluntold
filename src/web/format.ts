@@ -19,12 +19,12 @@ export function toLocalDate(ms: number | null): string {
 }
 
 export const REASON_TEXT: Record<string, string> = {
-  requirements: 'Missing a requirement',
-  no_contact_ok: "Hasn't agreed to be contacted",
+  requirements: 'Missing requirement',
+  no_contact_ok: 'No consent',
   paused: 'Paused',
-  stopped: 'Asked not to be contacted',
-  weekly_limit: 'Asked enough this week',
-  busy: 'Busy then',
+  stopped: 'Unsubscribed',
+  weekly_limit: 'Weekly limit reached',
+  busy: 'Schedule conflict',
   already_asked: 'Already asked',
 };
 
@@ -33,5 +33,5 @@ export const STATUS_TEXT: Record<string, string> = {
   open: 'Open',
   filled: 'Full',
   canceled: 'Canceled',
-  done: 'Done',
+  done: 'Completed',
 };

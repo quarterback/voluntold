@@ -23,9 +23,9 @@ interface VTask {
 }
 
 const ANSWER_TEXT: Record<string, string> = {
-  yes: 'You said yes',
-  no: 'You said no',
-  filled: "This one's already filled. Thank you.",
+  yes: 'Accepted',
+  no: 'Declined',
+  filled: 'This task is full',
   closed: 'Canceled',
 };
 
@@ -57,7 +57,7 @@ function TaskInfo({ task, big }: { task: VTask; big?: boolean }) {
   const date = task.timing === 'at_time' ? task.startsAt : task.timing === 'by_date' ? task.dueAt : null;
   const time =
     task.timing === 'at_time' && task.startsAt && task.endsAt ? timeRange(task.startsAt, task.endsAt) :
-    task.timing === 'by_date' ? 'Any time before the end of the day' : 'Any time';
+    task.timing === 'by_date' ? 'By end of day' : 'Any time';
   const place = [task.placePublic, task.placePrivate].filter(Boolean).join(', ');
   return (
     <Stack direction="row" spacing={2}>
@@ -67,7 +67,7 @@ function TaskInfo({ task, big }: { task: VTask; big?: boolean }) {
         <Stack spacing={0.75}>
           <Line icon={<ClockIcon />}>{time}</Line>
           {place && <Line icon={<PlaceIcon />}>{place}</Line>}
-          {task.contact && <Line icon={<PersonIcon />}>Ask for {task.contact.replace(/^ask for /i, '')}</Line>}
+          {task.contact && <Line icon={<PersonIcon />}>{task.contact}</Line>}
         </Stack>
         {big && task.description && <Typography color="text.secondary" sx={{ mt: 1.5, whiteSpace: 'pre-wrap' }}>{task.description}</Typography>}
       </Box>
@@ -116,12 +116,12 @@ export function VolunteerPage() {
   }
 
   async function giveUp(spotId: string) {
-    const ok = await dialogs.confirm({ title: 'Give up your spot?', confirm: 'Give up spot', cancel: 'Keep my spot', destructive: true });
+    const ok = await dialogs.confirm({ title: 'Cancel your spot?', confirm: 'Cancel spot', cancel: 'Go back', destructive: true });
     if (ok) await run(() => api(`/api/v/spots/${spotId}/cant`, { body: {} }));
   }
 
   async function stop() {
-    const ok = await dialogs.confirm({ title: `Stop all asks from ${data.org.name}?`, confirm: 'Stop asks', destructive: true });
+    const ok = await dialogs.confirm({ title: `Unsubscribe from ${data.org.name}?`, confirm: 'Unsubscribe', destructive: true });
     if (ok) await run(() => api('/api/v/stop', { body: {} }));
   }
 
@@ -136,14 +136,14 @@ export function VolunteerPage() {
 
   return (
     <Box sx={{ maxWidth: 520, mx: 'auto', px: 2, pt: 4, pb: 6 }}>
-      <Typography variant="body2" color="text.secondary">{data.org.name}</Typography>
-      <Typography variant="h1" component="h1" sx={{ mb: 2.5 }}>Hi {v.name.split(' ')[0]}</Typography>
+      <Typography variant="body2" color="text.secondary">{v.name}</Typography>
+      <Typography variant="h1" component="h1" sx={{ mb: 2.5 }}>{data.org.name}</Typography>
       <Stack spacing={2}>
         {problem && <Alert severity="error">{problem}</Alert>}
-        {stopped && <Alert severity="info">Asks stopped</Alert>}
+        {stopped && <Alert severity="info">Unsubscribed</Alert>}
         {v.status === 'paused' && v.pausedReason === 'volunteer' && v.pausedUntil && (
-          <Alert severity="info" action={<Button color="inherit" size="small" disabled={busy} onClick={() => run(() => api('/api/v/resume', { body: {} }))}>End break</Button>}>
-            On a break until {shortDate(v.pausedUntil)}
+          <Alert severity="info" action={<Button color="inherit" size="small" disabled={busy} onClick={() => run(() => api('/api/v/resume', { body: {} }))}>Resume</Button>}>
+            Paused until {shortDate(v.pausedUntil)}
           </Alert>
         )}
 
@@ -161,8 +161,8 @@ export function VolunteerPage() {
                 {!result && ['canceled', 'done'].includes(a.task.status) && !a.holding && <Alert severity="info" sx={{ mt: 2 }}>{ANSWER_TEXT.closed}</Alert>}
                 {canAnswer && (
                   <Stack direction="row" spacing={1.5} sx={{ mt: 2.5 }}>
-                    <Button variant="contained" size="large" disabled={busy} onClick={() => answer(a.id, 'yes')} sx={{ flex: 1 }}>Yes</Button>
-                    <Button variant="outlined" size="large" disabled={busy} onClick={() => answer(a.id, 'no')} sx={{ flex: 1 }}>No</Button>
+                    <Button variant="contained" size="large" disabled={busy} onClick={() => answer(a.id, 'yes')} sx={{ flex: 1 }}>Accept</Button>
+                    <Button variant="outlined" size="large" disabled={busy} onClick={() => answer(a.id, 'no')} sx={{ flex: 1 }}>Decline</Button>
                   </Stack>
                 )}
               </CardContent>
@@ -171,8 +171,8 @@ export function VolunteerPage() {
         })}
 
         <Box>
-          <Typography variant="h2" component="h2" sx={{ mb: 1 }}>Coming up</Typography>
-          {data.upcoming.length === 0 ? <Typography variant="body2" color="text.secondary">Nothing coming up</Typography> : (
+          <Typography variant="h2" component="h2" sx={{ mb: 1 }}>Upcoming</Typography>
+          {data.upcoming.length === 0 ? <Typography variant="body2" color="text.secondary">No upcoming tasks</Typography> : (
             <Card>
               {data.upcoming.map((s: any, i: number) => (
                 <Box key={s.id}>
@@ -183,7 +183,7 @@ export function VolunteerPage() {
                       <Alert severity="warning" sx={{ mt: 1.5 }}>Canceled</Alert>
                     ) : (
                       <Box sx={{ mt: 1, ml: 9 }}>
-                        <Button size="small" color="error" disabled={busy} onClick={() => giveUp(s.id)}>I can't make it</Button>
+                        <Button size="small" color="error" disabled={busy} onClick={() => giveUp(s.id)}>Cancel spot</Button>
                       </Box>
                     )}
                   </Box>
@@ -195,7 +195,7 @@ export function VolunteerPage() {
 
         {data.past.filter((s: any) => s.status === 'done').length > 0 && (
           <Box>
-            <Typography variant="h2" component="h2" sx={{ mb: 1 }}>Done</Typography>
+            <Typography variant="h2" component="h2" sx={{ mb: 1 }}>Completed</Typography>
             <Card>
               {data.past.filter((s: any) => s.status === 'done').map((s: any, i: number) => (
                 <Box key={s.id}>
@@ -210,13 +210,13 @@ export function VolunteerPage() {
         {!stopped && (
           <Card>
             <CardContent>
-              <Typography variant="h2" component="h2" sx={{ mb: 1.5 }}>Take a break</Typography>
+              <Typography variant="h2" component="h2" sx={{ mb: 1.5 }}>Pause asks</Typography>
               <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-end' }}>
-                <TextField type="date" label="Until" value={until} onChange={(e) => setUntil(e.target.value)} />
-                <Button variant="outlined" disabled={!until || busy} onClick={() => run(() => api('/api/v/pause', { body: { until: `${until}T00:00` } }))}>Pause asks</Button>
+                <TextField type="date" label="Pause until" value={until} onChange={(e) => setUntil(e.target.value)} />
+                <Button variant="outlined" disabled={!until || busy} onClick={() => run(() => api('/api/v/pause', { body: { until: `${until}T00:00` } }))}>Pause</Button>
               </Stack>
               <Divider sx={{ my: 2 }} />
-              <Button color="error" disabled={busy} onClick={stop} sx={{ ml: -1 }}>Stop asking me</Button>
+              <Button color="error" disabled={busy} onClick={stop} sx={{ ml: -1 }}>Unsubscribe</Button>
             </CardContent>
           </Card>
         )}

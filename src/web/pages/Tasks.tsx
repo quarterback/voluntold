@@ -30,9 +30,9 @@ function TaskRows({ tasks }: { tasks: any[] }) {
             <Box><StatusBadge label={STATUS_TEXT[t.status]} tone={STATUS_TONE[t.status]} /></Box>
             <Box sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                {t.taken} of {t.peopleNeeded}{t.waiting ? `, ${t.waiting} waiting` : ''}
+                {t.taken} of {t.peopleNeeded}{t.waiting ? `, ${t.waiting} pending` : ''}
               </Typography>
-              <LinearProgress variant="determinate" value={Math.min(100, (t.taken / t.peopleNeeded) * 100)} aria-label={`${t.taken} of ${t.peopleNeeded} spots taken`} />
+              <LinearProgress variant="determinate" value={Math.min(100, (t.taken / t.peopleNeeded) * 100)} aria-label={`${t.taken} of ${t.peopleNeeded} filled`} />
             </Box>
           </ListItemButton>
         </Box>
@@ -56,7 +56,7 @@ export function Tasks() {
         : <TaskRows tasks={active} />}
       {finished.length > 0 && (
         <>
-          <Typography variant="h2" component="h2" sx={{ mt: 4, mb: 1 }}>Finished</Typography>
+          <Typography variant="h2" component="h2" sx={{ mt: 4, mb: 1 }}>Past</Typography>
           <TaskRows tasks={finished} />
         </>
       )}

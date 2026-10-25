@@ -113,7 +113,7 @@ export async function createAsks(
   await sweep(env, now, orgId);
   const task = await loadTask(db, orgId, taskId);
   if (!task) fail(404, 'Not found');
-  if (task.status !== 'open') fail(409, 'Open the task before asking people.');
+  if (task.status !== 'open') fail(409, 'Publish the task before asking people.');
   const org = await loadOrg(db, orgId);
   const all = await candidates(env, orgId, task, now);
   const byId = new Map(all.map((c) => [c.volunteer.id, c]));
@@ -221,7 +221,7 @@ export async function answerAsk(
     .first<{ task_id: string; status: string; revoked_at: number | null }>();
   if (!ask || ask.revoked_at) fail(404, 'Not found');
   const volunteer = await db.prepare('SELECT status FROM volunteers WHERE id = ? AND org_id = ?').bind(volunteerId, orgId).first<{ status: string }>();
-  if (!volunteer || volunteer.status === 'stopped') fail(409, 'You asked us to stop contacting you.');
+  if (!volunteer || volunteer.status === 'stopped') fail(409, "You're unsubscribed.");
   const taskRow = await db.prepare('SELECT * FROM tasks WHERE id = ? AND org_id = ?').bind(ask.task_id, orgId).first();
   if (!taskRow) fail(404, 'Not found');
   const task = toTask(taskRow);

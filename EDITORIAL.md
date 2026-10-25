@@ -43,8 +43,8 @@ Adobe rules, with the local decisions that apply:
   - no exclamation marks
   - "and" instead of "&"
   - an ellipsis only to show work in progress ("Reading…") or to prompt a picker
-- **Buttons:** a verb and a noun, three words or fewer: "Add person", "Cancel task", "Import 18 people". The primary button in a confirmation names the action. Never OK or Yes. The one exception is the volunteer's Yes and No, which the spec names.
-- **Confirmations:** the title asks the question ("Cancel this task?"). The buttons are the action and a way out ("Cancel task", "Keep task").
+- **Buttons:** a verb and a noun, three words or fewer: "Add person", "Cancel task", "Import 18 people". Common actions stand alone, as Polaris allows: Save, Edit, Publish, Cancel, Next, Copy. The primary button in a confirmation names the action. Never OK, Yes or No.
+- **Confirmations:** the title asks the question ("Cancel this task?"). The buttons are the action and "Cancel" ("Delete person", "Cancel"), or "Go back" when the action is itself a cancel ("Cancel task", "Go back").
 - **Errors:** lead with what happened, then how to fix it. Give the cause only when it helps. Save "sorry" for serious failures. Never blame the person. Use "we" and "you" to show who acts.
 - **Empty states:** a short title and the action button.
 - **Contractions:** use them, except in text about security, consent or deleting data.
@@ -59,8 +59,27 @@ Adobe rules, with the local decisions that apply:
   - data and status
   - error messages, which say what went wrong
 
-  Leave out helper text under fields, section notes, hints, example placeholders, subtitles that explain, and pleasantries. A confirmation is a question and two buttons. The only body line allowed is "This can't be undone." for a permanent delete. The spec's "This one's already filled. Thank you." is the one other sentence allowed.
-- **Length:** no string on a screen over 8 words, and no full sentences apart from the two above. No server message over 20 words. `npm run check:docs` enforces both.
+  Leave out helper text under fields, section notes, hints, example placeholders, subtitles that explain, and pleasantries. A confirmation is a question and two buttons, with no body text.
+- **Standard wording.** The owner set this on October 25, 2026: use the words people already know from other apps, not wording made up for this one. Sources: [Apple HIG alerts](https://developer.apple.com/design/human-interface-guidelines/alerts), [GitHub Primer confirmation dialogs](https://primer.style/product/components/confirmation-dialog/guidelines), [Shopify Polaris buttons](https://polaris.shopify.com/components/actions/button), [Meetup](https://help.meetup.com/hc/en-us/articles/41229648295181-How-to-Join-an-Event-Waitlist-on-Meetup), [Luma](https://help.luma.com/p/waitlist.md) and the [HubSpot import](https://knowledge.hubspot.com/crm-setup/import-objects).
+
+  | Use | Not |
+  |---|---|
+  | Accept, Decline, Accepted, Declined, Pending | Yes, No, Said yes, No answer yet |
+  | Cancel spot | I can't make it, Give up spot |
+  | Pause, Resume, Paused until | Take a break, End break, On a break until |
+  | Unsubscribe, Unsubscribed | Stop asking me, Stop asks, Asked not to be contacted |
+  | This task is full, Full | This one's already filled. Thank you. |
+  | Publish, Save, Edit | Open task, Save and open, Save changes |
+  | Confirmed, Canceled, Attended, No-show | Coming, Can't make it, Done, Missed |
+  | Location, Contact, Description, Volunteers needed | Place, Who to find, What to do, People |
+  | Custom fields, Field, Condition, Add option | Details, Rule, Add choice |
+  | Map columns, Import as, Don't import, Next, Import history, Skipped | Match columns, Goes to, Skip, Find duplicates, Past imports, Set aside |
+  | In batches, All eligible, Manual, Batch size | A few at a time, Everyone who fits, Pick by hand, Group size |
+  | Not eligible, Missing requirement, Weekly limit reached, Schedule conflict | Can't ask, Asked enough this week, Busy then |
+  | Reset link, Share link, Copy, Copy all | Get new link, Send this link, Copy message |
+
+  The dismiss button in a confirmation is "Cancel" (Apple, Primer). When the action itself is a cancel ("Cancel task", "Cancel spot"), the dismiss button is "Go back", so two buttons never both say Cancel.
+- **Length:** no string on a screen over 8 words, and no full sentences. No server message over 20 words. `npm run check:docs` enforces both.
 
 ## Writing mechanics for docs
 
@@ -85,7 +104,7 @@ Follow the Vloora style manual:
 - **Checks:** `npm run check` (types, tests, build) and `npm run check:docs`. The docs check runs:
   - prosekeep on the docs and on every interface string
   - the Adobe rules above that a machine can check
-  - the 20-word limit
+  - the 20-word limit, the 8-word screen limit, and the list of replaced wording above
   - `closedtab check` on every record
 
   `node e2e/smoke.mjs` walks the pilot on a phone-sized screen.

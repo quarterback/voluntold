@@ -54,16 +54,22 @@ for (const c of copy) {
 }
 // No helper text, hints or explanations on screens: labels, buttons, data,
 // status and errors only (owner, October 25, 2026). Server error messages are
-// exempt. The spec names the one sentence allowed.
+// exempt. Buttons and labels use the standard wording in EDITORIAL.md.
 const SCREEN_MAX_WORDS = 8;
-const ALLOWED_SENTENCES = new Set(["This one's already filled. Thank you.", "This can't be undone."]);
+// Wording replaced by standard terms on October 25, 2026. Keep it from coming back.
+const NOT_STANDARD = [/\bsaid (yes|no)\b/i, /\bgive up\b/i, /stop asking me/i, /\bkeep (my|task)\b/i, /who to find/i, /can't make it/i, /already filled/i, /can't be undone/i, /\btake a break\b/i, /\bset aside\b/i];
 for (const c of copy.filter((c) => c.file.includes('src/web'))) {
   const words = c.text.split(/\s+/).length;
   if (words > SCREEN_MAX_WORDS) {
     console.log(`screen text too long (${words} words, limit ${SCREEN_MAX_WORDS}): ${c.file}:${c.line} ${c.text}`);
     failed = true;
-  } else if (/[.?]\s*$/.test(c.text) && words >= 3 && !ALLOWED_SENTENCES.has(c.text) && !/\?$/.test(c.text)) {
+  } else if (/[.?]\s*$/.test(c.text) && words >= 3 && !/\?$/.test(c.text)) {
     console.log(`explanatory sentence on a screen: ${c.file}:${c.line} ${c.text}`);
+    failed = true;
+  }
+  const off = NOT_STANDARD.find((re) => re.test(c.text));
+  if (off) {
+    console.log(`not standard wording (${off}): ${c.file}:${c.line} ${c.text}`);
     failed = true;
   }
 }

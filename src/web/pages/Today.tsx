@@ -28,12 +28,12 @@ function describe(item: Item): { title: string; body: string; to: string; badge:
     case 'ask_next':
       return {
         title: item.firstRound ? `Ask people for ${item.title}` : `Ask more people for ${item.title}`,
-        body: `${plural(item.openSpots!, 'spot')} open · ${item.fits} fit${item.soon && item.startsAt ? ` · starts ${day(item.startsAt)}` : ''}`,
+        body: `${plural(item.openSpots!, 'spot')} open · ${item.fits} eligible${item.soon && item.startsAt ? ` · starts ${day(item.startsAt)}` : ''}`,
         to: `tasks/${item.taskId}`,
         badge: item.soon ? ['Soon', 'warning'] : ['Ask', 'accent'],
       };
     case 'no_one_left':
-      return { title: `No one left to ask for ${item.title}`, body: `${plural(item.openSpots!, 'spot')} open`, to: `tasks/${item.taskId}`, badge: ['Stuck', 'danger'] };
+      return { title: `No one left to ask for ${item.title}`, body: `${plural(item.openSpots!, 'spot')} open`, to: `tasks/${item.taskId}`, badge: ['Blocked', 'danger'] };
     case 'draft':
       return { title: item.title!, body: '', to: `tasks/${item.taskId}`, badge: ['Draft', 'neutral'] };
     case 'never_asked':
@@ -46,9 +46,9 @@ function describe(item: Item): { title: string; body: string; to: string; badge:
         badge: ['Paused', 'neutral'],
       };
     case 'set_aside':
-      return { title: `${plural(item.count!, 'row')} set aside from ${item.fileName}`, body: '', to: 'import', badge: ['Import', 'neutral'] };
+      return { title: `${plural(item.count!, 'row')} skipped in ${item.fileName}`, body: '', to: 'import', badge: ['Import', 'neutral'] };
     case 'atproto_error':
-      return { title: `${item.title} isn't posted`, body: item.message ?? '', to: `tasks/${item.taskId}`, badge: ['Not posted', 'danger'] };
+      return { title: `Couldn't post ${item.title}`, body: item.message ?? '', to: `tasks/${item.taskId}`, badge: ['Not posted', 'danger'] };
     default:
       return null;
   }
@@ -69,7 +69,7 @@ export function Today() {
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 1.5 }}>
             <StatTile label="Volunteers" value={m.people} />
             <StatTile label="Asked" value={m.asked} />
-            <StatTile label="Said yes" value={m.said_yes} />
+            <StatTile label="Accepted" value={m.said_yes} />
             <StatTile label="Tasks filled" value={m.filled} />
           </Box>
         </Box>

@@ -92,7 +92,7 @@ export function People() {
             <Stack direction="row" spacing={1}>
               <TextField placeholder="Search" value={filter.q ?? ''} onChange={(e) => setFilter({ ...filter, q: e.target.value })}
                 slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }, htmlInput: { 'aria-label': 'Search' } }} />
-              <Button variant="outlined" startIcon={<FilterIcon fontSize="small" />} onClick={() => setShowFilters(!showFilters)}>{showFilters ? 'Hide filters' : 'Show filters'}</Button>
+              <Button variant="outlined" startIcon={<FilterIcon fontSize="small" />} onClick={() => setShowFilters(!showFilters)}>Filters</Button>
             </Stack>
             <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
               {[['', 'All'], ['never', 'Never asked'], ['paused', 'Paused'], ['stopped', 'Stopped']].map(([k, label]) => (
@@ -115,9 +115,9 @@ export function People() {
                   </FormControl>
                 )}
                 <FormControl fullWidth>
-                  <InputLabel id="field-filter">Detail</InputLabel>
-                  <Select labelId="field-filter" label="Detail" value={filter.fieldId ?? ''} displayEmpty onChange={(e) => setFilter({ ...filter, fieldId: e.target.value, value: '' })}>
-                    <MenuItem value="">Any detail</MenuItem>
+                  <InputLabel id="field-filter">Field</InputLabel>
+                  <Select labelId="field-filter" label="Field" value={filter.fieldId ?? ''} displayEmpty onChange={(e) => setFilter({ ...filter, fieldId: e.target.value, value: '' })}>
+                    <MenuItem value="">Any field</MenuItem>
                     {fields.map((f) => <MenuItem key={f.id} value={f.id}>{f.label}</MenuItem>)}
                   </Select>
                 </FormControl>
@@ -129,7 +129,7 @@ export function People() {
                     </Select>
                   </FormControl>
                 ) : field.type === 'yesno' ? (
-                  <FormControlLabel sx={{ mt: 3 }} control={<Checkbox size="small" checked={!!filter.value} onChange={(e) => setFilter({ ...filter, value: e.target.checked ? 'yes' : '' })} />} label="Is yes" />
+                  <FormControlLabel sx={{ mt: 3 }} control={<Checkbox size="small" checked={!!filter.value} onChange={(e) => setFilter({ ...filter, value: e.target.checked ? 'yes' : '' })} />} label="Yes" />
                 ) : (
                   <TextField label="Value" value={filter.value ?? ''} onChange={(e) => setFilter({ ...filter, value: e.target.value })} />
                 ))}
@@ -193,7 +193,7 @@ function AddPerson({ onClose }: { onClose: (id?: string) => void }) {
           <TextField label="Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <TextField label="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
           <TextField label="Phone" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-          <FormControlLabel control={<Checkbox size="small" checked={form.contactOk} onChange={(e) => setForm({ ...form, contactOk: e.target.checked })} />} label="They agreed to be contacted" />
+          <FormControlLabel control={<Checkbox size="small" checked={form.contactOk} onChange={(e) => setForm({ ...form, contactOk: e.target.checked })} />} label="Consented to contact" />
         </Stack>
       </DialogContent>
       <DialogActions>

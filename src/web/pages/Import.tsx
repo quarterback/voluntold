@@ -131,23 +131,23 @@ export function Import() {
         {table && !result && (
           <Card>
             <CardContent>
-              <Typography variant="h2" component="h2" gutterBottom>Match columns</Typography>
+              <Typography variant="h2" component="h2" gutterBottom>Map columns</Typography>
               {table.via === 'model' && (
-                <Alert severity="info" sx={{ mb: 2 }}>Read by a model{table.notes ? `: ${table.notes}` : ''}</Alert>
+                <Alert severity="info" sx={{ mb: 2 }}>Extracted with AI{table.notes ? `: ${table.notes}` : ''}</Alert>
               )}
               <Stack spacing={1} sx={{ mb: 1.5 }}>
                 {table.columns.map((col) => (
                   <Stack key={col} direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                     <Typography variant="body2" sx={{ width: '40%', flexShrink: 0, overflowWrap: 'anywhere' }}><strong>{col}</strong></Typography>
                     <FormControl size="small" fullWidth>
-                      <InputLabel id={`map-${col}`}>Goes to</InputLabel>
-                      <Select labelId={`map-${col}`} label="Goes to" value={map[col]} onChange={(e) => { setMap({ ...map, [col]: e.target.value }); setPreview(null); }}>
+                      <InputLabel id={`map-${col}`}>Import as</InputLabel>
+                      <Select labelId={`map-${col}`} label="Import as" value={map[col]} onChange={(e) => { setMap({ ...map, [col]: e.target.value }); setPreview(null); }}>
                         <MenuItem value="name">Name</MenuItem>
                         <MenuItem value="email">Email</MenuItem>
                         <MenuItem value="phone">Phone</MenuItem>
                         {fields.map((f) => <MenuItem key={f.id} value={`field:${f.id}`}>{f.label}</MenuItem>)}
-                        <MenuItem value={`new:${col}`}>New detail: {col}</MenuItem>
-                        <MenuItem value="ignore">Skip</MenuItem>
+                        <MenuItem value={`new:${col}`}>New field: {col}</MenuItem>
+                        <MenuItem value="ignore">Don't import</MenuItem>
                       </Select>
                     </FormControl>
                   </Stack>
@@ -163,7 +163,7 @@ export function Import() {
                 </Table>
               </TableContainer>
               {!hasName && <Alert severity="warning" sx={{ mb: 2 }}>Name column required</Alert>}
-              {!preview && <Button variant="contained" disabled={busy || !hasName} onClick={check}>Find duplicates</Button>}
+              {!preview && <Button variant="contained" disabled={busy || !hasName} onClick={check}>Next</Button>}
             </CardContent>
           </Card>
         )}
@@ -195,7 +195,7 @@ export function Import() {
                   {problems.length} skipped, no email or phone: {problems.slice(0, 5).map((p) => joined(table!.rows[p.index], 'name') || `row ${p.index + 2}`).join(', ')}{problems.length > 5 ? ', …' : ''}
                 </Alert>
               )}
-              <FormControlLabel control={<Checkbox checked={consent} onChange={(e) => setConsent(e.target.checked)} />} label="They agreed to be contacted" />
+              <FormControlLabel control={<Checkbox checked={consent} onChange={(e) => setConsent(e.target.checked)} />} label="These people consented to contact" />
               <Box sx={{ mt: 2 }}>
                 <Button variant="contained" disabled={busy || !consent} onClick={commit}>Import {table!.rows.length - problems.length} people</Button>
               </Box>
@@ -210,13 +210,13 @@ export function Import() {
               <Button color="inherit" onClick={() => navigate('../people', { relative: 'path' })}>View people</Button>
             </Stack>
           }>
-            Added {result.added} · merged {result.merged}{result.setAside.length ? ` · set aside ${result.setAside.length}` : ''}
+            Added {result.added} · merged {result.merged}{result.setAside.length ? ` · skipped ${result.setAside.length}` : ''}
           </Alert>
         )}
 
         {recent.data?.imports?.length > 0 && (
           <Box>
-            <Typography variant="h2" component="h2" sx={{ mb: 1 }}>Past imports</Typography>
+            <Typography variant="h2" component="h2" sx={{ mb: 1 }}>Import history</Typography>
             <Stack spacing={1}>
               {recent.data.imports.map((imp: any) => (
                 <Card key={imp.id}>
@@ -224,8 +224,8 @@ export function Import() {
                     <Typography>{imp.file_name}: added {imp.added}, merged {imp.merged}</Typography>
                     {imp.set_aside.length > 0 && (
                       <>
-                        <Typography color="text.secondary" variant="body2">Set aside: {imp.set_aside.map((s: any) => `${Object.values(s.cells).filter(Boolean).slice(0, 2).join(' ') || `row ${s.row + 2}`} (${s.reason.toLowerCase()})`).join('; ')}</Typography>
-                        <Button size="small" onClick={() => api(path(`/imports/${imp.id}/clear`), { body: {} }).then(recent.reload)}>Clear rows</Button>
+                        <Typography color="text.secondary" variant="body2">Skipped: {imp.set_aside.map((s: any) => `${Object.values(s.cells).filter(Boolean).slice(0, 2).join(' ') || `row ${s.row + 2}`} (${s.reason.toLowerCase()})`).join('; ')}</Typography>
+                        <Button size="small" onClick={() => api(path(`/imports/${imp.id}/clear`), { body: {} }).then(recent.reload)}>Clear</Button>
                       </>
                     )}
                   </CardContent>

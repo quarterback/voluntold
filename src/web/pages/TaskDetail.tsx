@@ -21,18 +21,18 @@ interface NewAsk {
 }
 
 const ASK_STATUS: Record<string, string> = {
-  waiting: 'No answer yet',
-  yes: 'Said yes',
-  no: 'Said no',
-  expired: "Didn't answer",
-  closed: 'Filled first',
+  waiting: 'Pending',
+  yes: 'Accepted',
+  no: 'Declined',
+  expired: 'Expired',
+  closed: 'Task filled',
 };
 
 const SPOT_STATUS: Record<string, string> = {
-  holding: 'Coming',
-  cant: "Can't make it",
-  done: 'Done',
-  missed: 'Missed',
+  holding: 'Confirmed',
+  cant: 'Canceled',
+  done: 'Attended',
+  missed: 'No-show',
 };
 
 async function copy(text: string): Promise<boolean> {
@@ -50,7 +50,7 @@ export function CopyList({ asks, onClose }: { asks: NewAsk[]; onClose: () => voi
   const all = asks.map((a) => a.message).join('\n\n');
   return (
     <Dialog open fullWidth maxWidth="sm" onClose={onClose}>
-      <DialogTitle>Send {asks.length === 1 ? 'this link' : `${asks.length} links`}</DialogTitle>
+      <DialogTitle>Share {asks.length === 1 ? 'link' : `${asks.length} links`}</DialogTitle>
       <DialogContent>
         <Stack spacing={1.5}>
           {asks.map((a) => (
@@ -60,8 +60,8 @@ export function CopyList({ asks, onClose }: { asks: NewAsk[]; onClose: () => voi
                   <Typography variant="h3">{a.name}</Typography>
                   <Typography variant="caption" noWrap component="p">{[a.email, a.phone].filter(Boolean).join(' · ')}</Typography>
                 </Box>
-                <Button variant="outlined" size="small" aria-label={`Copy message for ${a.name}`} onClick={async () => setCopied((await copy(a.message)) ? `Copied for ${a.name}` : 'Select the text to copy it')}>
-                  Copy message
+                <Button variant="outlined" size="small" aria-label={`Copy for ${a.name}`} onClick={async () => setCopied((await copy(a.message)) ? `Copied for ${a.name}` : "Couldn't copy")}>
+                  Copy
                 </Button>
               </Stack>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1, wordBreak: 'break-word' }} data-testid="ask-message">{a.message}</Typography>
@@ -70,7 +70,7 @@ export function CopyList({ asks, onClose }: { asks: NewAsk[]; onClose: () => voi
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button variant="outlined" onClick={async () => setCopied((await copy(all)) ? 'Copied all messages' : 'Select the text to copy it')}>Copy all messages</Button>
+        <Button variant="outlined" onClick={async () => setCopied((await copy(all)) ? 'Copied' : "Couldn't copy")}>Copy all</Button>
         <Button variant="contained" onClick={onClose}>Done</Button>
       </DialogActions>
       <Snackbar open={!!copied} autoHideDuration={2500} onClose={() => setCopied(null)} message={copied} />
@@ -135,14 +135,14 @@ export function TaskDetail() {
     const ok = await dialogs.confirm({
       title: 'Cancel this task?',
       confirm: 'Cancel task',
-      cancel: 'Keep task',
+      cancel: 'Go back',
       destructive: true,
     });
     if (ok) await act(() => api(path(`/tasks/${taskId}/cancel`), { body: {} }));
   }
 
   const people = (n: number) => `${n} ${n === 1 ? 'person' : 'people'}`;
-  const startLabel = task.askMode === 'hand' ? 'Choose people' : `Ask ${people(data.nextGroup.length)}`;
+  const startLabel = task.askMode === 'hand' ? 'Select people' : `Ask ${people(data.nextGroup.length)}`;
   const canAsk = task.status === 'open' && data.openSpots > 0;
   const editable = ['draft', 'open', 'filled'].includes(task.status);
 
@@ -153,11 +153,11 @@ export function TaskDetail() {
       back={<Button size="small" startIcon={<BackIcon fontSize="small" />} onClick={() => navigate('..', { relative: 'path' })} sx={{ color: 'text.secondary', ml: -1 }}>Tasks</Button>}
       action={
         <>
-          {editable && <Button variant="outlined" onClick={() => navigate('edit')}>Edit task</Button>}
-          {task.status === 'draft' && <Button variant="contained" disabled={busy} onClick={() => act(() => api(path(`/tasks/${taskId}/open`), { body: {} }))}>Open task</Button>}
+          {editable && <Button variant="outlined" onClick={() => navigate('edit')}>Edit</Button>}
+          {task.status === 'draft' && <Button variant="contained" disabled={busy} onClick={() => act(() => api(path(`/tasks/${taskId}/open`), { body: {} }))}>Publish</Button>}
           {canAsk && (
             <Button variant="contained" disabled={busy || fits.length === 0} onClick={() => setPicking(new Set(data.nextGroup))}>
-              {fits.length === 0 ? 'No one left to ask' : startLabel}
+              {fits.length === 0 ? 'No eligible people' : startLabel}
             </Button>
           )}
         </>
@@ -171,9 +171,9 @@ export function TaskDetail() {
               <CardContent>
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
                   <Detail label="When">{when(task)}</Detail>
-                  {task.placePublic && <Detail label="Place">{task.placePublic}</Detail>}
+                  {task.placePublic && <Detail label="Location">{task.placePublic}</Detail>}
                   {task.placePrivate && <Detail label="Address">{task.placePrivate}</Detail>}
-                  {task.contact && <Detail label="Who to find">{task.contact}</Detail>}
+                  {task.contact && <Detail label="Contact">{task.contact}</Detail>}
                 </Box>
                 {task.description && <Typography sx={{ mt: 2, whiteSpace: 'pre-wrap' }}>{task.description}</Typography>}
                 {data.requirementLines.length > 0 && (
@@ -186,10 +186,10 @@ export function TaskDetail() {
                 )}
                 <Divider sx={{ my: 2 }} />
                 <Stack direction="row" sx={{ justifyContent: 'space-between', mb: 0.75 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{data.holding} of {task.peopleNeeded} said yes</Typography>
-                  {canAsk && task.askMode === 'few' && !data.roundDue && <Typography variant="body2" color="text.secondary">Waiting on answers</Typography>}
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{data.holding} of {task.peopleNeeded} filled</Typography>
+                  {canAsk && task.askMode === 'few' && !data.roundDue && <Typography variant="body2" color="text.secondary">Awaiting replies</Typography>}
                 </Stack>
-                <LinearProgress variant="determinate" value={Math.min(100, (data.holding / task.peopleNeeded) * 100)} aria-label="Spots taken" />
+                <LinearProgress variant="determinate" value={Math.min(100, (data.holding / task.peopleNeeded) * 100)} aria-label="Spots filled" />
               </CardContent>
             </Card>
 
@@ -212,13 +212,13 @@ export function TaskDetail() {
           <Stack spacing={2}>
             <Card>
               <CardContent>
-                <Typography variant="h2" component="h2">Said yes</Typography>
+                <Typography variant="h2" component="h2">Volunteers</Typography>
                 {data.spots.length === 0 ? <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>No one yet</Typography> : (
                   <List disablePadding>
                     {data.spots.map((s: any) => (
                       <ListItem key={s.id} disableGutters secondaryAction={
-                        s.status === 'done' ? <Button size="small" onClick={() => act(() => api(path(`/spots/${s.id}/missed`), { body: {} }))}>Mark missed</Button> :
-                        s.status === 'missed' ? <Button size="small" onClick={() => act(() => api(path(`/spots/${s.id}/missed`), { body: { missed: false } }))}>Mark done</Button> : null
+                        s.status === 'done' ? <Button size="small" onClick={() => act(() => api(path(`/spots/${s.id}/missed`), { body: {} }))}>Mark no-show</Button> :
+                        s.status === 'missed' ? <Button size="small" onClick={() => act(() => api(path(`/spots/${s.id}/missed`), { body: { missed: false } }))}>Mark attended</Button> : null
                       }>
                         <ListItemText primary={s.name} secondary={SPOT_STATUS[s.status]} />
                       </ListItem>
@@ -235,7 +235,7 @@ export function TaskDetail() {
                     {data.asks.map((a: any) => (
                       <ListItem key={a.id} disableGutters secondaryAction={
                         ['waiting', 'yes'].includes(a.status)
-                          ? <Button size="small" onClick={() => act(async () => setSent([await api(path(`/asks/${a.id}/link`), { body: {} })]))}>Get new link</Button>
+                          ? <Button size="small" onClick={() => act(async () => setSent([await api(path(`/asks/${a.id}/link`), { body: {} })]))}>Reset link</Button>
                           : null
                       }>
                         <ListItemText primary={a.name} secondary={ASK_STATUS[a.status]} />
@@ -251,7 +251,7 @@ export function TaskDetail() {
 
       {picking && (
         <Dialog open fullWidth maxWidth="sm" onClose={() => setPicking(null)}>
-          <DialogTitle>Who to ask</DialogTitle>
+          <DialogTitle>Select people</DialogTitle>
           <DialogContent>
             <List>
               {fits.map((c: any) => (
@@ -263,7 +263,7 @@ export function TaskDetail() {
             </List>
             {notFit.length > 0 && (
               <Box sx={{ mt: 1, p: 1.5, borderRadius: 2, bgcolor: (t) => t.vt.subtle }}>
-                <Typography variant="h3">Can't ask</Typography>
+                <Typography variant="h3">Not eligible</Typography>
                 {Object.entries(notFit.reduce((g: Record<string, any[]>, c: any) => ({ ...g, [c.reason]: [...(g[c.reason] ?? []), c] }), {})).map(([reason, list]) => (
                   <Typography key={reason} variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                     <strong>{REASON_TEXT[reason] ?? reason}:</strong> {(list as any[]).map((c) => c.name).join(', ')}

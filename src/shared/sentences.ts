@@ -28,24 +28,24 @@ export function standing(
   lastAnswer: AskStatus | null,
   now: number,
 ): string {
-  if (v.status === 'stopped') return 'Asked not to be contacted';
-  if (v.status === 'paused' && v.pausedReason === 'no_answer') return 'Paused: no answer to 3 asks';
-  if (v.status === 'paused' && v.pausedUntil && v.pausedUntil > now) return `On a break until ${shortDate(v.pausedUntil)}`;
+  if (v.status === 'stopped') return 'Unsubscribed';
+  if (v.status === 'paused' && v.pausedReason === 'no_answer') return 'Paused: 3 unanswered asks';
+  if (v.status === 'paused' && v.pausedUntil && v.pausedUntil > now) return `Paused until ${shortDate(v.pausedUntil)}`;
   if (!v.email && !v.phone) return 'No email or phone';
-  if (v.contactOkAt === null) return "Hasn't agreed to be contacted";
+  if (v.contactOkAt === null) return 'No consent';
   if (v.lastAskedAt === null) return 'Never asked';
   const when = `Asked ${ago(v.lastAskedAt, now)}`;
   switch (lastAnswer) {
     case 'yes':
-      return `${when}, said yes`;
+      return `${when}, accepted`;
     case 'no':
-      return `${when}, said no`;
+      return `${when}, declined`;
     case 'waiting':
-      return `${when}, no answer yet`;
+      return `${when}, pending`;
     case 'expired':
-      return `${when}, didn't answer`;
+      return `${when}, expired`;
     case 'closed':
-      return `${when}, filled first`;
+      return `${when}, task filled`;
     default:
       return when;
   }

@@ -59,7 +59,7 @@ export function Login() {
             <Typography variant="body2" color="text.secondary">{email}</Typography>
             {devCode && <Alert severity="info">Test mode code: <strong>{devCode}</strong></Alert>}
             <TextField
-              label="Code"
+              label="Verification code"
               inputMode="numeric"
               autoComplete="one-time-code"
               required
@@ -67,7 +67,7 @@ export function Login() {
               onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
             />
             <Button type="submit" variant="contained" size="large" disabled={busy || code.length !== 6}>Sign in</Button>
-            <Button onClick={() => { setSent(false); setCode(''); }}>Use another email</Button>
+            <Button onClick={() => { setSent(false); setCode(''); }}>Use a different email</Button>
           </Stack>
         </form>
       )}
