@@ -74,3 +74,10 @@
 ## 6. Change: what happens next
 1. Owner reviews the replacement table in `EDITORIAL.md`.
 2. Next run: check new wording against the table and a named design system before writing it.
+3. After this run the owner said: "No more tests. This is a spec I haven't even published, tests don't matter, stop token churning me." Then: "Screenshots yes, tests no." From now on:
+   - don't run `npm run check`, `npm run check:docs`, the walkthrough or other test runs
+   - do take screenshots of changed screens
+   - don't watch the PR or schedule check-ins
+
+   The agent cancelled the scheduled PR check-in and stopped watching PR #3. The tests and the CI workflow are still in the repo. Removing them is the owner's call.
+4. Lesson: this run spent effort on test runs, a flaky walkthrough fix and PR follow-ups that the owner didn't want at this stage. Match the effort to the stage. An unpublished spec needs the change and screenshots, not test runs.
