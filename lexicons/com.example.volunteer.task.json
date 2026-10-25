@@ -1,0 +1,30 @@
+{
+  "lexicon": 1,
+  "id": "com.example.volunteer.task",
+  "description": "PLACEHOLDER NAME. A piece of volunteer work an organization posts. Replace com.example with a domain the project owns before the first real post (docs/decisions/0006-only-tasks-go-on-at-protocol.md). The record never holds anything about volunteers.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "any",
+      "description": "Lives in the organization's own repository. The record key is the task's ID in the app.",
+      "record": {
+        "type": "object",
+        "required": ["title", "timing", "peopleNeeded", "status", "url", "createdAt"],
+        "properties": {
+          "title": { "type": "string", "maxLength": 200 },
+          "description": { "type": "string", "maxLength": 4000 },
+          "timing": { "type": "string", "knownValues": ["at_time", "by_date", "none"] },
+          "startsAt": { "type": "string", "format": "datetime" },
+          "endsAt": { "type": "string", "format": "datetime" },
+          "dueAt": { "type": "string", "format": "datetime" },
+          "place": { "type": "string", "maxLength": 200, "description": "Only the public part of the place, such as a neighborhood or building name." },
+          "peopleNeeded": { "type": "integer", "minimum": 1 },
+          "requirements": { "type": "array", "items": { "type": "string", "maxLength": 200 }, "description": "Plain-language requirements, such as 'Experience is Can lead'." },
+          "status": { "type": "string", "knownValues": ["open", "filled", "canceled", "done"] },
+          "url": { "type": "string", "format": "uri", "description": "The task's public page." },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

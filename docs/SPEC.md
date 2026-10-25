@@ -3,7 +3,7 @@
 **Status:** the build spec for the first pilot with 3 to 5 organizations. Written October 24, 2026.
 **Product name:** undecided. "Voluntold" is the repository name only.
 
-This is the only document a coding agent needs to build the pilot. Ideas that are not in the pilot are in [LATER.md](LATER.md). The reasons behind each choice are in [decisions/](decisions/). The October 21 to 24 planning docs are in [archive/](archive/) for reference. Where they disagree with this spec, this spec wins.
+This is the only document a coding agent needs to build the pilot. The pilot is built: see the README for how to run it. Ideas that are not in the pilot are in [LATER.md](LATER.md). The reasons behind each choice are in [decisions/](decisions/). The October 21 to 24 planning docs are in [archive/](archive/) for reference. Where they disagree with this spec, this spec wins.
 
 ## What it does
 
@@ -64,7 +64,7 @@ Its status is draft, open, filled, canceled or done.
 
 ## Bringing people in
 
-The coordinator uploads a file: CSV, Excel, XML, JSON, a text file, a Word file or a PDF.
+The coordinator uploads a file: CSV, Excel (.xlsx), XML, JSON, a text file, a Word file (.docx) or a PDF.
 
 1. The tool reads the rows. CSV, Excel, XML and JSON are read directly. For text, Word and PDF files, a model pulls out the rows.
 2. The tool suggests which column goes to which field and shows the first 10 rows. The coordinator fixes anything wrong. A column with no matching field can become a new field in one tap.
@@ -96,7 +96,7 @@ Each task uses one ready-made way to ask. The coordinator picks it when writing 
 
 In the pilot, the tool sends nothing itself.
 
-For each ask, the coordinator gets the person's private link and a short message to go with it: "Hi Sam, can you help with the registration desk on Thursday, 12:00 to 14:00? Answer here: [link]". There is a Copy button for each person, and "Copy all" for the whole group. The coordinator pastes it into email, a text, Slack or WhatsApp. Copying counts as sent.
+For each ask, the coordinator gets the person's private link and a short message to go with it: "Hi Sam, can you help with the registration desk on Thursday, 12:00 to 14:00? Answer here: [link]". There is a Copy button for each person, and "Copy all" for the whole group. The coordinator pastes it into email, a text, Slack or WhatsApp. An ask counts as sent when the coordinator taps Ask, and the weekly limit counts it from then. Links are shown once. If one gets lost, the coordinator makes a new link from the task, and the old one stops working.
 
 An ask expires after 48 hours, or 6 hours before the task starts, whichever comes first.
 
@@ -152,7 +152,7 @@ An admin can download everything as CSV: volunteers with their fields, tasks, as
 
 ## For the coding agent
 
-**Stack:** Cloudflare Workers and D1. A React web app using MUI, themed from the Material 3 seed color `#00B8A9`, with dark mode from the same seed. Sign-in uses a managed service with email codes. Never build passwords. Add "Log in with Bluesky" only if the AT Protocol OAuth client passes a one-day test on Workers. If it doesn't, use the client on a small separate server or keep email sign-in and connect AT Protocol only for posting.
+**Stack:** Cloudflare Workers and D1. A React web app using MUI, themed from the Material 3 seed color `#00B8A9`, with dark mode from the same seed. Sign-in uses 6 digit email codes sent through an email provider (Resend in the pilot). There are no passwords. Posting to AT Protocol uses an app password the organization makes in its Bluesky settings. AT Protocol OAuth, and "Log in with Bluesky", replace it only after the OAuth client passes a one-day test on Workers ([decision 0008](decisions/0008-pilot-build-choices.md)).
 
 **Model for imports:** used only to pull rows out of text, Word and PDF files. Its output must be checked against a schema. Use a provider whose terms say it doesn't train on prompts or keep them. Record which provider and the date it was checked in a decision record before any real file goes through it.
 

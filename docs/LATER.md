@@ -33,6 +33,7 @@ Ideas that are not in the pilot, one line each. When a pilot organization needs 
 
 ## AT Protocol
 
+- **Log in with Bluesky:** AT Protocol OAuth for sign-in and posting, replacing the app password ([0008](decisions/0008-pilot-build-choices.md)).
 - **Volunteers keep their record:** a volunteer claims their history into their own AT Protocol account.
 - **Organization statements:** the organization posts "this person completed training" or "this person did this work", with the person's consent.
 - **Following tasks:** a feed or page that shows posted tasks from many organizations in one area.

@@ -1,0 +1,31 @@
+name = "voluntold"
+main = "src/worker/index.ts"
+compatibility_date = "2026-08-15"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*", "/v/*", "/t/*"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "voluntold"
+# Replace with the id from `wrangler d1 create voluntold`.
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+[triggers]
+# Expire asks and mark work done when its time passes.
+crons = ["*/15 * * * *"]
+
+[vars]
+# "1" turns on sign-in codes in the response, the sample data button and the
+# test clock header. Never set it in production.
+DEV_MODE = "0"
+APP_URL = "http://localhost:8787"
+# The record name for tasks posted to AT Protocol. It must sit under a domain
+# the project owns, and it can't change once records exist. Posting stays off
+# until it is set. See docs/decisions/0006-only-tasks-go-on-at-protocol.md.
+ATPROTO_TASK_NSID = ""
