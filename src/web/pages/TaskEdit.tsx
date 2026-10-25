@@ -14,11 +14,17 @@ import type { Field, Requirement, RequirementOp } from '../../shared/types';
 
 const OPS: Record<Field['type'], { op: RequirementOp; label: string }[]> = {
   text: [{ op: 'is', label: 'is' }, { op: 'includes', label: 'includes' }],
-  number: [{ op: 'atLeast', label: 'is at least' }, { op: 'atMost', label: 'is at most' }, { op: 'is', label: 'is' }],
-  date: [{ op: 'atLeast', label: 'is on or after' }, { op: 'atMost', label: 'is on or before' }],
-  one: [{ op: 'is', label: 'is' }, { op: 'atLeast', label: 'is at least' }, { op: 'atMost', label: 'is at most' }],
+  number: [{ op: 'atLeast', label: 'at least' }, { op: 'atMost', label: 'at most' }, { op: 'is', label: 'is' }],
+  date: [{ op: 'atLeast', label: 'on or after' }, { op: 'atMost', label: 'on or before' }],
+  one: [{ op: 'is', label: 'is' }, { op: 'atLeast', label: 'at least' }, { op: 'atMost', label: 'at most' }],
   many: [{ op: 'includes', label: 'includes' }],
   yesno: [{ op: 'isYes', label: 'is yes' }],
+};
+
+const ASK_MODES = {
+  few: { label: 'A few at a time', hint: 'Asks the people who fit and have waited longest. Today tells you when to ask more.' },
+  everyone: { label: 'Everyone who fits', hint: 'Asks everyone who fits. The first to say yes get the spots.' },
+  hand: { label: 'Pick by hand', hint: 'You choose from the people who fit.' },
 };
 
 interface Form {
@@ -39,6 +45,8 @@ interface Form {
   teamId: string;
   publish: boolean;
 }
+
+const shrink = { inputLabel: { shrink: true } };
 
 export function TaskEdit() {
   const { taskId } = useParams();
@@ -122,47 +130,51 @@ export function TaskEdit() {
     set('requirements', next);
   }
 
-  return (
-    <Page title={taskId ? 'Change task' : 'New task'}>
-      <Stack spacing={2.5}>
-        {error && <Alert severity="error">{error}</Alert>}
-        <TextField label="Title" required value={form.title} onChange={(e) => set('title', e.target.value)} helperText="Say what the work is, for example: Registration desk" />
-        <TextField label="What to do" multiline minRows={3} value={form.description} onChange={(e) => set('description', e.target.value)} />
+  const visibleTeams = teams.filter((t) => !leadOnly || me.leadTeamIds.includes(t.id));
 
-        <Box>
-          <Typography variant="h3" component="h2" gutterBottom>When</Typography>
-          <ToggleButtonGroup exclusive value={form.timing} onChange={(_, v) => v && set('timing', v)} size="small" sx={{ mb: 2, flexWrap: 'wrap' }}>
-            <ToggleButton value="at_time">At a set time</ToggleButton>
-            <ToggleButton value="by_date">By a date</ToggleButton>
+  return (
+    <Page title={taskId ? 'Edit task' : 'New task'}>
+      <Stack spacing={2}>
+        {error && <Alert severity="error">{error}</Alert>}
+        <TextField label="Title" required value={form.title} placeholder="Registration desk" onChange={(e) => set('title', e.target.value)} slotProps={shrink} />
+        <TextField label="What to do" multiline minRows={2} value={form.description} onChange={(e) => set('description', e.target.value)} />
+
+        <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', flexWrap: 'wrap', rowGap: 1 }}>
+          <ToggleButtonGroup exclusive size="small" value={form.timing} onChange={(_, v) => v && set('timing', v)} aria-label="When">
+            <ToggleButton value="at_time">Set time</ToggleButton>
+            <ToggleButton value="by_date">Due date</ToggleButton>
             <ToggleButton value="none">No date</ToggleButton>
           </ToggleButtonGroup>
-          {form.timing === 'at_time' && (
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <TextField label="Starts" type="datetime-local" value={form.startsAt} onChange={(e) => set('startsAt', e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
-              <TextField label="Ends" type="datetime-local" value={form.endsAt} onChange={(e) => set('endsAt', e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
-            </Stack>
-          )}
-          {form.timing === 'by_date' && (
-            <TextField label="Due by" type="date" value={form.dueAt} onChange={(e) => set('dueAt', e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
-          )}
-        </Box>
-
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-          <TextField label="Place, public part" value={form.placePublic} onChange={(e) => set('placePublic', e.target.value)} helperText="Shown if the task is posted, for example: East Side branch" />
-          <TextField label="Place, private part" value={form.placePrivate} onChange={(e) => set('placePrivate', e.target.value)} helperText="Only people you ask see this, for example the street address" />
         </Stack>
-        <TextField label="Who to find when they arrive" value={form.contact} onChange={(e) => set('contact', e.target.value)} />
-        <TextField label="How many people" type="number" value={form.peopleNeeded} onChange={(e) => set('peopleNeeded', Number(e.target.value))} slotProps={{ htmlInput: { min: 1, max: 500 } }} />
+        {form.timing === 'at_time' && (
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+            <TextField label="Starts" type="datetime-local" value={form.startsAt} onChange={(e) => set('startsAt', e.target.value)} slotProps={shrink} />
+            <TextField label="Ends" type="datetime-local" value={form.endsAt} onChange={(e) => set('endsAt', e.target.value)} slotProps={shrink} />
+          </Stack>
+        )}
+        {form.timing === 'by_date' && (
+          <TextField label="Due" type="date" value={form.dueAt} onChange={(e) => set('dueAt', e.target.value)} slotProps={shrink} sx={{ maxWidth: 200 }} />
+        )}
+
+        <Stack direction="row" spacing={1.5}>
+          <TextField label="Place" placeholder="Downtown library" value={form.placePublic} onChange={(e) => set('placePublic', e.target.value)} slotProps={shrink} />
+          <TextField label="Address" placeholder="Only people you ask see it" value={form.placePrivate} onChange={(e) => set('placePrivate', e.target.value)} slotProps={shrink} />
+        </Stack>
+        <Stack direction="row" spacing={1.5}>
+          <TextField label="People" type="number" value={form.peopleNeeded} onChange={(e) => set('peopleNeeded', Number(e.target.value))}
+            slotProps={{ htmlInput: { min: 1, max: 500 } }} sx={{ width: 110, flexShrink: 0 }} />
+          <TextField label="Who to find" placeholder="Priya, at the front door" value={form.contact} onChange={(e) => set('contact', e.target.value)} slotProps={shrink} />
+        </Stack>
 
         <Box>
-          <Typography variant="h3" component="h2">What it needs</Typography>
-          <Typography color="text.secondary" sx={{ mb: 1.5 }}>Only people who meet every requirement are asked.</Typography>
-          <Stack spacing={1.5}>
+          <Typography variant="h3" component="h2">Requirements</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>People must meet all of them.</Typography>
+          <Stack spacing={1}>
             {form.requirements.map((r, i) => {
               const field = r.kind === 'field' ? fields.find((f) => f.id === r.fieldId) : undefined;
               return (
-                <Stack key={i} direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'center' } }}>
-                  <FormControl fullWidth size="small">
+                <Stack key={i} direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                  <FormControl fullWidth>
                     <InputLabel id={`req-${i}`}>Detail</InputLabel>
                     <Select labelId={`req-${i}`} label="Detail" value={reqTarget(r)} onChange={(e) => changeTarget(i, e.target.value)}>
                       {fields.map((f) => <MenuItem key={f.id} value={`field:${f.id}`}>{f.label}</MenuItem>)}
@@ -171,88 +183,81 @@ export function TaskEdit() {
                   </FormControl>
                   {r.kind === 'field' && field && (
                     <>
-                      <FormControl fullWidth size="small">
-                        <InputLabel id={`op-${i}`}>Rule</InputLabel>
-                        <Select labelId={`op-${i}`} label="Rule" value={r.op} onChange={(e) => changeReq(i, { op: e.target.value as RequirementOp })}>
-                          {OPS[field.type].map((o) => <MenuItem key={o.op} value={o.op}>{o.label}</MenuItem>)}
-                        </Select>
-                      </FormControl>
+                      {OPS[field.type].length > 1 && (
+                        <FormControl sx={{ minWidth: 104 }}>
+                          <InputLabel id={`op-${i}`}>Rule</InputLabel>
+                          <Select labelId={`op-${i}`} label="Rule" value={r.op} onChange={(e) => changeReq(i, { op: e.target.value as RequirementOp })}>
+                            {OPS[field.type].map((o) => <MenuItem key={o.op} value={o.op}>{o.label}</MenuItem>)}
+                          </Select>
+                        </FormControl>
+                      )}
                       {r.op !== 'isYes' &&
                         (field.type === 'one' || field.type === 'many' ? (
-                          <FormControl fullWidth size="small">
+                          <FormControl fullWidth>
                             <InputLabel id={`val-${i}`}>Value</InputLabel>
                             <Select labelId={`val-${i}`} label="Value" value={String(r.value ?? '')} onChange={(e) => changeReq(i, { value: e.target.value })}>
                               {field.options.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
                             </Select>
                           </FormControl>
                         ) : (
-                          <TextField size="small" label="Value" type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'} value={r.value ?? ''}
-                            onChange={(e) => changeReq(i, { value: field.type === 'number' ? Number(e.target.value) : e.target.value })} slotProps={{ inputLabel: { shrink: true } }} />
+                          <TextField label="Value" type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'} value={r.value ?? ''}
+                            onChange={(e) => changeReq(i, { value: field.type === 'number' ? Number(e.target.value) : e.target.value })} slotProps={shrink} />
                         ))}
                     </>
                   )}
-                  <IconButton aria-label="Remove requirement" onClick={() => set('requirements', form.requirements.filter((_, j) => j !== i))}><DeleteIcon /></IconButton>
+                  <IconButton aria-label="Remove requirement" size="small" onClick={() => set('requirements', form.requirements.filter((_, j) => j !== i))}><DeleteIcon fontSize="small" /></IconButton>
                 </Stack>
               );
             })}
             <Box>
-              <Button startIcon={<AddIcon />} disabled={fields.length === 0 && teams.length === 0} onClick={() => {
+              <Button size="small" startIcon={<AddIcon />} disabled={fields.length === 0 && teams.length === 0} onClick={() => {
                 const f = fields[0];
                 set('requirements', [...form.requirements, f ? { kind: 'field', fieldId: f.id, op: OPS[f.type][0].op, value: f.options[0] ?? '' } : { kind: 'team', teamId: teams[0].id }]);
-              }}>Add a requirement</Button>
+              }}>Add requirement</Button>
             </Box>
           </Stack>
         </Box>
 
-        {(teams.length > 0 || leadOnly) && (
-          <FormControl fullWidth>
-            <InputLabel id="team">Team that owns it</InputLabel>
-            <Select labelId="team" label="Team that owns it" value={form.teamId} onChange={(e) => set('teamId', e.target.value)}>
-              {!leadOnly && <MenuItem value="">No team</MenuItem>}
-              {teams.filter((t) => !leadOnly || me.leadTeamIds.includes(t.id)).map((t) => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
-            </Select>
-          </FormControl>
-        )}
-
         <Box>
-          <Typography variant="h3" component="h2" gutterBottom>How to ask people</Typography>
-          <ToggleButtonGroup orientation="vertical" exclusive fullWidth value={form.askMode} onChange={(_, v) => v && set('askMode', v)}>
-            <ToggleButton value="few" sx={{ justifyContent: 'flex-start', textAlign: 'left' }}>
-              <Box><strong>A few at a time.</strong> Ask the people who fit and have waited longest. If it isn't full in time, Today says to ask the next group.</Box>
-            </ToggleButton>
-            <ToggleButton value="everyone" sx={{ justifyContent: 'flex-start', textAlign: 'left' }}>
-              <Box><strong>Everyone who fits.</strong> Ask them all at once. The first to say yes get the spots.</Box>
-            </ToggleButton>
-            <ToggleButton value="hand" sx={{ justifyContent: 'flex-start', textAlign: 'left' }}>
-              <Box><strong>Pick by hand.</strong> Choose people from the list of who fits.</Box>
-            </ToggleButton>
-          </ToggleButtonGroup>
+          <Stack direction="row" spacing={1.5}>
+            <FormControl fullWidth>
+              <InputLabel id="ask-mode">How to ask</InputLabel>
+              <Select labelId="ask-mode" label="How to ask" value={form.askMode} onChange={(e) => set('askMode', e.target.value as Form['askMode'])}>
+                {Object.entries(ASK_MODES).map(([k, m]) => <MenuItem key={k} value={k}>{m.label}</MenuItem>)}
+              </Select>
+            </FormControl>
+            {(visibleTeams.length > 0 || leadOnly) && (
+              <FormControl fullWidth>
+                <InputLabel id="team">Team</InputLabel>
+                <Select labelId="team" label="Team" value={form.teamId} onChange={(e) => set('teamId', e.target.value)}>
+                  {!leadOnly && <MenuItem value="">No team</MenuItem>}
+                  {visibleTeams.map((t) => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
+                </Select>
+              </FormControl>
+            )}
+          </Stack>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>{ASK_MODES[form.askMode].hint}</Typography>
           {form.askMode === 'few' && (
-            <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-              <TextField label="People per group" type="number" value={form.askBatch} placeholder={String(form.peopleNeeded * 2)} onChange={(e) => set('askBatch', e.target.value)} helperText="Blank means twice the open spots" slotProps={{ inputLabel: { shrink: true } }} />
-              <TextField label="Hours before the next group" type="number" value={form.askWaitHours} onChange={(e) => set('askWaitHours', Number(e.target.value))} />
+            <Stack direction="row" spacing={1.5} sx={{ mt: 1.5 }}>
+              <TextField label="Group size" type="number" value={form.askBatch} placeholder={String(form.peopleNeeded * 2)} onChange={(e) => set('askBatch', e.target.value)} slotProps={shrink} />
+              <TextField label="Hours between groups" type="number" value={form.askWaitHours} onChange={(e) => set('askWaitHours', Number(e.target.value))} />
             </Stack>
           )}
         </Box>
 
         <Box>
-          <FormControlLabel
-            control={<Switch checked={form.publish} onChange={(e) => set('publish', e.target.checked)} />}
-            label="Post publicly on AT Protocol"
-          />
-          <Typography color="text.secondary">
+          <FormControlLabel control={<Switch size="small" checked={form.publish} onChange={(e) => set('publish', e.target.checked)} />} label="Post on AT Protocol" />
+          <Typography variant="body2" color="text.secondary">
             {org.atproto
-              ? `Posts the task, not the people, to ${org.atproto.handle}. Anyone can see and follow it.`
-              : atprotoReady
-                ? 'Connect an AT Protocol account in Settings to post tasks. Until then, this stays private.'
-                : 'Posting is not set up on this server yet. The task stays private.'}
+              ? `Posts the task, never the people, to ${org.atproto.handle}.`
+              : atprotoReady ? 'Connect an account in Settings first.' : 'Not set up on this server.'}
           </Typography>
         </Box>
 
-        <Stack direction="row" spacing={1.5} sx={{ justifyContent: 'flex-end', pt: 1 }}>
+        <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end' }}>
           <Button onClick={() => navigate(-1)}>Cancel</Button>
-          {status === 'draft' && <Button variant="outlined" disabled={busy} onClick={() => save(false)}>Save as draft</Button>}
-          <Button variant="contained" disabled={busy} onClick={() => save(true)}>{status === 'draft' ? 'Save and open' : 'Save changes'}</Button>
+          {status === 'draft' && <Button variant="outlined" disabled={busy} onClick={() => save(false)}>Save draft</Button>}
+          <Button variant="contained" disabled={busy} onClick={() => save(true)}>{status === 'draft' ? 'Save and open' : 'Save'}</Button>
         </Stack>
       </Stack>
     </Page>

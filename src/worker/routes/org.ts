@@ -85,7 +85,7 @@ orgRoutes.patch('/', async (c) => {
   let limit = org.weekly_ask_limit;
   if (body.weeklyAskLimit !== undefined) {
     limit = Number(body.weeklyAskLimit);
-    if (!Number.isInteger(limit) || limit < 1 || limit > 14) fail(400, 'The weekly ask limit must be between 1 and 14.');
+    if (!Number.isInteger(limit) || limit < 1 || limit > 14) fail(400, 'Asks per week must be 1 to 14.');
   }
   let signup = org.signup_url;
   if (body.signupUrl !== undefined) {

@@ -39,17 +39,17 @@ async function readTaskInput(db: D1Database, orgId: string, body: Record<string,
   const startsAt = toMs(pick('startsAt', body.startsAt));
   const endsAt = toMs(pick('endsAt', body.endsAt));
   const dueAt = toMs(pick('dueAt', body.dueAt));
-  if (timing === 'at_time' && (startsAt === null || endsAt === null || endsAt <= startsAt)) fail(400, 'Set a start and an end time, with the end after the start.');
-  if (timing === 'by_date' && dueAt === null) fail(400, 'Set the date it is due by.');
+  if (timing === 'at_time' && (startsAt === null || endsAt === null || endsAt <= startsAt)) fail(400, 'Set a start and an end after it.');
+  if (timing === 'by_date' && dueAt === null) fail(400, 'Set a due date.');
   const peopleNeeded = Number(pick('peopleNeeded', body.peopleNeeded));
-  if (!Number.isInteger(peopleNeeded) || peopleNeeded < 1 || peopleNeeded > 500) fail(400, 'Say how many people are needed, from 1 to 500.');
+  if (!Number.isInteger(peopleNeeded) || peopleNeeded < 1 || peopleNeeded > 500) fail(400, 'People must be 1 to 500.');
   const askMode = (pick('askMode', body.askMode) ?? 'few') as AskMode;
   if (!['few', 'everyone', 'hand'].includes(askMode)) fail(400, 'Choose how to ask people.');
   const rawBatch = pick('askBatch', body.askBatch);
   const askBatch = rawBatch === null || rawBatch === undefined || rawBatch === '' ? null : Number(rawBatch);
-  if (askBatch !== null && (!Number.isInteger(askBatch) || askBatch < 1 || askBatch > 200)) fail(400, 'Ask between 1 and 200 people at a time.');
+  if (askBatch !== null && (!Number.isInteger(askBatch) || askBatch < 1 || askBatch > 200)) fail(400, 'Group size must be 1 to 200.');
   const askWaitHours = Number(pick('askWaitHours', body.askWaitHours) ?? 24);
-  if (!Number.isInteger(askWaitHours) || askWaitHours < 1 || askWaitHours > 336) fail(400, 'Wait between 1 hour and 14 days before asking the next group.');
+  if (!Number.isInteger(askWaitHours) || askWaitHours < 1 || askWaitHours > 336) fail(400, 'Hours between groups must be 1 to 336.');
   const teamId = (pick('teamId', body.teamId) as string | null) || null;
   if (teamId && !teamIds.has(teamId)) fail(400, 'That team does not exist.');
 
@@ -192,12 +192,12 @@ taskRoutes.patch('/tasks/:taskId', async (c) => {
   const actor = c.get('actor');
   const task = await taskFor(c, c.req.param('taskId'));
   mustManageTask(actor, task.teamId);
-  if (task.status === 'done' || task.status === 'canceled') fail(409, 'This task is finished and can no longer change.');
+  if (task.status === 'done' || task.status === 'canceled') fail(409, "This task is finished and can't change.");
   const body = await c.req.json().catch(() => ({}));
   const input = await readTaskInput(c.env.DB, actor.orgId, body, task);
   mustManageTask(actor, input.teamId);
   const holding = await holdingCount(c.env.DB, task.id);
-  if (input.peopleNeeded < holding) fail(409, `${holding} people already said yes. Ask someone to drop out before lowering the number.`);
+  if (input.peopleNeeded < holding) fail(409, `${holding} people already said yes. Ask someone to drop out first.`);
   const now = c.get('now');
   const status = task.status === 'filled' && input.peopleNeeded > holding ? 'open' : task.status === 'open' && input.peopleNeeded <= holding ? 'filled' : task.status;
   await c.env.DB.prepare(
@@ -241,7 +241,7 @@ taskRoutes.delete('/tasks/:taskId', async (c) => {
   const actor = c.get('actor');
   const task = await taskFor(c, c.req.param('taskId'));
   mustManageTask(actor, task.teamId);
-  if (task.status !== 'draft') fail(409, 'Only a draft can be deleted. Cancel the task instead.');
+  if (task.status !== 'draft') fail(409, 'Only drafts can be deleted. Cancel it instead.');
   await c.env.DB.prepare('DELETE FROM tasks WHERE id = ? AND org_id = ?').bind(task.id, actor.orgId).run();
   return c.json({ ok: true });
 });

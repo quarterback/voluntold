@@ -36,8 +36,8 @@ export function Loading({ error }: { error?: string | null }) {
 
 export function Page({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
   return (
-    <Box sx={{ maxWidth: 760, mx: 'auto', px: 2, pt: 2, pb: 12 }}>
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+    <Box sx={{ maxWidth: 640, mx: 'auto', px: 2, pt: 1.5, pb: 11 }}>
+      <Stack direction="row" spacing={2} sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
         <Typography variant="h1" component="h1">{title}</Typography>
         {action}
       </Stack>

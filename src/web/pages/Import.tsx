@@ -111,7 +111,7 @@ export function Import() {
   const showRows = table?.rows.slice(0, 10) ?? [];
 
   return (
-    <Page title="Import volunteers">
+    <Page title="Import">
       <Stack spacing={2}>
         {error && <Alert severity="error">{error}</Alert>}
 
@@ -119,13 +119,13 @@ export function Import() {
           <Card>
             <CardContent>
               <Typography sx={{ mb: 2 }}>
-                Choose a file: CSV, Excel (.xlsx), XML, JSON, text, Word (.docx) or PDF. Nothing is saved until you confirm.
+                CSV, Excel (.xlsx), XML, JSON, text, Word (.docx) or PDF. Nothing saves until you confirm.
               </Typography>
               <Button component="label" variant="contained" startIcon={<UploadIcon />} disabled={busy}>
-                {file ? 'Choose a different file' : 'Choose a file'}
+                {file ? 'Choose another file' : 'Choose file'}
                 <input hidden type="file" accept=".csv,.tsv,.xlsx,.xml,.json,.txt,.md,.docx,.pdf" onChange={(e) => e.target.files?.[0] && choose(e.target.files[0])} />
               </Button>
-              {file && <Typography color="text.secondary" sx={{ mt: 1 }}>{file.name}{busy && !table ? ': reading…' : ''}</Typography>}
+              {file && <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{file.name}{busy && !table ? ', reading…' : ''}</Typography>}
             </CardContent>
           </Card>
         )}
@@ -133,14 +133,14 @@ export function Import() {
         {table && !result && (
           <Card>
             <CardContent>
-              <Typography variant="h2" component="h2" gutterBottom>Match the columns</Typography>
+              <Typography variant="h2" component="h2" gutterBottom>Match columns</Typography>
               {table.via === 'model' && (
-                <Alert severity="info" sx={{ mb: 2 }}>A model read this file. Check every row below before you import.{table.notes ? ` Notes: ${table.notes}` : ''}</Alert>
+                <Alert severity="info" sx={{ mb: 2 }}>A model read this file. Check every row.{table.notes ? ` Notes: ${table.notes}` : ''}</Alert>
               )}
-              <Stack spacing={1.5} sx={{ mb: 2 }}>
+              <Stack spacing={1} sx={{ mb: 1.5 }}>
                 {table.columns.map((col) => (
-                  <Stack key={col} direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'center' } }}>
-                    <Typography sx={{ minWidth: 180 }}><strong>{col}</strong></Typography>
+                  <Stack key={col} direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                    <Typography variant="body2" sx={{ width: '40%', flexShrink: 0, overflowWrap: 'anywhere' }}><strong>{col}</strong></Typography>
                     <FormControl size="small" fullWidth>
                       <InputLabel id={`map-${col}`}>Goes to</InputLabel>
                       <Select labelId={`map-${col}`} label="Goes to" value={map[col]} onChange={(e) => { setMap({ ...map, [col]: e.target.value }); setPreview(null); }}>
@@ -149,7 +149,7 @@ export function Import() {
                         <MenuItem value="phone">Phone</MenuItem>
                         {fields.map((f) => <MenuItem key={f.id} value={`field:${f.id}`}>{f.label}</MenuItem>)}
                         <MenuItem value={`new:${col}`}>New detail: {col}</MenuItem>
-                        <MenuItem value="ignore">Leave out</MenuItem>
+                        <MenuItem value="ignore">Skip</MenuItem>
                       </Select>
                     </FormControl>
                   </Stack>
@@ -164,8 +164,8 @@ export function Import() {
                   </TableBody>
                 </Table>
               </TableContainer>
-              {!hasName && <Alert severity="warning" sx={{ mb: 2 }}>Choose which column holds the name.</Alert>}
-              {!preview && <Button variant="contained" disabled={busy || !hasName} onClick={check}>Check for duplicates</Button>}
+              {!hasName && <Alert severity="warning" sx={{ mb: 2 }}>Pick the name column.</Alert>}
+              {!preview && <Button variant="contained" disabled={busy || !hasName} onClick={check}>Check duplicates</Button>}
             </CardContent>
           </Card>
         )}
@@ -173,10 +173,10 @@ export function Import() {
         {preview && !result && (
           <Card>
             <CardContent>
-              <Typography variant="h2" component="h2" gutterBottom>Check and import</Typography>
-              {dupes.length === 0 ? <Typography sx={{ mb: 2 }}>No likely duplicates.</Typography> : (
+              <Typography variant="h2" component="h2" gutterBottom>Review</Typography>
+              {dupes.length === 0 ? <Typography variant="body2" sx={{ mb: 1.5 }}>No duplicates found.</Typography> : (
                 <Stack spacing={2} sx={{ mb: 2 }}>
-                  <Typography>These look like the same person, by email or phone:</Typography>
+                  <Typography variant="body2">Same email or phone:</Typography>
                   {dupes.map((d) => {
                     const row = table!.rows[d.index];
                     const other = d.duplicateOf ? `${d.duplicateOf.name} (already saved)` : `${joined(table!.rows[d.duplicateOfRow!], 'name')} (row ${d.duplicateOfRow! + 2} of this file)`;
@@ -184,8 +184,8 @@ export function Import() {
                       <Box key={d.index}>
                         <Typography><strong>{joined(row, 'name')}</strong> and <strong>{other}</strong></Typography>
                         <RadioGroup row value={choices[d.index]} onChange={(e) => setChoices({ ...choices, [d.index]: e.target.value as 'merge' | 'add' })}>
-                          <FormControlLabel value="merge" control={<Radio />} label="Merge them" />
-                          <FormControlLabel value="add" control={<Radio />} label="Keep apart" />
+                          <FormControlLabel value="merge" control={<Radio />} label="Merge" />
+                          <FormControlLabel value="add" control={<Radio />} label="Keep both" />
                         </RadioGroup>
                       </Box>
                     );
@@ -194,12 +194,12 @@ export function Import() {
               )}
               {problems.length > 0 && (
                 <Alert severity="info" sx={{ mb: 2 }}>
-                  {problems.length} {problems.length === 1 ? 'row is' : 'rows are'} set aside, because nobody can be sent a link without an email or phone: {problems.slice(0, 5).map((p) => joined(table!.rows[p.index], 'name') || `row ${p.index + 2}`).join(', ')}{problems.length > 5 ? ', …' : ''}
+                  {problems.length} set aside, no email or phone: {problems.slice(0, 5).map((p) => joined(table!.rows[p.index], 'name') || `row ${p.index + 2}`).join(', ')}{problems.length > 5 ? ', …' : ''}
                 </Alert>
               )}
-              <FormControlLabel control={<Checkbox checked={consent} onChange={(e) => setConsent(e.target.checked)} />} label="These people agreed to be contacted by us" />
+              <FormControlLabel control={<Checkbox checked={consent} onChange={(e) => setConsent(e.target.checked)} />} label="They agreed to be contacted" />
               <Box sx={{ mt: 2 }}>
-                <Button variant="contained" disabled={busy || !consent} onClick={commit}>Import {table!.rows.length - problems.length} people</Button>
+                <Button variant="contained" disabled={busy || !consent} onClick={commit}>Import {table!.rows.length - problems.length}</Button>
               </Box>
             </CardContent>
           </Card>
@@ -208,17 +208,17 @@ export function Import() {
         {result && (
           <Alert severity="success" action={
             <Stack direction="row" spacing={1}>
-              <Button color="inherit" onClick={() => { setFile(null); setTable(null); setPreview(null); setResult(null); setConsent(false); }}>Import another file</Button>
+              <Button color="inherit" onClick={() => { setFile(null); setTable(null); setPreview(null); setResult(null); setConsent(false); }}>Import another</Button>
               <Button color="inherit" onClick={() => navigate('../people', { relative: 'path' })}>See people</Button>
             </Stack>
           }>
-            Added {result.added}, merged {result.merged}{result.setAside.length ? `, set aside ${result.setAside.length}` : ''}.
+            Added {result.added} · merged {result.merged}{result.setAside.length ? ` · set aside ${result.setAside.length}` : ''}
           </Alert>
         )}
 
         {recent.data?.imports?.length > 0 && (
           <Box>
-            <Typography variant="h2" component="h2" sx={{ mb: 1 }}>Earlier imports</Typography>
+            <Typography variant="h2" component="h2" sx={{ mb: 1 }}>Past imports</Typography>
             <Stack spacing={1}>
               {recent.data.imports.map((imp: any) => (
                 <Card key={imp.id}>
@@ -227,7 +227,7 @@ export function Import() {
                     {imp.set_aside.length > 0 && (
                       <>
                         <Typography color="text.secondary" variant="body2">Set aside: {imp.set_aside.map((s: any) => `${Object.values(s.cells).filter(Boolean).slice(0, 2).join(' ') || `row ${s.row + 2}`} (${s.reason.toLowerCase()})`).join('; ')}</Typography>
-                        <Button size="small" onClick={() => api(path(`/imports/${imp.id}/clear`), { body: {} }).then(recent.reload)}>Done with these</Button>
+                        <Button size="small" onClick={() => api(path(`/imports/${imp.id}/clear`), { body: {} }).then(recent.reload)}>Clear</Button>
                       </>
                     )}
                   </CardContent>

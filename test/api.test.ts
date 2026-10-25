@@ -262,7 +262,7 @@ describe('time passing', () => {
     }
     const person = (await org.client.get(org.api(`/volunteers/${sam}`))).body.volunteer;
     expect(person.status).toBe('paused');
-    expect(person.standing).toBe('No answer to the last 3 asks, so asks stopped');
+    expect(person.standing).toBe('Paused: no answer to 3 asks');
 
     const phone = await openLink(links[0].link, org.client.now);
     expect((await phone.post(`/api/v/asks/${links[0].askId}/answer`, { answer: 'no' })).body.result).toBe('no');

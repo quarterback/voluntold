@@ -83,22 +83,24 @@ export function Person() {
 
   return (
     <Page title={v.name}>
-      <Stack spacing={2}>
-        <Typography color="text.secondary">{v.standing}</Typography>
+      <Stack spacing={1.5}>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: -1 }}>{v.standing}</Typography>
         {problem && <Alert severity="error">{problem}</Alert>}
         {saved && <Alert severity="success" onClose={() => setSaved(false)}>Saved.</Alert>}
 
         <Card>
           <CardContent>
-            <Stack spacing={2}>
+            <Stack spacing={1.5}>
               <TextField label="Name" value={form.name} disabled={!canEdit} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-              <TextField label="Email" value={form.email} disabled={!canEdit} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-              <TextField label="Phone" value={form.phone} disabled={!canEdit} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              <Stack direction="row" spacing={1.5}>
+                <TextField label="Email" value={form.email} disabled={!canEdit} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                <TextField label="Phone" value={form.phone} disabled={!canEdit} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              </Stack>
               {fields.map((f) => (
                 <FieldInput key={f.id} field={f} value={form.values[f.id]} onChange={(val) => setForm({ ...form, values: { ...form.values, [f.id]: val } })} />
               ))}
               {v.contactOkAt === null && canEdit && (
-                <Button variant="outlined" onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { contactOk: true } }))}>They agreed to be contacted</Button>
+                <Button variant="outlined" onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { contactOk: true } }))}>Mark as agreed to be contacted</Button>
               )}
               {canEdit && (
                 <Box>
@@ -111,7 +113,7 @@ export function Person() {
 
         {myTeams.length > 0 && (
           <Box>
-            <Typography variant="h2" component="h2" sx={{ mb: 1 }}>Teams</Typography>
+            <Typography variant="h2" component="h2">Teams</Typography>
             <FormGroup>
               {myTeams.map((t) => (
                 <FormControlLabel key={t.id} label={t.name} control={
@@ -130,27 +132,27 @@ export function Person() {
 
         {canEdit && (
           <Box>
-            <Typography variant="h2" component="h2" sx={{ mb: 1 }}>Asking</Typography>
+            <Typography variant="h2" component="h2" sx={{ mb: 1 }}>Asks</Typography>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'center' } }}>
-              {v.status !== 'active' && <Button variant="outlined" onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { status: 'active' } }))}>Ask them again</Button>}
+              {v.status !== 'active' && <Button variant="outlined" onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { status: 'active' } }))}>Resume asks</Button>}
               {v.status === 'active' && (
                 <>
                   <TextField size="small" type="date" label="Pause until" value={pauseUntil} onChange={(e) => setPauseUntil(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} sx={{ maxWidth: 200 }} />
                   <Button disabled={!pauseUntil} onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { status: 'paused', pausedUntil: `${pauseUntil}T00:00` } }))}>Pause</Button>
                 </>
               )}
-              {v.status !== 'stopped' && <Button color="error" onClick={() => confirm(`Stop asking ${v.name}?`) && run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { status: 'stopped' } }))}>Stop asking</Button>}
+              {v.status !== 'stopped' && <Button color="error" onClick={() => confirm(`Stop asking ${v.name}?`) && run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { status: 'stopped' } }))}>Stop asks</Button>}
             </Stack>
           </Box>
         )}
 
         <Box>
-          <Typography variant="h2" component="h2" sx={{ mb: 1 }}>History</Typography>
+          <Typography variant="h2" component="h2">History</Typography>
           {data.asks.length === 0 ? <Typography color="text.secondary">Never asked.</Typography> : (
             <List dense disablePadding>
               {data.asks.map((a: any) => (
                 <ListItem key={a.id} disableGutters>
-                  <ListItemText primary={a.title} secondary={`Asked ${ago(a.created_at, Date.now())}: ${({ waiting: 'no answer yet', yes: 'said yes', no: 'said no', expired: "didn't answer", closed: 'filled before they answered' } as Record<string, string>)[a.status]}`} />
+                  <ListItemText primary={a.title} secondary={`Asked ${ago(a.created_at, Date.now())}: ${({ waiting: 'no answer yet', yes: 'said yes', no: 'said no', expired: "didn't answer", closed: 'filled first' } as Record<string, string>)[a.status]}`} />
                 </ListItem>
               ))}
             </List>
@@ -164,7 +166,7 @@ export function Person() {
 
         {me.role === 'admin' && (
           <Box>
-            <Button color="error" onClick={() => confirm(`Delete ${v.name} and their history? This can't be undone.`) && run(() => api(path(`/volunteers/${v.id}`), { method: 'DELETE' }), () => navigate('..', { relative: 'path' }))}>Delete this person</Button>
+            <Button color="error" onClick={() => confirm(`Delete ${v.name} and their history? This can't be undone.`) && run(() => api(path(`/volunteers/${v.id}`), { method: 'DELETE' }), () => navigate('..', { relative: 'path' }))}>Delete person</Button>
           </Box>
         )}
       </Stack>

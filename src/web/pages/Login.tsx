@@ -43,22 +43,22 @@ export function Login() {
   return (
     <Box sx={{ maxWidth: 420, mx: 'auto', px: 2, py: 6 }}>
       <Typography variant="h1" component="h1" gutterBottom>Sign in</Typography>
-      <Typography color="text.secondary" sx={{ mb: 3 }}>
-        For people who run volunteers. Volunteers don't need to sign in: they answer from the link you send them.
+      <Typography color="text.secondary" sx={{ mb: 2 }}>
+        Volunteers don't sign in. They answer from their link.
       </Typography>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {!sent ? (
         <form onSubmit={start}>
           <Stack spacing={2}>
             <TextField label="Email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-            <Button type="submit" variant="contained" disabled={busy}>Send me a code</Button>
+            <Button type="submit" variant="contained" disabled={busy}>Send code</Button>
           </Stack>
         </form>
       ) : (
         <form onSubmit={verify}>
           <Stack spacing={2}>
-            <Typography>We sent a 6 digit code to {email}.</Typography>
-            {devCode && <Alert severity="info">Test mode: your code is <strong>{devCode}</strong></Alert>}
+            <Typography>Code sent to {email}.</Typography>
+            {devCode && <Alert severity="info">Test mode code: <strong>{devCode}</strong></Alert>}
             <TextField
               label="Code"
               inputMode="numeric"
@@ -68,7 +68,7 @@ export function Login() {
               onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
             />
             <Button type="submit" variant="contained" disabled={busy || code.length !== 6}>Sign in</Button>
-            <Button onClick={() => { setSent(false); setCode(''); }}>Use a different email</Button>
+            <Button onClick={() => { setSent(false); setCode(''); }}>Use another email</Button>
           </Stack>
         </form>
       )}

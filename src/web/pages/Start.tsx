@@ -58,14 +58,14 @@ export function Start() {
             </CardActionArea>
           </Card>
         ))}
-        {data.orgs.length === 0 && <Typography color="text.secondary">You're not part of an organization yet. Start one, or ask an admin to add {data.email}.</Typography>}
+        {data.orgs.length === 0 && <Typography color="text.secondary">None yet. Start one, or ask an admin to add {data.email}.</Typography>}
       </Stack>
       <form onSubmit={create}>
         <Stack spacing={2}>
-          <Typography variant="h2" component="h2">Start an organization</Typography>
+          <Typography variant="h2" component="h2">New organization</Typography>
           <TextField label="Organization name" required value={name} onChange={(e) => setName(e.target.value)} />
-          <Button type="submit" variant="contained" disabled={busy || !name.trim()}>Create organization</Button>
-          <Button onClick={sample} disabled={busy}>Try it with sample data</Button>
+          <Button type="submit" variant="contained" disabled={busy || !name.trim()}>Create</Button>
+          <Button onClick={sample} disabled={busy}>Try sample data</Button>
         </Stack>
       </form>
     </Box>

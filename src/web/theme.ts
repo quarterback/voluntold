@@ -60,20 +60,28 @@ export function makeTheme(dark: boolean): Theme {
     shape: { borderRadius: 12 },
     typography: {
       fontFamily: 'Roboto, system-ui, sans-serif',
-      h1: { fontSize: '1.75rem', fontWeight: 400 },
-      h2: { fontSize: '1.375rem', fontWeight: 400 },
+      h1: { fontSize: '1.5rem', fontWeight: 400 },
+      h2: { fontSize: '1.125rem', fontWeight: 500 },
       h3: { fontSize: '1rem', fontWeight: 500 },
+      body2: { fontSize: '0.875rem' },
       button: { textTransform: 'none', fontWeight: 500, letterSpacing: '0.01em' },
     },
     components: {
-      MuiButton: { defaultProps: { disableElevation: true }, styleOverrides: { root: { borderRadius: 20, minHeight: 40, paddingInline: 24 } } },
+      MuiButton: { defaultProps: { disableElevation: true }, styleOverrides: { root: { borderRadius: 20, minHeight: 36, paddingInline: 16 } } },
       MuiCard: { defaultProps: { elevation: 0 }, styleOverrides: { root: { backgroundColor: r.surfaceContainerLow, borderRadius: 12 } } },
+      MuiCardContent: { styleOverrides: { root: { padding: 16, '&:last-child': { paddingBottom: 16 } } } },
       MuiPaper: { styleOverrides: { root: { backgroundImage: 'none' } } },
       MuiChip: { styleOverrides: { root: { borderRadius: 8 } } },
       MuiAppBar: { defaultProps: { elevation: 0, color: 'inherit' }, styleOverrides: { root: { backgroundColor: r.surface } } },
-      MuiBottomNavigation: { styleOverrides: { root: { backgroundColor: r.surfaceContainer, height: 72 } } },
+      MuiToolbar: { styleOverrides: { root: { minHeight: 56 } } },
+      MuiBottomNavigation: { styleOverrides: { root: { backgroundColor: r.surfaceContainer, height: 64 } } },
       MuiDialog: { styleOverrides: { paper: { backgroundColor: r.surfaceContainerHigh, borderRadius: 28 } } },
-      MuiTextField: { defaultProps: { fullWidth: true } },
+      MuiAlert: { styleOverrides: { root: { paddingBlock: 2 } } },
+      // Compact fields: the content of most forms here is a few words.
+      MuiTextField: { defaultProps: { fullWidth: true, size: 'small' } },
+      MuiFormControl: { defaultProps: { size: 'small' } },
+      MuiSelect: { defaultProps: { size: 'small' } },
+      MuiList: { defaultProps: { dense: true } },
     },
   });
 }

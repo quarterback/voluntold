@@ -28,9 +28,9 @@ export function modelConfigured(env: Env): boolean {
 
 export async function extractRows(env: Env, fileName: string, text: string): Promise<ExtractedRows> {
   if (!modelConfigured(env)) {
-    fail(503, 'Reading this kind of file needs a model, and none is set up. Save the list as CSV or Excel and import that.');
+    fail(503, 'This file type needs a model, and none is set up. Import a CSV or Excel file instead.');
   }
-  if (text.length > MAX_TEXT) fail(400, 'That file is too long to read in one go. Split it into smaller files.');
+  if (text.length > MAX_TEXT) fail(400, 'File too long. Split it into smaller files.');
 
   const client = new Anthropic({ apiKey: env.MODEL_API_KEY });
   const response = await client.messages.parse({
@@ -45,7 +45,7 @@ export async function extractRows(env: Env, fileName: string, text: string): Pro
     messages: [{ role: 'user', content: `File name: ${fileName}\n\n<document>\n${text}\n</document>` }],
   });
   if (response.stop_reason === 'refusal' || !response.parsed_output) {
-    fail(503, 'The file could not be read. Save the list as CSV or Excel and import that.');
+    fail(503, "Couldn't read the file. Import a CSV or Excel file instead.");
   }
   const out = response.parsed_output;
   return { columns: out.columns, rows: out.rows.map((r) => out.columns.map((_, i) => r[i] ?? '')), notes: out.notes };

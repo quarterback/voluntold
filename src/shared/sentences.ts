@@ -29,10 +29,10 @@ export function standing(
   now: number,
 ): string {
   if (v.status === 'stopped') return 'Asked not to be contacted';
-  if (v.status === 'paused' && v.pausedReason === 'no_answer') return 'No answer to the last 3 asks, so asks stopped';
-  if (v.status === 'paused' && v.pausedUntil && v.pausedUntil > now) return `Taking a break until ${shortDate(v.pausedUntil)}`;
-  if (!v.email && !v.phone) return 'No email or phone, so no way to send a link';
-  if (v.contactOkAt === null) return "Can't be asked until they agree to be contacted";
+  if (v.status === 'paused' && v.pausedReason === 'no_answer') return 'Paused: no answer to 3 asks';
+  if (v.status === 'paused' && v.pausedUntil && v.pausedUntil > now) return `On a break until ${shortDate(v.pausedUntil)}`;
+  if (!v.email && !v.phone) return 'No email or phone';
+  if (v.contactOkAt === null) return "Hasn't agreed to be contacted";
   if (v.lastAskedAt === null) return 'Never asked';
   const when = `Asked ${ago(v.lastAskedAt, now)}`;
   switch (lastAnswer) {
@@ -45,7 +45,7 @@ export function standing(
     case 'expired':
       return `${when}, didn't answer`;
     case 'closed':
-      return `${when}, filled before they answered`;
+      return `${when}, filled first`;
     default:
       return when;
   }

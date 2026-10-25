@@ -47,6 +47,7 @@ export function People() {
   }, [path]);
   const [filter, setFilter] = useState<Filter>({ status: (params.get('filter') as Filter['status']) ?? '' });
   const [adding, setAdding] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   const shown = useMemo(
     () => (data ? data.volunteers.filter((v) => matches(v, filter, fields)).sort(byLongestWait) : []),
@@ -57,7 +58,7 @@ export function People() {
   const canEdit = me.role !== 'lead';
 
   async function saveList() {
-    const name = prompt('Name this list, for example: Spanish speakers who can lead');
+    const name = prompt('Name this list');
     if (!name) return;
     await api(path('/lists'), { body: { name, filter } });
     reload();
@@ -65,17 +66,17 @@ export function People() {
 
   return (
     <Page title="People" action={canEdit && <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAdding(true)}>Add</Button>}>
-      <Stack spacing={1.5} sx={{ mb: 2 }}>
-        <TextField size="small" label="Search by name, email or phone" value={filter.q ?? ''} onChange={(e) => setFilter({ ...filter, q: e.target.value })} />
+      <Stack spacing={1} sx={{ mb: 1.5 }}>
+        <TextField label="Search" value={filter.q ?? ''} onChange={(e) => setFilter({ ...filter, q: e.target.value })} />
         <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
-          {[['', 'Everyone'], ['never', 'Never asked'], ['paused', 'Paused'], ['stopped', 'Stopped']].map(([k, label]) => (
-            <Chip key={k} label={label} color={filter.status === k ? 'primary' : 'default'} variant={filter.status === k ? 'filled' : 'outlined'} onClick={() => setFilter({ ...filter, status: k as Filter['status'] })} />
+          {[['', 'All'], ['never', 'Never asked'], ['paused', 'Paused'], ['stopped', 'Stopped']].map(([k, label]) => (
+            <Chip key={k} size="small" label={label} color={filter.status === k ? 'primary' : 'default'} variant={filter.status === k ? 'filled' : 'outlined'} onClick={() => setFilter({ ...filter, status: k as Filter['status'] })} />
           ))}
           {data.lists.map((l) => (
-            <Chip key={l.id} label={l.name} variant="outlined" onClick={() => setFilter(l.filter)} onDelete={() => api(path(`/lists/${l.id}`), { method: 'DELETE' }).then(reload)} />
+            <Chip key={l.id} size="small" label={l.name} variant="outlined" onClick={() => setFilter(l.filter)} onDelete={() => api(path(`/lists/${l.id}`), { method: 'DELETE' }).then(reload)} />
           ))}
         </Stack>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+        {(showFilters || filter.teamId || filter.fieldId) && <Stack direction="row" spacing={1}>
           {teams.length > 0 && (
             <FormControl size="small" fullWidth>
               <InputLabel id="team-filter">Team</InputLabel>
@@ -104,15 +105,18 @@ export function People() {
           ) : (
             <TextField size="small" label="Is" value={filter.value ?? ''} onChange={(e) => setFilter({ ...filter, value: e.target.value })} />
           ))}
-        </Stack>
+        </Stack>}
         <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography color="text.secondary">{shown.length} of {data.volunteers.length}, longest since asked first</Typography>
-          <Button size="small" onClick={saveList}>Save as a list</Button>
+          <Typography variant="body2" color="text.secondary">{shown.length} of {data.volunteers.length} · longest wait first</Typography>
+          <Box>
+            <Button size="small" onClick={() => setShowFilters(!showFilters)}>Filters</Button>
+            <Button size="small" onClick={saveList}>Save list</Button>
+          </Box>
         </Stack>
       </Stack>
 
       {data.volunteers.length === 0 ? (
-        <Empty>No volunteers yet. Import your list from Settings, or add people one at a time.</Empty>
+        <Empty>No people yet. Import a list in Settings.</Empty>
       ) : (
         <Card>
           <List disablePadding>
@@ -146,19 +150,19 @@ function AddPerson({ onClose }: { onClose: (id?: string) => void }) {
   }
   return (
     <Dialog open fullWidth maxWidth="xs" onClose={() => onClose()}>
-      <DialogTitle>Add a person</DialogTitle>
+      <DialogTitle>Add person</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
           {error && <Typography color="error">{error}</Typography>}
           <TextField label="Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <TextField label="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
           <TextField label="Phone" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-          <FormControlLabel control={<Checkbox checked={form.contactOk} onChange={(e) => setForm({ ...form, contactOk: e.target.checked })} />} label="They agreed to be contacted by us" />
+          <FormControlLabel control={<Checkbox checked={form.contactOk} onChange={(e) => setForm({ ...form, contactOk: e.target.checked })} />} label="Agreed to be contacted" />
         </Stack>
       </DialogContent>
       <DialogActions>
         <Button onClick={() => onClose()}>Cancel</Button>
-        <Button variant="contained" onClick={save} disabled={!form.name.trim()}>Add person</Button>
+        <Button variant="contained" onClick={save} disabled={!form.name.trim()}>Add</Button>
       </DialogActions>
     </Dialog>
   );
