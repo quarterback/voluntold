@@ -52,9 +52,6 @@ export function CopyList({ asks, onClose }: { asks: NewAsk[]; onClose: () => voi
     <Dialog open fullWidth maxWidth="sm" onClose={onClose}>
       <DialogTitle>Send {asks.length === 1 ? 'this link' : `${asks.length} links`}</DialogTitle>
       <DialogContent>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Paste each message wherever you reach that person. Links show only once.
-        </Typography>
         <Stack spacing={1.5}>
           {asks.map((a) => (
             <Box key={a.askId} sx={{ border: (t) => `1px solid ${t.vt.border}`, borderRadius: 2, p: 1.5 }}>
@@ -92,7 +89,7 @@ function Detail({ label, children }: { label: string; children: React.ReactNode 
 
 export function TaskDetail() {
   const { taskId } = useParams();
-  const { path, org } = useOrg();
+  const { path } = useOrg();
   const navigate = useNavigate();
   const dialogs = useDialogs();
   const { data, error, reload } = useLoad(() => api(path(`/tasks/${taskId}`)), [taskId]);
@@ -125,7 +122,7 @@ export function TaskDetail() {
       const res = await api(path(`/tasks/${taskId}/ask`), { body: { volunteerIds: [...picking!] } });
       setPicking(null);
       setSent(res.asks);
-      if (res.skipped.length) setProblem(`${res.skipped.length} skipped because they no longer fit`);
+      if (res.skipped.length) setProblem(`${res.skipped.length} skipped`);
       await reload();
     } catch (e) {
       setProblem(errorText(e));
@@ -137,7 +134,6 @@ export function TaskDetail() {
   async function cancelTask() {
     const ok = await dialogs.confirm({
       title: 'Cancel this task?',
-      body: "People who said yes will see it's canceled.",
       confirm: 'Cancel task',
       cancel: 'Keep task',
       destructive: true,
@@ -197,13 +193,10 @@ export function TaskDetail() {
               </CardContent>
             </Card>
 
-            {task.publish && (
-              <Alert severity={data.atproto.error ? 'error' : 'info'}>
-                {data.atproto.error
-                  ? `This task isn't posted on AT Protocol. We'll try again when it changes. ${data.atproto.error}`
-                  : data.atproto.uri
-                    ? <span title={data.atproto.uri}>Posted on AT Protocol</span>
-                    : org.atproto ? 'Posts when you open it' : 'Connect an account in Settings to post it'}
+            {data.atproto.error && <Alert severity="error">Not posted: {data.atproto.error}</Alert>}
+            {!data.atproto.error && data.atproto.uri && (
+              <Alert severity="info">
+                <span title={data.atproto.uri}>Posted on AT Protocol</span>
                 {data.publicUrl && <> · <Link href={data.publicUrl} target="_blank" rel="noopener">View public page</Link></>}
               </Alert>
             )}
@@ -260,7 +253,6 @@ export function TaskDetail() {
         <Dialog open fullWidth maxWidth="sm" onClose={() => setPicking(null)}>
           <DialogTitle>Who to ask</DialogTitle>
           <DialogContent>
-            <Typography variant="body2" color="text.secondary">People who fit, longest wait first</Typography>
             <List>
               {fits.map((c: any) => (
                 <ListItemButton key={c.id} onClick={() => { const n = new Set(picking); n.has(c.id) ? n.delete(c.id) : n.add(c.id); setPicking(n); }}>

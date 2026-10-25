@@ -141,7 +141,7 @@ Tasks are the only thing that goes on AT Protocol. Nothing about volunteers ever
 - A posted task is a record in the organization's own account. It holds the title, the description, when, and the public part of the place. It also holds how many people are needed, the requirements as text, the status, and a link to the task's public page.
 - A task set for a time is also written in the shared calendar format, `community.lexicon.calendar.event`, so calendar apps that read AT Protocol can show it.
 - When the task fills, is canceled or is done, the record's status changes. If a coordinator switches the task to private, the record is deleted.
-- The public page shows the task and says: "Already volunteer with us? Watch for your link. New? Sign up here", linking to the organization's own sign-up page.
+- The public page shows the task and a "Sign up to volunteer" link to the organization's own sign-up page.
 - Never posted: names, contact details, field values, who was asked, who said yes or no, private addresses.
 
 Our record format needs a name tied to a domain we own, such as `com.example.volunteer.task`. It can't be renamed once records exist, so choose the domain before the first real post.

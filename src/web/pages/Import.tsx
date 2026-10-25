@@ -118,13 +118,11 @@ export function Import() {
         {!result && (
           <Card>
             <CardContent>
-              <Typography sx={{ mb: 2 }}>
-                CSV, Excel (.xlsx), XML, JSON, text, Word (.docx) or PDF. Nothing saves until you confirm.
-              </Typography>
               <Button component="label" variant="contained" startIcon={<UploadIcon />} disabled={busy}>
                 {file ? 'Choose another file' : 'Choose file'}
                 <input hidden type="file" accept=".csv,.tsv,.xlsx,.xml,.json,.txt,.md,.docx,.pdf" onChange={(e) => e.target.files?.[0] && choose(e.target.files[0])} />
               </Button>
+              <Typography variant="caption" component="p" sx={{ mt: 1 }}>CSV, XLSX, XML, JSON, TXT, DOCX or PDF</Typography>
               {file && <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{file.name}{busy && !table ? ', reading…' : ''}</Typography>}
             </CardContent>
           </Card>
@@ -135,7 +133,7 @@ export function Import() {
             <CardContent>
               <Typography variant="h2" component="h2" gutterBottom>Match columns</Typography>
               {table.via === 'model' && (
-                <Alert severity="info" sx={{ mb: 2 }}>A model read this file, so check every row before you import.{table.notes ? ` Notes: ${table.notes}` : ''}</Alert>
+                <Alert severity="info" sx={{ mb: 2 }}>Read by a model{table.notes ? `: ${table.notes}` : ''}</Alert>
               )}
               <Stack spacing={1} sx={{ mb: 1.5 }}>
                 {table.columns.map((col) => (
@@ -164,7 +162,7 @@ export function Import() {
                   </TableBody>
                 </Table>
               </TableContainer>
-              {!hasName && <Alert severity="warning" sx={{ mb: 2 }}>Choose which column holds names</Alert>}
+              {!hasName && <Alert severity="warning" sx={{ mb: 2 }}>Name column required</Alert>}
               {!preview && <Button variant="contained" disabled={busy || !hasName} onClick={check}>Find duplicates</Button>}
             </CardContent>
           </Card>
@@ -176,7 +174,7 @@ export function Import() {
               <Typography variant="h2" component="h2" gutterBottom>Review</Typography>
               {dupes.length === 0 ? <Typography variant="body2" sx={{ mb: 1.5 }}>No duplicates found</Typography> : (
                 <Stack spacing={2} sx={{ mb: 2 }}>
-                  <Typography variant="body2">These rows share an email or phone</Typography>
+                  <Typography variant="h3">Possible duplicates</Typography>
                   {dupes.map((d) => {
                     const row = table!.rows[d.index];
                     const other = d.duplicateOf ? `${d.duplicateOf.name} (already saved)` : `${joined(table!.rows[d.duplicateOfRow!], 'name')} (row ${d.duplicateOfRow! + 2} of this file)`;
@@ -194,7 +192,7 @@ export function Import() {
               )}
               {problems.length > 0 && (
                 <Alert severity="info" sx={{ mb: 2 }}>
-                  {problems.length} set aside, no email or phone: {problems.slice(0, 5).map((p) => joined(table!.rows[p.index], 'name') || `row ${p.index + 2}`).join(', ')}{problems.length > 5 ? ', …' : ''}
+                  {problems.length} skipped, no email or phone: {problems.slice(0, 5).map((p) => joined(table!.rows[p.index], 'name') || `row ${p.index + 2}`).join(', ')}{problems.length > 5 ? ', …' : ''}
                 </Alert>
               )}
               <FormControlLabel control={<Checkbox checked={consent} onChange={(e) => setConsent(e.target.checked)} />} label="They agreed to be contacted" />

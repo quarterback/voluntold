@@ -52,6 +52,21 @@ for (const c of copy) {
     }
   }
 }
+// No helper text, hints or explanations on screens: labels, buttons, data,
+// status and errors only (owner, October 25, 2026). Server error messages are
+// exempt. The spec names the one sentence allowed.
+const SCREEN_MAX_WORDS = 8;
+const ALLOWED_SENTENCES = new Set(["This one's already filled. Thank you.", "This can't be undone."]);
+for (const c of copy.filter((c) => c.file.includes('src/web'))) {
+  const words = c.text.split(/\s+/).length;
+  if (words > SCREEN_MAX_WORDS) {
+    console.log(`screen text too long (${words} words, limit ${SCREEN_MAX_WORDS}): ${c.file}:${c.line} ${c.text}`);
+    failed = true;
+  } else if (/[.?]\s*$/.test(c.text) && words >= 3 && !ALLOWED_SENTENCES.has(c.text) && !/\?$/.test(c.text)) {
+    console.log(`explanatory sentence on a screen: ${c.file}:${c.line} ${c.text}`);
+    failed = true;
+  }
+}
 for (const c of copy.filter((c) => c.text.split(/\s+/).length > MAX_WORDS)) {
   console.log(`too long (${c.text.split(/\s+/).length} words, limit ${MAX_WORDS}): ${c.file}:${c.line} ${c.text}`);
   failed = true;

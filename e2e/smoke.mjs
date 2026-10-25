@@ -52,7 +52,7 @@ const email = `coord-${Date.now()}@example.com`;
 await signIn(page, email);
 await page.getByLabel('Organization name').fill('Chapter A');
 await page.getByRole('button', { name: 'Create organization' }).click();
-await page.getByText('Your organization is ready').waitFor();
+await page.getByText('Volunteer details').waitFor();
 await shot('settings-new-org');
 await noSideScroll(page, 'Settings');
 await page.getByLabel('Email', { exact: true }).fill(`second-${Date.now()}@example.com`);
@@ -60,7 +60,7 @@ await page.getByRole('combobox').filter({ hasText: 'Coordinator' }).click();
 await page.getByRole('option', { name: 'Admin' }).click();
 await page.getByRole('button', { name: 'Add member' }).click();
 await page.getByText(/second-.*@example.com/).waitFor();
-check(await page.getByText('Add a second admin').count() === 0, 'second admin added');
+check((await page.getByText('Admin', { exact: true }).count()) >= 2, 'second admin added');
 check(await page.getByText('Can lead').count() > 0, 'starter field Experience has Can lead');
 
 // 2. Import the sample CSV, merge the duplicate, set aside the row with no contact.
@@ -70,9 +70,9 @@ await page.getByText('Match columns').waitFor();
 await shot('import-map');
 await noSideScroll(page, 'Import');
 await page.getByRole('button', { name: 'Find duplicates' }).click();
-await page.getByText('These rows share an email or phone').waitFor();
+await page.getByText('Possible duplicates').waitFor();
 check(await page.getByText(/Beatrice Smith/).count() > 0, 'Bea and Beatrice offered as a duplicate');
-check(await page.getByText(/1 set aside, no email or phone/).count() === 1, 'row with no contact set aside');
+check(await page.getByText(/1 skipped, no email or phone/).count() === 1, 'row with no contact set aside');
 await page.getByLabel('They agreed to be contacted').check();
 await shot('import-check');
 await page.getByRole('button', { name: /^Import \d+ people$/ }).click();
@@ -154,7 +154,7 @@ async function phoneSays(link, answer) {
   const p = await ctx.newPage();
   await p.goto(link);
   check(!p.url().includes('/v/'), 'token removed from the address bar');
-  await p.getByText('Can you help?').waitFor();
+  await p.getByRole('button', { name: answer, exact: true }).waitFor();
   return { ctx, p, answer: async () => { await p.getByRole('button', { name: answer, exact: true }).click(); } };
 }
 const one = await phoneSays(links[0], 'Yes');
@@ -178,7 +178,7 @@ await shot('task-full');
 // 6. One person can't make it. Today says what to do about the open spot.
 await two.p.getByRole('button', { name: "I can't make it" }).click();
 await two.p.getByRole('button', { name: 'Give up spot' }).click();
-await two.p.getByText('Nothing coming up.').waitFor();
+await two.p.getByText('Nothing coming up').waitFor();
 await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Today', exact: true }).click();
 await page.getByText(/Registration desk/).first().waitFor();
 await shot('today');

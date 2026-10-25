@@ -58,7 +58,6 @@ export function Start() {
             </CardActionArea>
           </Card>
         ))}
-        {data.orgs.length === 0 && <Typography color="text.secondary">None yet. Start one, or ask an admin to add {data.email}.</Typography>}
       </Stack>
       <form onSubmit={create}>
         <Stack spacing={2}>

@@ -52,7 +52,7 @@ export function Tasks() {
   return (
     <Page title="Tasks" action={data.tasks.length > 0 && newTask}>
       {active.length === 0
-        ? <EmptyState title="No open tasks" body="Write a task, say what it needs, and the app finds who fits." action={data.tasks.length === 0 && newTask} />
+        ? <EmptyState title="No open tasks" action={data.tasks.length === 0 && newTask} />
         : <TaskRows tasks={active} />}
       {finished.length > 0 && (
         <>

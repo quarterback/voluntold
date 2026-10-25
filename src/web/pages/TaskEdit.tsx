@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  Alert, Box, Button, FormControl, FormControlLabel, FormHelperText, IconButton, InputLabel, MenuItem, Select, Stack, Switch,
+  Alert, Box, Button, FormControl, FormControlLabel, IconButton, InputLabel, MenuItem, Select, Stack, Switch,
   TextField, ToggleButton, ToggleButtonGroup, Typography,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/DeleteOutlined';
@@ -23,9 +23,9 @@ const OPS: Record<Field['type'], { op: RequirementOp; label: string }[]> = {
 };
 
 const ASK_MODES = {
-  few: { label: 'A few at a time', hint: 'Asks the people who fit and have waited longest. Today tells you when to ask more.' },
-  everyone: { label: 'Everyone who fits', hint: 'Asks everyone who fits. The first to say yes get the spots.' },
-  hand: { label: 'Pick by hand', hint: 'You choose from the people who fit.' },
+  few: { label: 'A few at a time' },
+  everyone: { label: 'Everyone who fits' },
+  hand: { label: 'Pick by hand' },
 };
 
 interface Form {
@@ -50,7 +50,7 @@ interface Form {
 
 export function TaskEdit() {
   const { taskId } = useParams();
-  const { path, fields, teams, org, me, atprotoReady } = useOrg();
+  const { path, fields, teams, org, me } = useOrg();
   const navigate = useNavigate();
   const [form, setForm] = useState<Form | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -144,8 +144,8 @@ export function TaskEdit() {
         {error && <Alert severity="error">{error}</Alert>}
         <Section title="Task">
           <Stack spacing={2}>
-            <TextField label="Title" required value={form.title} placeholder="Registration desk" onChange={(e) => set('title', e.target.value)} />
-            <TextField label="What to do" multiline minRows={2} placeholder="Greet people and check them in" value={form.description} onChange={(e) => set('description', e.target.value)} />
+            <TextField label="Title" required value={form.title} onChange={(e) => set('title', e.target.value)} />
+            <TextField label="What to do" multiline minRows={2}  value={form.description} onChange={(e) => set('description', e.target.value)} />
             <Box>
               {label('When')}
               <ToggleButtonGroup exclusive size="small" value={form.timing} onChange={(_, v) => v && set('timing', v)} aria-label="When">
@@ -164,18 +164,18 @@ export function TaskEdit() {
               <TextField label="Due" type="date" value={form.dueAt} onChange={(e) => set('dueAt', e.target.value)} sx={{ maxWidth: 220 }} />
             )}
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <TextField label="Place" placeholder="Downtown library" value={form.placePublic} onChange={(e) => set('placePublic', e.target.value)} helperText="Shown if you post the task" />
-              <TextField label="Address" placeholder="120 Main St, Room 2" value={form.placePrivate} onChange={(e) => set('placePrivate', e.target.value)} helperText="Only people you ask see it" />
+              <TextField label="Place" value={form.placePublic} onChange={(e) => set('placePublic', e.target.value)} />
+              <TextField label="Address" value={form.placePrivate} onChange={(e) => set('placePrivate', e.target.value)} />
             </Stack>
             <Stack direction="row" spacing={2}>
               <TextField label="People" type="number" value={form.peopleNeeded} onChange={(e) => set('peopleNeeded', Number(e.target.value))}
                 slotProps={{ htmlInput: { min: 1, max: 500 } }} sx={{ width: 110, flexShrink: 0 }} />
-              <TextField label="Who to find" placeholder="Priya, at the front door" value={form.contact} onChange={(e) => set('contact', e.target.value)} />
+              <TextField label="Who to find" value={form.contact} onChange={(e) => set('contact', e.target.value)} />
             </Stack>
           </Stack>
         </Section>
 
-        <Section title="Requirements" note="People must meet all of them">
+        <Section title="Requirements">
           <Stack spacing={1.5}>
             {form.requirements.map((r, i) => {
               const field = r.kind === 'field' ? fields.find((f) => f.id === r.fieldId) : undefined;
@@ -239,7 +239,6 @@ export function TaskEdit() {
                 <Select labelId="ask-mode" label="How to ask" value={form.askMode} onChange={(e) => set('askMode', e.target.value as Form['askMode'])}>
                   {Object.entries(ASK_MODES).map(([k, m]) => <MenuItem key={k} value={k}>{m.label}</MenuItem>)}
                 </Select>
-                <FormHelperText>{ASK_MODES[form.askMode].hint}</FormHelperText>
               </FormControl>
               {(visibleTeams.length > 0 || leadOnly) && (
                 <FormControl fullWidth>
@@ -257,14 +256,11 @@ export function TaskEdit() {
                 <TextField label="Hours between groups" type="number" value={form.askWaitHours} onChange={(e) => set('askWaitHours', Number(e.target.value))} />
               </Stack>
             )}
-            <Box>
-              <FormControlLabel control={<Switch checked={form.publish} onChange={(e) => set('publish', e.target.checked)} />} label="Post on AT Protocol" />
-              <Typography variant="body2" color="text.secondary">
-                {org.atproto
-                  ? `Posts the task, never the people, to ${org.atproto.handle}`
-                  : atprotoReady ? 'Connect an account in Settings first' : 'Not set up on this server'}
-              </Typography>
-            </Box>
+            <FormControlLabel
+              disabled={!org.atproto}
+              control={<Switch checked={form.publish && !!org.atproto} onChange={(e) => set('publish', e.target.checked)} />}
+              label={org.atproto ? `Post to ${org.atproto.handle}` : 'Post on AT Protocol'}
+            />
           </Stack>
         </Section>
 

@@ -82,15 +82,15 @@ export function People() {
   const addButton = canEdit && <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAdding(true)}>Add person</Button>;
 
   return (
-    <Page title="People" subtitle={`${data.volunteers.length} volunteers, longest wait first`} action={addButton}>
+    <Page title="People" action={addButton}>
       {data.volunteers.length === 0 ? (
-        <EmptyState title="No volunteers yet" body="Import your list, or add people one at a time."
+        <EmptyState title="No volunteers yet"
           action={<Button variant="contained" onClick={() => navigate('../import', { relative: 'path' })}>Import file</Button>} />
       ) : (
         <>
           <Stack spacing={1.5} sx={{ mb: 2 }}>
             <Stack direction="row" spacing={1}>
-              <TextField placeholder="Search by name, email or phone" value={filter.q ?? ''} onChange={(e) => setFilter({ ...filter, q: e.target.value })}
+              <TextField placeholder="Search" value={filter.q ?? ''} onChange={(e) => setFilter({ ...filter, q: e.target.value })}
                 slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }, htmlInput: { 'aria-label': 'Search' } }} />
               <Button variant="outlined" startIcon={<FilterIcon fontSize="small" />} onClick={() => setShowFilters(!showFilters)}>{showFilters ? 'Hide filters' : 'Show filters'}</Button>
             </Stack>
@@ -143,7 +143,7 @@ export function People() {
                 <Typography key={h} variant="caption" sx={{ fontWeight: 500, color: 'text.secondary' }}>{h}</Typography>
               ))}
             </Box>
-            {shown.length === 0 && <Typography color="text.secondary" sx={{ p: 2.5 }}>No one matches these filters.</Typography>}
+            {shown.length === 0 && <Typography color="text.secondary" sx={{ p: 2.5 }}>No results</Typography>}
             {shown.map((v, i) => {
               const details = shownFields.flatMap((f) => [v.values[f.id]].flat()).filter(Boolean).join(', ');
               const [label, tone] = badge(v);

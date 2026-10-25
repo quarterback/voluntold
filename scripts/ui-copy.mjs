@@ -11,7 +11,7 @@ import ts from 'typescript';
 import { readFileSync, readdirSync, writeFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
-const TEXT_PROPS = new Set(['label', 'helperText', 'placeholder', 'title', 'aria-label', 'message', 'primary', 'secondary', 'caption']);
+const TEXT_PROPS = new Set(['label', 'helperText', 'placeholder', 'title', 'aria-label', 'message', 'primary', 'secondary', 'caption', 'note', 'subtitle', 'body', 'hint']);
 const TEXT_CALLS = new Set(['fail', 'confirm', 'prompt', 'setProblem', 'setError', 'setCopied']);
 
 function files(dir) {
@@ -54,7 +54,9 @@ export function collect(roots) {
       else if (ts.isJsxAttribute(node) && node.initializer && TEXT_PROPS.has(node.name.getText(sf))) add(node, textOf(node.initializer, sf));
       else if (ts.isCallExpression(node) && TEXT_CALLS.has(node.expression.getText(sf).split('.').pop())) {
         for (const arg of node.arguments) add(arg, textOf(arg, sf));
-      } else if (ts.isPropertyAssignment(node) && file.endsWith('format.ts')) add(node, textOf(node.initializer, sf));
+      } else if (ts.isPropertyAssignment(node) && (file.endsWith('format.ts') || ['title', 'body', 'confirm', 'cancel', 'label'].includes(node.name.getText(sf)))) {
+        add(node, textOf(node.initializer, sf));
+      }
       else if (ts.isConditionalExpression(node) && ts.isJsxExpression(node.parent)) {
         add(node.whenTrue, textOf(node.whenTrue, sf));
         add(node.whenFalse, textOf(node.whenFalse, sf));

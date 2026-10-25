@@ -23,10 +23,10 @@ interface VTask {
 }
 
 const ANSWER_TEXT: Record<string, string> = {
-  yes: "You said yes. Thank you. It's in your list below.",
-  no: 'You said no. Thanks for telling us.',
+  yes: 'You said yes',
+  no: 'You said no',
   filled: "This one's already filled. Thank you.",
-  closed: "This task isn't happening anymore.",
+  closed: 'Canceled',
 };
 
 /** The calendar-style date block on the left of a task. */
@@ -88,8 +88,7 @@ export function VolunteerPage() {
     if (error) {
       return (
         <Box sx={{ maxWidth: 520, mx: 'auto', px: 2, py: 8, textAlign: 'center' }}>
-          <Typography variant="h1" component="h1" gutterBottom>Open the link you were sent</Typography>
-          <Typography color="text.secondary">If your link stopped working, ask the organization for a new one.</Typography>
+          <Typography variant="h1" component="h1">Link expired</Typography>
         </Box>
       );
     }
@@ -117,12 +116,12 @@ export function VolunteerPage() {
   }
 
   async function giveUp(spotId: string) {
-    const ok = await dialogs.confirm({ title: 'Give up your spot?', body: "We'll let the organization know so they can ask someone else.", confirm: 'Give up spot', cancel: 'Keep my spot', destructive: true });
+    const ok = await dialogs.confirm({ title: 'Give up your spot?', confirm: 'Give up spot', cancel: 'Keep my spot', destructive: true });
     if (ok) await run(() => api(`/api/v/spots/${spotId}/cant`, { body: {} }));
   }
 
   async function stop() {
-    const ok = await dialogs.confirm({ title: `Stop all asks from ${data.org.name}?`, body: 'You can still see what you said yes to.', confirm: 'Stop asks', destructive: true });
+    const ok = await dialogs.confirm({ title: `Stop all asks from ${data.org.name}?`, confirm: 'Stop asks', destructive: true });
     if (ok) await run(() => api('/api/v/stop', { body: {} }));
   }
 
@@ -141,7 +140,7 @@ export function VolunteerPage() {
       <Typography variant="h1" component="h1" sx={{ mb: 2.5 }}>Hi {v.name.split(' ')[0]}</Typography>
       <Stack spacing={2}>
         {problem && <Alert severity="error">{problem}</Alert>}
-        {stopped && <Alert severity="info">You won't get new asks from {data.org.name}</Alert>}
+        {stopped && <Alert severity="info">Asks stopped</Alert>}
         {v.status === 'paused' && v.pausedReason === 'volunteer' && v.pausedUntil && (
           <Alert severity="info" action={<Button color="inherit" size="small" disabled={busy} onClick={() => run(() => api('/api/v/resume', { body: {} }))}>End break</Button>}>
             On a break until {shortDate(v.pausedUntil)}
@@ -154,7 +153,6 @@ export function VolunteerPage() {
           return (
             <Card key={a.id}>
               <CardContent sx={{ p: 2.5 }}>
-                <Typography variant="caption" component="p" sx={{ fontWeight: 500, color: 'primary.main', mb: 1.5 }}>Can you help?</Typography>
                 <TaskInfo task={a.task} big />
                 {result && <Alert severity={result === 'yes' ? 'success' : 'info'} sx={{ mt: 2 }}>{ANSWER_TEXT[result]}</Alert>}
                 {!result && a.task.status === 'filled' && !a.holding && <Alert severity="info" sx={{ mt: 2 }}>{ANSWER_TEXT.filled}</Alert>}
@@ -171,11 +169,10 @@ export function VolunteerPage() {
             </Card>
           );
         })}
-        {ordered.length === 0 && <Typography color="text.secondary">Nothing to answer right now.</Typography>}
 
         <Box>
           <Typography variant="h2" component="h2" sx={{ mb: 1 }}>Coming up</Typography>
-          {data.upcoming.length === 0 ? <Typography variant="body2" color="text.secondary">Nothing coming up.</Typography> : (
+          {data.upcoming.length === 0 ? <Typography variant="body2" color="text.secondary">Nothing coming up</Typography> : (
             <Card>
               {data.upcoming.map((s: any, i: number) => (
                 <Box key={s.id}>
@@ -183,7 +180,7 @@ export function VolunteerPage() {
                   <Box sx={{ p: 2 }}>
                     <TaskInfo task={s.task} />
                     {s.task.status === 'canceled' ? (
-                      <Alert severity="warning" sx={{ mt: 1.5 }}>Canceled. You don't need to go.</Alert>
+                      <Alert severity="warning" sx={{ mt: 1.5 }}>Canceled</Alert>
                     ) : (
                       <Box sx={{ mt: 1, ml: 9 }}>
                         <Button size="small" color="error" disabled={busy} onClick={() => giveUp(s.id)}>I can't make it</Button>
@@ -213,8 +210,7 @@ export function VolunteerPage() {
         {!stopped && (
           <Card>
             <CardContent>
-              <Typography variant="h2" component="h2">Take a break</Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>You won't get asks until the date you pick</Typography>
+              <Typography variant="h2" component="h2" sx={{ mb: 1.5 }}>Take a break</Typography>
               <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-end' }}>
                 <TextField type="date" label="Until" value={until} onChange={(e) => setUntil(e.target.value)} />
                 <Button variant="outlined" disabled={!until || busy} onClick={() => run(() => api('/api/v/pause', { body: { until: `${until}T00:00` } }))}>Pause asks</Button>

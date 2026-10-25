@@ -28,25 +28,25 @@ function describe(item: Item): { title: string; body: string; to: string; badge:
     case 'ask_next':
       return {
         title: item.firstRound ? `Ask people for ${item.title}` : `Ask more people for ${item.title}`,
-        body: `${plural(item.openSpots!, 'spot')} open, ${item.fits} fit${item.soon && item.startsAt ? `. Starts ${day(item.startsAt)}` : ''}`,
+        body: `${plural(item.openSpots!, 'spot')} open · ${item.fits} fit${item.soon && item.startsAt ? ` · starts ${day(item.startsAt)}` : ''}`,
         to: `tasks/${item.taskId}`,
         badge: item.soon ? ['Soon', 'warning'] : ['Ask', 'accent'],
       };
     case 'no_one_left':
-      return { title: `No one left to ask for ${item.title}`, body: `${plural(item.openSpots!, 'spot')} open. Loosen the requirements or add people.`, to: `tasks/${item.taskId}`, badge: ['Stuck', 'danger'] };
+      return { title: `No one left to ask for ${item.title}`, body: `${plural(item.openSpots!, 'spot')} open`, to: `tasks/${item.taskId}`, badge: ['Stuck', 'danger'] };
     case 'draft':
-      return { title: item.title!, body: 'Open it to start asking', to: `tasks/${item.taskId}`, badge: ['Draft', 'neutral'] };
+      return { title: item.title!, body: '', to: `tasks/${item.taskId}`, badge: ['Draft', 'neutral'] };
     case 'never_asked':
-      return { title: `${plural(item.count!, 'person', 'people')} never asked`, body: 'They agreed to help', to: 'people?filter=never', badge: ['People', 'info'] };
+      return { title: `${plural(item.count!, 'person', 'people')} never asked`, body: '', to: 'people?filter=never', badge: ['People', 'info'] };
     case 'paused_no_answer':
       return {
         title: `${plural(item.count!, 'person', 'people')} paused after 3 unanswered asks`,
-        body: `${item.people!.map((p) => p.name).join(', ')}${item.count! > item.people!.length ? ' and others' : ''}. Any answer unpauses them.`,
+        body: `${item.people!.map((p) => p.name).join(', ')}${item.count! > item.people!.length ? ' and others' : ''}`,
         to: 'people?filter=paused',
         badge: ['Paused', 'neutral'],
       };
     case 'set_aside':
-      return { title: `${plural(item.count!, 'row')} set aside from ${item.fileName}`, body: 'No name, or no email or phone', to: 'import', badge: ['Import', 'neutral'] };
+      return { title: `${plural(item.count!, 'row')} set aside from ${item.fileName}`, body: '', to: 'import', badge: ['Import', 'neutral'] };
     case 'atproto_error':
       return { title: `${item.title} isn't posted`, body: item.message ?? '', to: `tasks/${item.taskId}`, badge: ['Not posted', 'danger'] };
     default:
@@ -78,8 +78,7 @@ export function Today() {
       <Card>
         {items.length === 0 && (
           <Box sx={{ p: 2.5 }}>
-            <Typography variant="h3">You're all caught up</Typography>
-            <Typography variant="body2" color="text.secondary">Open tasks are full or waiting on answers.</Typography>
+            <Typography variant="body2" color="text.secondary">Nothing to do</Typography>
           </Box>
         )}
         {items.map((item, i) => (
@@ -90,7 +89,7 @@ export function Today() {
                 <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                   <Typography variant="h3" component="h3" noWrap>{item.title}</Typography>
                 </Stack>
-                <Typography variant="body2" color="text.secondary">{item.body}</Typography>
+                {item.body && <Typography variant="body2" color="text.secondary">{item.body}</Typography>}
               </Box>
               <StatusBadge label={item.badge[0]} tone={item.badge[1]} />
               <ChevronIcon fontSize="small" sx={{ color: 'text.disabled' }} />

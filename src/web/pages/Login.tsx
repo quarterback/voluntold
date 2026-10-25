@@ -45,9 +45,6 @@ export function Login() {
       <Typography sx={{ fontWeight: 700, fontSize: '1.125rem', letterSpacing: '-0.02em', mb: 3, textAlign: 'center' }}>Volunteers</Typography>
       <Card><CardContent sx={{ p: 3 }}>
       <Typography variant="h1" component="h1" gutterBottom>Sign in</Typography>
-      <Typography color="text.secondary" sx={{ mb: 2 }}>
-        Volunteers don't sign in. They answer from their link.
-      </Typography>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {!sent ? (
         <form onSubmit={start}>
@@ -59,7 +56,7 @@ export function Login() {
       ) : (
         <form onSubmit={verify}>
           <Stack spacing={2}>
-            <Typography variant="body2" color="text.secondary">We sent a code to {email}</Typography>
+            <Typography variant="body2" color="text.secondary">{email}</Typography>
             {devCode && <Alert severity="info">Test mode code: <strong>{devCode}</strong></Alert>}
             <TextField
               label="Code"

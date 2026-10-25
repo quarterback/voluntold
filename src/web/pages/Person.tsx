@@ -36,7 +36,7 @@ function FieldInput({ field, value, onChange }: { field: Field; value: FieldValu
         <TextField size="small" label={`Add to ${field.label}`} onKeyDown={(e) => {
           const input = e.target as HTMLInputElement;
           if (e.key === 'Enter' && input.value.trim()) { e.preventDefault(); onChange([...list, input.value.trim()]); input.value = ''; }
-        }} helperText="Type and press Enter" />
+        }} />
       </Box>
     );
   }
@@ -84,11 +84,11 @@ export function Person() {
   }
 
   async function stopAsks() {
-    const ok = await dialogs.confirm({ title: `Stop asks to ${v.name}?`, body: "They won't get new asks. You can resume asks later.", confirm: 'Stop asks', destructive: true });
+    const ok = await dialogs.confirm({ title: `Stop asks to ${v.name}?`, confirm: 'Stop asks', destructive: true });
     if (ok) run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { status: 'stopped' } }));
   }
   async function deletePerson() {
-    const ok = await dialogs.confirm({ title: `Delete ${v.name}?`, body: "This also deletes their history. You can't undo this.", confirm: 'Delete person', destructive: true });
+    const ok = await dialogs.confirm({ title: `Delete ${v.name}?`, body: "This can't be undone.", confirm: 'Delete person', destructive: true });
     if (ok) run(() => api(path(`/volunteers/${v.id}`), { method: 'DELETE' }), () => navigate('..', { relative: 'path' }));
   }
   const ANSWER: Record<string, string> = { waiting: 'No answer yet', yes: 'Said yes', no: 'Said no', expired: "Didn't answer", closed: 'Filled first' };
@@ -116,7 +116,7 @@ export function Person() {
               ))}
               {v.contactOkAt === null && canEdit && (
                 <Alert severity="warning" action={<Button color="inherit" size="small" onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { contactOk: true } }))}>Mark as agreed</Button>}>
-                  Not yet agreed to be contacted
+                  Hasn't agreed to be contacted
                 </Alert>
               )}
             </Stack>

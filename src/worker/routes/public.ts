@@ -29,9 +29,7 @@ publicRoutes.get('/:taskId', async (c) => {
     `${left} of ${task.peopleNeeded} spots open.`;
   const when = describeWhen(task, org.time_zone);
   const reqs = task.requirements.map((r) => `<li>${escapeHtml(requirementText(r, fields, (id) => teamName.get(id) ?? 'a team'))}</li>`).join('');
-  const signup = org.signup_url
-    ? `New? <a href="${escapeHtml(org.signup_url)}" rel="noopener">Sign up here</a>.`
-    : `New? Get in touch with ${escapeHtml(org.name)} to sign up.`;
+  const signup = org.signup_url ? `<a href="${escapeHtml(org.signup_url)}" rel="noopener">Sign up to volunteer</a>` : '';
   return c.html(
     page(
       task.title,
@@ -41,7 +39,7 @@ publicRoutes.get('/:taskId', async (c) => {
        ${task.description ? `<p>${escapeHtml(task.description).replace(/\n/g, '<br>')}</p>` : ''}
        ${reqs ? `<p class="row"><b>What it needs</b></p><ul>${reqs}</ul>` : ''}
        <span class="status">${escapeHtml(status)}</span>
-       <p class="foot">Already volunteer with ${escapeHtml(org.name)}? Watch for your link. ${signup}</p>`,
+       ${signup ? `<p class="foot">${signup}</p>` : ''}`,
     ),
   );
 });

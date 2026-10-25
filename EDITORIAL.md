@@ -44,9 +44,9 @@ Adobe rules, with the local decisions that apply:
   - "and" instead of "&"
   - an ellipsis only to show work in progress ("Reading…") or to prompt a picker
 - **Buttons:** a verb and a noun, three words or fewer: "Add person", "Cancel task", "Import 18 people". The primary button in a confirmation names the action. Never OK or Yes. The one exception is the volunteer's Yes and No, which the spec names.
-- **Confirmations:** the title asks the question ("Cancel this task?"). The body gives the consequence in one sentence. The buttons are the action and a way out ("Cancel task", "Keep task").
+- **Confirmations:** the title asks the question ("Cancel this task?"). The buttons are the action and a way out ("Cancel task", "Keep task").
 - **Errors:** lead with what happened, then how to fix it. Give the cause only when it helps. Save "sorry" for serious failures. Never blame the person. Use "we" and "you" to show who acts.
-- **Empty states:** say what's missing and how to add it, with the action button.
+- **Empty states:** a short title and the action button.
 - **Contractions:** use them, except in text about security, consent or deleting data.
 - **Pronouns:** address people as "you". Don't speak as the user. Use "they" for a person.
 - **Numbers:** numerals in labels, counts and tiles. Zero through nine as words in running sentences.
@@ -54,7 +54,13 @@ Adobe rules, with the local decisions that apply:
 - **Dates:** "Thu, Oct 29" in the interface. "October 29, 2026" in docs, as the Vloora manual sets.
 - **Percentages:** "%" in the interface (Adobe). "percent" in docs (Vloora).
 - **Status:** a word, never color alone. Badges carry the word.
-- **Length:** no interface string over 20 words. `npm run check:docs` enforces this.
+- **No microcopy.** The owner set this on October 25, 2026. Screens carry only:
+  - labels, buttons and headings
+  - data and status
+  - error messages, which say what went wrong
+
+  Leave out helper text under fields, section notes, hints, example placeholders, subtitles that explain, and pleasantries. A confirmation is a question and two buttons. The only body line allowed is "This can't be undone." for a permanent delete. The spec's "This one's already filled. Thank you." is the one other sentence allowed.
+- **Length:** no string on a screen over 8 words, and no full sentences apart from the two above. No server message over 20 words. `npm run check:docs` enforces both.
 
 ## Writing mechanics for docs
 
