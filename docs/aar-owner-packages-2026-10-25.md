@@ -16,7 +16,7 @@
 ## 2. Action: what actually happened
 **What the agent did (step by step):**
 1. Found the packages by `npm search maintainer:ronbronson`: `closedtab` 0.5.0, `plain-language-default` 0.1.0 and `prosekeep` 0.3.0. `closedtab` is also named in the vloora CLAUDE.md.
-2. Checked that none of them runs install scripts, then added all three as dev dependencies at those exact versions.
+2. Checked that none of them runs install scripts, then added all three as dev dependencies.
 3. Ran `closedtab check` on every record (all 6/6). Ran `plain-language-default check` on the new docs, and split five long sentences it found in decisions 0006 to 0008. Ran `prosekeep check --profile vloora`. It flagged 12 em dashes in the headings of the two October 21 records, and the headings were changed to colons to match the newer records.
 4. Added `scripts/check-docs.mjs` and `npm run check:docs` (prosekeep and closedtab), and a CI step that runs it.
 5. Ran `prosekeep init --help` expecting help text. The command ignored `--help` and created `.editorial.json` and `EDITORIAL.md`. Both files were deleted before anything was committed.
@@ -36,7 +36,7 @@
 **Left to the owner:** Whether to run the project installers.
 
 ## 4. Deviation: the gaps
-- The packages are pinned to the versions published today. Later releases won't be picked up automatically.
+- `package.json` allows patch releases (`^0.5.0` and so on). The lockfile holds today's versions, and CI installs from the lockfile.
 - No machine trace was available to reconcile this record against.
 
 ## 5. Consequence: what it cost or risked
