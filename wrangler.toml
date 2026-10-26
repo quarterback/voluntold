@@ -29,3 +29,19 @@ APP_URL = "http://localhost:8787"
 # the project owns, and it can't change once records exist. Posting stays off
 # until it is set. See docs/decisions/0006-only-tasks-go-on-at-protocol.md.
 ATPROTO_TASK_NSID = ""
+
+# The shareable demo. Sign-in codes appear on screen and the sample data button
+# is on, so anyone with the link can sign in as anyone. Demo data only.
+# Deploy it with scripts/deploy-demo.sh.
+[env.demo]
+
+[[env.demo.d1_databases]]
+binding = "DB"
+database_name = "voluntold-demo"
+database_id = "f238db41-2d05-43c5-b7ac-49c7ce78ad72"
+migrations_dir = "migrations"
+
+[env.demo.vars]
+DEV_MODE = "1"
+APP_URL = "https://voluntold-demo.square-dawn-9932.workers.dev"
+ATPROTO_TASK_NSID = ""
