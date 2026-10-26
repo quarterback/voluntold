@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Alert, Box, Button, Card, CardContent, Stack, TextField, Typography } from '@mui/material';
+import { FONT_DISPLAY } from '../theme';
 import { api } from '../api';
 import { errorText } from './common';
 
@@ -42,7 +43,7 @@ export function Login() {
 
   return (
     <Box sx={{ maxWidth: 400, mx: 'auto', px: 2, py: { xs: 6, md: 12 } }}>
-      <Typography sx={{ fontWeight: 700, fontSize: '1.125rem', letterSpacing: '-0.02em', mb: 3, textAlign: 'center' }}>Volunteers</Typography>
+      <Typography component="p" sx={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: '2rem', letterSpacing: '-0.04em', mb: 3, textAlign: 'center', color: 'text.primary' }}>Volly</Typography>
       <Card><CardContent sx={{ p: 3 }}>
       <Typography variant="h1" component="h1" gutterBottom>Sign in</Typography>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
