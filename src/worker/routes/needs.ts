@@ -9,6 +9,7 @@ import { cleanText, fail, newId } from '../util';
 import { batchSize } from '../../shared/rules';
 import { activeCount, candidates, createAsks, holdingCount, sweep, type NewAsk } from '../engine';
 import { syncTask } from '../atproto';
+import { afterResponse, autoTag, tagIdsOf } from '../tags';
 
 export const needRoutes = new Hono<AppBindings>();
 
@@ -76,9 +77,10 @@ export async function summarizeNeed(env: Env, orgId: string, needId: string, now
     .bind(orgId)
     .all<{ id: string; name: string }>();
   const partners = await Promise.all(partnerRows.map(async (p) => ({ ...p, active: await activeCount(db, p.id) })));
+  const tags = await tagIdsOf(db, orgId, 'need', need.id);
   return {
     partners,
-    need: { id: need.id, title: need.title, startsAt: need.starts_at, repeat: need.repeat, status: need.status },
+    need: { id: need.id, title: need.title, startsAt: need.starts_at, repeat: need.repeat, status: need.status, tags },
     assignments,
     items,
     counts: { canOffer, gaps, fit: fitTotal.size, assignments: assignments.length },
@@ -119,6 +121,7 @@ needRoutes.post('/needs', async (c) => {
     c.env.DB.prepare('INSERT INTO needs (id, org_id, title, starts_at, repeat, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(id, actor.orgId, input.title, input.startsAt, input.repeat, now, now),
     logEvent(c.env.DB, { orgId: actor.orgId, actorKind: 'member', actorId: actor.memberId, verb: 'created', objectType: 'need', objectId: id, at: now }),
   ]);
+  afterResponse(c, autoTag(c.env, actor.orgId, 'need', [{ id, text: `Need: ${input.title}${input.repeat !== 'none' ? `\nRepeats ${input.repeat}` : ''}` }], now));
   return c.json({ id }, 201);
 });
 

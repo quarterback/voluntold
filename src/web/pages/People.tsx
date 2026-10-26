@@ -12,14 +12,16 @@ import { useOrg } from './OrgShell';
 import { EmptyState, Initials, Loading, Page, StatusBadge, errorText, useDialogs, useLoad, type Tone } from './common';
 import { TIER_TEXT, usualTimes } from '../format';
 import { meetsRequirement, byLongestWait } from '../../shared/rules';
+import { TagFilter, TagRow } from './tags';
 import type { Requirement, Volunteer } from '../../shared/types';
 
-type Row = Volunteer & { standing: string; asked: number; yes: number; offerReady: boolean };
+type Row = Volunteer & { standing: string; asked: number; yes: number; offerReady: boolean; tags: string[] };
 
 interface Filter {
   q?: string;
   status?: 'never' | 'paused' | 'stopped' | '';
   tier?: string;
+  tagId?: string;
   teamId?: string;
   fieldId?: string;
   value?: string;
@@ -31,6 +33,7 @@ function matches(v: Row, f: Filter, fields: ReturnType<typeof useOrg>['fields'])
   if (f.status === 'paused' && v.status !== 'paused') return false;
   if (f.status === 'stopped' && v.status !== 'stopped') return false;
   if (f.tier && v.tier !== f.tier) return false;
+  if (f.tagId && !v.tags.includes(f.tagId)) return false;
   if (f.teamId && !v.teamIds.includes(f.teamId)) return false;
   if (f.fieldId && f.value) {
     const field = fields.find((x) => x.id === f.fieldId);
@@ -89,8 +92,8 @@ export function People() {
   if (!data) return <Loading error={error} />;
   const field = fields.find((f) => f.id === filter.fieldId);
   const canEdit = me.role !== 'lead';
-  const shownFields = fields.filter((f) => f.type === 'many' || f.type === 'one').slice(0, 2);
-  const teamName = new Map(teams.map((t) => [t.id, t.name]));
+  const tagCounts = new Map<string, number>();
+  for (const v of data.volunteers) for (const t of v.tags) tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
 
   async function saveList() {
     const name = await dialogs.prompt({ title: 'Save list', label: 'List name', confirm: 'Save list' });
@@ -130,6 +133,7 @@ export function People() {
               ))}
               <Button size="small" onClick={saveList}>Save list</Button>
             </Stack>
+            <TagFilter value={filter.tagId ?? ''} counts={tagCounts} onChange={(tagId) => setFilter({ ...filter, tagId })} />
             {(showFilters || filter.teamId || filter.fieldId) && (
               <Stack direction="row" spacing={1}>
                 {teams.length > 0 && (
@@ -182,6 +186,7 @@ export function People() {
                       <Typography variant="h3" noWrap>{v.name}{v.tier ? <Typography component="span" variant="body2" color="text.secondary"> · {TIER_TEXT[v.tier]}</Typography> : null}</Typography>
                       {about(v, fields) && <Typography variant="body2" color="text.secondary" noWrap>{about(v, fields)}</Typography>}
                       <Typography variant="body2" sx={{ color: 'text.disabled' }} noWrap>{history(v)}</Typography>
+                      <TagRow tagIds={v.tags} sx={{ mt: 0.5 }} />
                     </Box>
                     {b && <StatusBadge label={b[0]} tone={b[1]} />}
                   </ListItemButton>

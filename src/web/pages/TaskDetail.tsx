@@ -16,6 +16,7 @@ import ScheduleIcon from '@mui/icons-material/ScheduleOutlined';
 import SplitIcon from '@mui/icons-material/CallSplit';
 import HubIcon from '@mui/icons-material/HubOutlined';
 import { STATUS_TONE } from './Tasks';
+import { TagPicker } from './tags';
 
 interface NewAsk {
   askId: string;
@@ -100,7 +101,7 @@ export function TaskDetail() {
   const { path, org } = useOrg();
   const navigate = useNavigate();
   const dialogs = useDialogs();
-  const { data, error, reload } = useLoad(() => api(path(`/tasks/${taskId}`)), [taskId]);
+  const { data, error, reload, setData } = useLoad(() => api(path(`/tasks/${taskId}`)), [taskId]);
   const [picking, setPicking] = useState<Set<string> | null>(null);
   const [sent, setSent] = useState<NewAsk[] | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -193,6 +194,10 @@ export function TaskDetail() {
                     </Stack>
                   </Box>
                 )}
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="caption" component="p" sx={{ fontWeight: 500, mb: 0.75 }}>Tags</Typography>
+                  <TagPicker kind="tasks" id={task.id} tagIds={data.tags ?? []} onChanged={(tags) => setData({ ...data, tags })} disabled={!editable} />
+                </Box>
                 {(task.bring || task.files.length > 0 || task.remote || task.effortMinutes) && (
                   <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap', mt: 2 }}>
                     {task.remote && <Chip label="Remote" />}

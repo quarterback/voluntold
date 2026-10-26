@@ -8,6 +8,8 @@ import type { AskStatus, Field, FieldValue, Tier, Volunteer } from '../../shared
 import { DAY_KEYS, PART_KEYS } from '../../shared/rules';
 import { extractRows, modelConfigured } from '../model';
 import { firstOffers, sweep } from '../engine';
+import { afterResponse, autoTag, tagIdsFor, tagIdsOf, loadTags, type TagInput } from '../tags';
+import { TIER_WORDS, usualTimesText } from '../../shared/sentences';
 
 export const peopleRoutes = new Hono<AppBindings>();
 
@@ -38,6 +40,24 @@ export function coerceValue(field: Field, raw: unknown): FieldValue {
     default:
       return text;
   }
+}
+
+/**
+ * What the model sees when it tags a person: their field values, tier and
+ * availability. Never their name, email or phone.
+ */
+export function volunteerTagText(fields: Field[], v: Pick<Volunteer, 'values' | 'tier' | 'days' | 'remoteOk' | 'hoursWeek'>): string {
+  const lines: string[] = [];
+  for (const f of fields) {
+    const value = v.values[f.id];
+    if (value === null || value === undefined || value === '' || (Array.isArray(value) && value.length === 0)) continue;
+    lines.push(`${f.label}: ${Array.isArray(value) ? value.join(', ') : value === true ? 'yes' : value === false ? 'no' : String(value)}`);
+  }
+  if (v.tier) lines.push(`Tier: ${TIER_WORDS[v.tier]}`);
+  if (v.days.length) lines.push(`Usual times: ${usualTimesText(v.days)}`);
+  if (v.remoteOk) lines.push('Remote work is fine');
+  if (v.hoursWeek) lines.push(`Hours a week: ${v.hoursWeek}`);
+  return lines.join('\n');
 }
 
 function coerceValues(fields: Field[], input: unknown): Record<string, FieldValue> {
@@ -107,15 +127,16 @@ peopleRoutes.get('/volunteers', async (c) => {
   const orgId = c.get('actor').orgId;
   const now = c.get('now');
   await sweep(c.env, now, orgId);
-  const [volunteers, answers, history, offers] = await Promise.all([
+  const [volunteers, answers, history, offers, tags] = await Promise.all([
     loadVolunteers(c.env.DB, orgId),
     lastAnswers(c.env.DB, orgId),
     histories(c.env.DB, orgId),
     firstOffers(c.env, orgId, now, 200),
+    tagIdsFor(c.env.DB, orgId, 'volunteer'),
   ]);
   const offerFor = new Set(offers.map((o) => o.volunteer.id));
   return c.json({
-    volunteers: volunteers.map((v) => ({ ...view(v, answers.get(v.id) ?? null, now, history.get(v.id)), offerReady: offerFor.has(v.id) })),
+    volunteers: volunteers.map((v) => ({ ...view(v, answers.get(v.id) ?? null, now, history.get(v.id)), offerReady: offerFor.has(v.id), tags: tags.get(v.id) ?? [] })),
   });
 });
 
@@ -135,9 +156,9 @@ peopleRoutes.get('/volunteers/:volunteerId', async (c) => {
       .bind(orgId, v.id)
       .all(),
   ]);
-  const [answers, history] = await Promise.all([lastAnswers(c.env.DB, orgId), histories(c.env.DB, orgId)]);
+  const [answers, history, tags] = await Promise.all([lastAnswers(c.env.DB, orgId), histories(c.env.DB, orgId), tagIdsOf(c.env.DB, orgId, 'volunteer', v.id)]);
   return c.json({
-    volunteer: view(v, answers.get(v.id) ?? null, c.get('now'), history.get(v.id)),
+    volunteer: { ...view(v, answers.get(v.id) ?? null, c.get('now'), history.get(v.id)), tags },
     asks: asks.results,
     spots: spots.results.map((r) => ({ id: r.spot_id, status: r.spot_status, task: toTask(r) })),
   });
@@ -184,6 +205,7 @@ peopleRoutes.post('/volunteers', async (c) => {
     logEvent(c.env.DB, { orgId: actor.orgId, actorKind: 'member', actorId: actor.memberId, verb: 'added', objectType: 'volunteer', objectId: id, at: now }),
   ]);
   await growOptions(c.env.DB, actor.orgId, fields, [values]);
+  afterResponse(c, autoTag(c.env, actor.orgId, 'volunteer', [{ id, text: volunteerTagText(fields, { values, tier: null, hoursWeek: null, days: [], remoteOk: false }) }], now));
   return c.json({ id }, 201);
 });
 
@@ -245,6 +267,7 @@ peopleRoutes.delete('/volunteers/:volunteerId', async (c) => {
     db.prepare('DELETE FROM spots WHERE volunteer_id = ? AND org_id = ?').bind(id, actor.orgId),
     db.prepare('DELETE FROM asks WHERE volunteer_id = ? AND org_id = ?').bind(id, actor.orgId),
     db.prepare('DELETE FROM team_members WHERE volunteer_id = ? AND org_id = ?').bind(id, actor.orgId),
+    db.prepare("DELETE FROM taggings WHERE object_type = 'volunteer' AND object_id = ? AND org_id = ?").bind(id, actor.orgId),
     db.prepare('DELETE FROM volunteers WHERE id = ? AND org_id = ?').bind(id, actor.orgId),
     logEvent(db, { orgId: actor.orgId, actorKind: 'member', actorId: actor.memberId, verb: 'deleted', objectType: 'volunteer', objectId: id, at: c.get('now') }),
   ]);
@@ -439,6 +462,9 @@ peopleRoutes.post('/import/commit', async (c) => {
   );
   for (let i = 0; i < statements.length; i += 50) await db.batch(statements.slice(i, i + 50));
   await growOptions(db, actor.orgId, fields, allValues);
+  // Imported people get tags with no coordinator action. The model sees field values only.
+  const toTag: TagInput[] = [...created.values()].map(({ id, values }) => ({ id, text: volunteerTagText(fields, { values, tier: null, days: [], remoteOk: false, hoursWeek: null }) }));
+  afterResponse(c, autoTag(c.env, actor.orgId, 'volunteer', toTag, now));
   return c.json({ importId, added, merged, setAside });
 });
 
@@ -477,13 +503,20 @@ async function exportData(db: D1Database, orgId: string) {
   const fields = await loadFields(db, orgId);
   const volunteers = await loadVolunteers(db, orgId);
   const q = (sql: string) => db.prepare(sql).bind(orgId).all<Record<string, unknown>>().then((r) => r.results);
-  const [tasks, asks, spots, teams] = await Promise.all([
+  const [tasks, asks, spots, teams, tags, volunteerTags] = await Promise.all([
     q('SELECT * FROM tasks WHERE org_id = ? ORDER BY created_at'),
     q('SELECT id, task_id, volunteer_id, status, created_at, expires_at, answered_at FROM asks WHERE org_id = ? ORDER BY created_at'),
     q('SELECT id, task_id, volunteer_id, status, created_at, updated_at FROM spots WHERE org_id = ? ORDER BY created_at'),
     q('SELECT id, name FROM teams WHERE org_id = ?'),
+    loadTags(db, orgId),
+    tagIdsFor(db, orgId, 'volunteer'),
   ]);
-  return { fields, volunteers, tasks: tasks.map(toTask), asks, spots, teams };
+  const tagName = new Map(tags.map((t) => [t.id, t.name]));
+  return {
+    fields,
+    volunteers: volunteers.map((v) => ({ ...v, tags: (volunteerTags.get(v.id) ?? []).map((id) => tagName.get(id) ?? id) })),
+    tasks: tasks.map(toTask), asks, spots, teams, tags,
+  };
 }
 
 peopleRoutes.get('/export.json', async (c) => {
@@ -512,9 +545,10 @@ peopleRoutes.get('/export/:kind{(volunteers|tasks|asks|spots)\\.csv}', async (c)
         agreed_to_contact: iso(v.contactOkAt),
         last_asked: iso(v.lastAskedAt),
         teams: v.teamIds.map((t) => teamName.get(t) ?? t),
+        tags: v.tags,
         ...Object.fromEntries(data.fields.map((f) => [f.label, v.values[f.id]])),
       })),
-      ['id', 'name', 'email', 'phone', 'status', 'agreed_to_contact', 'last_asked', 'teams', ...data.fields.map((f) => f.label)],
+      ['id', 'name', 'email', 'phone', 'status', 'agreed_to_contact', 'last_asked', 'teams', 'tags', ...data.fields.map((f) => f.label)],
     );
   } else if (kind === 'tasks') {
     body = csv(

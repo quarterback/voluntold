@@ -24,6 +24,7 @@ The pilot in [SPEC.md](docs/SPEC.md):
 - work marked done when its time passes
 - the Today list and export
 - posting tasks to AT Protocol
+- tags on people, tasks and needs, applied by the model when one is set up
 
 It runs on Cloudflare Workers and D1, with a React and MUI web app.
 
@@ -64,7 +65,7 @@ node e2e/smoke.mjs                    # with wrangler dev running: the pilot che
 
 1. `npx wrangler d1 create voluntold`, then put the database id in `wrangler.toml`.
 2. `npm run db:migrate:remote`
-3. Set the secrets: `npx wrangler secret put APP_SECRET` (a long random string), `RESEND_API_KEY` and `EMAIL_FROM` for sign-in email, and optionally `MODEL_PROVIDER=anthropic` with `MODEL_API_KEY` for text, Word and PDF imports.
+3. Set the secrets: `npx wrangler secret put APP_SECRET` (a long random string), `RESEND_API_KEY` and `EMAIL_FROM` for sign-in email, and optionally `MODEL_PROVIDER=anthropic` with `MODEL_API_KEY` for text, Word and PDF imports and for tagging.
 4. In `wrangler.toml`, set `APP_URL` to the public address and `ATPROTO_TASK_NSID` to the record name under your domain. Keep `DEV_MODE = "0"`.
 5. `npm run build && npx wrangler deploy`
 

@@ -1,10 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Alert, Box, Button, Chip, FormControl, FormControlLabel, IconButton, InputLabel, Link, List, ListItem,
   ListItemText, MenuItem, Select, Stack, Switch, TextField, Typography,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/DeleteOutlined';
+import EditIcon from '@mui/icons-material/EditOutlined';
+import MergeIcon from '@mui/icons-material/MergeType';
+import { Menu } from '@mui/material';
+import { StatusBadge } from './common';
+import { TagChip } from './tags';
 import { api } from '../api';
 import { useOrg } from './OrgShell';
 import { Page, Section, errorText, useDialogs, useLoad } from './common';
@@ -115,6 +120,63 @@ function FieldsSection() {
           </Stack>
         )}
       </Stack>
+    </Section>
+  );
+}
+
+function TagsSection() {
+  const { tags, path, reload, me } = useOrg();
+  const dialogs = useDialogs();
+  const { error, run } = useAction();
+  const [merging, setMerging] = useState<{ id: string; anchor: HTMLElement } | null>(null);
+  const canEdit = me.role !== 'lead';
+  // The "new" marks stay while the coordinator looks, and go when they leave.
+  const hadNew = useRef(false);
+  hadNew.current = hadNew.current || tags.some((t) => t.isNew);
+  useEffect(() => () => {
+    if (hadNew.current && canEdit) api(path('/tags/seen'), { body: {} }).then(reload, () => undefined);
+  }, [path, canEdit, reload]);
+
+  async function rename(id: string, name: string) {
+    const next = await dialogs.prompt({ title: 'Rename tag', label: 'Tag name', confirm: 'Rename' });
+    if (next && next !== name && (await run(() => api(path(`/tags/${id}`), { method: 'PATCH', body: { name: next } })))) reload();
+  }
+  async function remove(id: string, name: string) {
+    if ((await dialogs.confirm({ title: `Delete ${name}?`, confirm: 'Delete tag', destructive: true })) && (await run(() => api(path(`/tags/${id}`), { method: 'DELETE' })))) reload();
+  }
+  async function merge(from: string, into: string) {
+    setMerging(null);
+    if (await run(() => api(path(`/tags/${from}/merge`), { body: { into } }))) reload();
+  }
+
+  return (
+    <Section title="Tags">
+      {error && <Alert severity="error" sx={{ mb: 1.5 }}>{error}</Alert>}
+      <Stack spacing={0.5}>
+        {tags.length === 0 && <Typography variant="body2" color="text.secondary">No tags yet</Typography>}
+        {tags.map((t) => (
+          <Stack key={t.id} direction="row" spacing={1} sx={{ alignItems: 'center', minHeight: 36 }}>
+            <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <TagChip tag={{ ...t, isNew: false }} size="medium" />
+              {t.isNew && <StatusBadge label="New" tone="info" />}
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0 }}>{t.count} tagged</Typography>
+            {canEdit && (
+              <>
+                <IconButton size="small" aria-label={`Rename ${t.name}`} onClick={() => rename(t.id, t.name)}><EditIcon fontSize="small" /></IconButton>
+                <IconButton size="small" aria-label={`Merge ${t.name}`} disabled={tags.length < 2} onClick={(e) => setMerging({ id: t.id, anchor: e.currentTarget })}><MergeIcon fontSize="small" /></IconButton>
+                <IconButton size="small" aria-label={`Delete ${t.name}`} onClick={() => remove(t.id, t.name)}><DeleteIcon fontSize="small" /></IconButton>
+              </>
+            )}
+          </Stack>
+        ))}
+        {canEdit && <Box sx={{ pt: 1 }}><AddOnEnter label="Add tag" onAdd={(v) => run(() => api(path('/tags'), { body: { name: v } })).then(reload)} /></Box>}
+      </Stack>
+      <Menu open={!!merging} anchorEl={merging?.anchor} onClose={() => setMerging(null)}>
+        {tags.filter((t) => t.id !== merging?.id).map((t) => (
+          <MenuItem key={t.id} onClick={() => merge(merging!.id, t.id)}>Merge into <Box component="span" sx={{ ml: 0.75, display: 'inline-flex' }}><TagChip tag={{ ...t, isNew: false }} /></Box></MenuItem>
+        ))}
+      </Menu>
     </Section>
   );
 }
@@ -238,6 +300,7 @@ export function Settings() {
         )}
         <OrgSection />
         <FieldsSection />
+        <TagsSection />
         <TeamsSection members={members} />
         <MembersSection members={members} reloadMembers={reload} />
         <AtprotoSection />

@@ -20,6 +20,7 @@ import { EmptyState, IconTile, Initials, Loading, StatTile, StatusBadge, errorTe
 import { CopyList } from './TaskDetail';
 import { effortText } from '../format';
 import { day, timeRange } from '../../shared/time';
+import { TagPicker, TagRow } from './tags';
 
 const STATE: Record<string, [string, Tone]> = {
   offer: ['Ready', 'accent'],
@@ -67,6 +68,7 @@ export function Needs() {
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography variant="h3" component="h2" noWrap>{n.title}</Typography>
                     <Typography variant="body2" color="text.secondary">{needWhen(n, org.timeZone) || `${n.counts.assignments} assignments`}</Typography>
+                    <TagRow tagIds={n.tags ?? []} max={3} sx={{ mt: 0.5 }} />
                   </Box>
                   <StatusBadge label={badge[0]} tone={badge[1]} />
                   {!wide && <ChevronIcon fontSize="small" sx={{ color: 'text.disabled' }} />}
@@ -117,7 +119,7 @@ function NeedDetail({ id, onChanged, onEdit }: { id: string; onChanged: () => vo
   const navigate = useNavigate();
   const theme = useTheme();
   const wide = useMediaQuery(theme.breakpoints.up('md'));
-  const { data, error, reload } = useLoad(() => api(path(`/needs/${id}`)), [id]);
+  const { data, error, reload, setData } = useLoad(() => api(path(`/needs/${id}`)), [id]);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [sent, setSent] = useState<any[] | null>(null);
@@ -244,6 +246,9 @@ function NeedDetail({ id, onChanged, onEdit }: { id: string; onChanged: () => vo
         <Box>
           <Typography variant="h1" component="h1">{need.title}</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{needWhen(need, tz) || 'No start date'}</Typography>
+          <Box sx={{ mt: 1 }}>
+            <TagPicker kind="needs" id={need.id} tagIds={need.tags ?? []} onChanged={(tags) => { setData({ ...data, need: { ...need, tags } }); onChanged(); }} />
+          </Box>
         </Box>
         {wide && actions}
       </Stack>
