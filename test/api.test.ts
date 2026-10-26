@@ -218,7 +218,7 @@ describe('asking people', () => {
     expect(detail.roundDue).toBe(true);
     expect(detail.nextGroup).toEqual([ids[3], ids[4]]);
     const today = (await org.client.get(org.api('/today'))).body;
-    expect(today.items).toContainEqual(expect.objectContaining({ kind: 'ask_next', taskId: task, openSpots: 1 }));
+    expect(today.items).toContainEqual(expect.objectContaining({ kind: 'ask_next', taskId: task, holding: 1, peopleNeeded: 2 }));
 
     const next = (await org.client.post(org.api(`/tasks/${task}/ask`), { volunteerIds: detail.nextGroup })).body.asks;
     const phone4 = await openLink(next[0].link);
