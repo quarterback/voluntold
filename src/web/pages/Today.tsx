@@ -86,11 +86,11 @@ export function Today() {
     .filter(Boolean) as NonNullable<ReturnType<typeof describe>>[];
   const go = (to: string) => navigate(`../${to}`, { relative: 'path' });
   const cap = data.capacity;
-  const date = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: tz });
+  const date = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: tz });
 
   return (
-    <Page title="Today" action={<Typography variant="body2" color="text.secondary" sx={{ pt: 0.75 }}>{date}</Typography>} width={880}>
-      <Typography variant="h3" component="h2" color="text.secondary" sx={{ mb: 1 }}>To do</Typography>
+    <Page title={date} width={880}>
+      <Typography variant="h2" component="h2" sx={{ mb: 1 }}>To do</Typography>
       <Card>
         {items.length === 0 && <Typography variant="body2" color="text.secondary" sx={{ p: 2.5 }}>Nothing to do</Typography>}
         {items.map((item, i) => (
@@ -110,7 +110,7 @@ export function Today() {
 
       {data.thisWeek.length > 0 && (
         <>
-          <Typography variant="h3" component="h2" color="text.secondary" sx={{ mt: 3, mb: 1 }}>This week</Typography>
+          <Typography variant="h2" component="h2" sx={{ mt: 3, mb: 1 }}>This week</Typography>
           <Card>
             {data.thisWeek.map((t: any, i: number) => (
               <Box key={t.id}>
@@ -131,17 +131,17 @@ export function Today() {
       )}
 
       <Stack direction="row" sx={{ mt: 3, mb: 1, justifyContent: 'space-between' }}>
-        <Typography variant="h3" component="h2" color="text.secondary">Capacity</Typography>
+        <Typography variant="h2" component="h2">Capacity</Typography>
       </Stack>
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' }, gap: 1, mb: 8 }}>
-        <StatTile label="Approved" value={cap.approved} />
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' }, gap: 1.5, mb: 8 }}>
+        <StatTile label="Approved" value={cap.approved} tone="lime" />
         <StatTile label="Never asked" value={cap.never_offered} />
         <StatTile label="Days to first ask" value={cap.daysToFirstOffer ?? 'None'} />
-        <StatTile label="Accepted twice" value={cap.yes_twice} />
+        <StatTile label="Accepted twice" value={cap.yes_twice} tone="blue" />
       </Box>
 
-      <Fab variant="extended" color="primary" onClick={() => navigate('../tasks/new?urgent=1', { relative: 'path' })}
-        sx={{ position: 'fixed', right: 16, bottom: wide ? 24 : 76, textTransform: 'none', fontWeight: 600, gap: 0.75 }}>
+      <Fab variant="extended" onClick={() => navigate('../tasks/new?urgent=1', { relative: 'path' })}
+        sx={(t) => ({ position: 'fixed', right: 16, bottom: wide ? 24 : 76, gap: 0.75, bgcolor: t.vt.tangerine, color: t.vt.onTangerine, '&:hover': { bgcolor: t.vt.tangerine, filter: 'brightness(0.95)' } })}>
         <BoltIcon fontSize="small" />Urgent ask
       </Fab>
     </Page>

@@ -161,7 +161,7 @@ function NeedDetail({ id, onChanged, onEdit }: { id: string; onChanged: () => vo
   const assignmentList = (
     <Box>
       <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-        <Typography variant="h3" component="h2" color="text.secondary">Assignments</Typography>
+        <Typography variant="h2" component="h2">Assignments</Typography>
         <Button size="small" startIcon={<AddIcon fontSize="small" />} onClick={() => navigate(`/o/${org.id}/tasks/new?need=${id}`)}>Add</Button>
       </Stack>
       <Card>
@@ -214,7 +214,7 @@ function NeedDetail({ id, onChanged, onEdit }: { id: string; onChanged: () => vo
   const itemList = (
     <Box>
       <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-        <Typography variant="h3" component="h2" color="text.secondary">Supplies and info</Typography>
+        <Typography variant="h2" component="h2">Supplies and info</Typography>
         <Button size="small" startIcon={<AddIcon fontSize="small" />} onClick={() => setAdding(true)}>Add</Button>
       </Stack>
       <Card>
