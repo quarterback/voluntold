@@ -80,6 +80,17 @@ export interface Task {
   files: TaskFile[];
 }
 
+export type Taggable = 'volunteer' | 'task' | 'need';
+
+export interface Tag {
+  id: string;
+  name: string;
+  color: import('./tags').TagColor;
+  /** Made by the model and not yet seen by a coordinator. */
+  isNew: boolean;
+  createdAt: number;
+}
+
 export type AskStatus = 'waiting' | 'yes' | 'no' | 'expired' | 'closed';
 export type SpotStatus = 'holding' | 'cant' | 'done' | 'missed';
 export type Role = 'admin' | 'coordinator' | 'lead';

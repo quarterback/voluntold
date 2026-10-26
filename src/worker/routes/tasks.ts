@@ -5,10 +5,11 @@ import { loadFields, loadOrg, loadTask, logEvent, toTask } from '../db';
 import { cleanText, fail, newId } from '../util';
 import { batchSize, DAY, requirementText } from '../../shared/rules';
 import type { AskMode, Field, Requirement, RequirementOp, Task, Timing } from '../../shared/types';
-import { activeCount, askMessage, candidates, createAsks, firstOffers, holdingCount, renewLink, shareTask, splitTask, sweep } from '../engine';
+import { activeCount, askMessage, candidates, createAsks, describeWhen, firstOffers, holdingCount, renewLink, shareTask, splitTask, sweep } from '../engine';
 import { syncTask } from '../atproto';
 import { standing } from '../../shared/sentences';
 import { summarizeNeed } from './needs';
+import { afterResponse, autoTag, tagIdsFor, tagIdsOf } from '../tags';
 
 export const taskRoutes = new Hono<AppBindings>();
 
@@ -121,11 +122,11 @@ taskRoutes.get('/tasks', async (c) => {
   const orgId = c.get('actor').orgId;
   await sweep(c.env, c.get('now'), orgId);
   const { results } = await c.env.DB.prepare('SELECT * FROM tasks WHERE org_id = ? ORDER BY COALESCE(starts_at, due_at, created_at)').bind(orgId).all();
-  const { taken, waiting } = await counts(c.env.DB, orgId);
+  const [{ taken, waiting }, tags] = await Promise.all([counts(c.env.DB, orgId), tagIdsFor(c.env.DB, orgId, 'task')]);
   return c.json({
     tasks: results.map((r) => {
       const t = toTask(r);
-      return { ...t, taken: taken.get(t.id) ?? 0, waiting: waiting.get(t.id) ?? 0, atError: (r as { at_error: string | null }).at_error };
+      return { ...t, taken: taken.get(t.id) ?? 0, waiting: waiting.get(t.id) ?? 0, atError: (r as { at_error: string | null }).at_error, tags: tags.get(t.id) ?? [] };
     }),
   });
 });
@@ -152,8 +153,28 @@ taskRoutes.post('/tasks', async (c) => {
     logEvent(c.env.DB, { orgId: actor.orgId, actorKind: 'member', actorId: actor.memberId, verb: 'created', objectType: 'task', objectId: id, at: now }),
   ]);
   if (body.open === true) await openTask(c.env, actor.orgId, id, now);
+  afterResponse(c, autoTag(c.env, actor.orgId, 'task', [{ id, text: await taskTagText(c.env.DB, actor.orgId, input) }], now));
   return c.json({ id }, 201);
 });
+
+/** What the model sees when it tags a task. No names of people. */
+async function taskTagText(db: D1Database, orgId: string, t: Pick<Task, 'title' | 'description' | 'timing' | 'startsAt' | 'endsAt' | 'dueAt' | 'placePublic' | 'remote' | 'effortMinutes' | 'bring' | 'requirements' | 'peopleNeeded'>): Promise<string> {
+  const fields = await loadFields(db, orgId);
+  const { results: teams } = await db.prepare('SELECT id, name FROM teams WHERE org_id = ?').bind(orgId).all<{ id: string; name: string }>();
+  const teamName = new Map(teams.map((x) => [x.id, x.name]));
+  const org = await loadOrg(db, orgId);
+  return [
+    `Title: ${t.title}`,
+    t.description ? `Description: ${t.description}` : '',
+    describeWhen(t, org?.time_zone) ? `When: ${describeWhen(t, org?.time_zone)}` : 'When: no date',
+    t.placePublic ? `Location: ${t.placePublic}` : '',
+    t.remote ? 'Remote' : '',
+    t.effortMinutes ? `Effort: ${t.effortMinutes} minutes` : '',
+    t.bring ? `Bring: ${t.bring}` : '',
+    `Volunteers needed: ${t.peopleNeeded}`,
+    ...t.requirements.map((r) => `Requires: ${requirementText(r, fields, (id) => teamName.get(id) ?? 'team')}`),
+  ].filter(Boolean).join('\n');
+}
 
 async function openTask(env: AppBindings['Bindings'], orgId: string, id: string, now: number) {
   const res = await env.DB.prepare("UPDATE tasks SET status = 'open', updated_at = ? WHERE id = ? AND org_id = ? AND status = 'draft'").bind(now, id, orgId).run();
@@ -175,12 +196,13 @@ taskRoutes.get('/tasks/:taskId', async (c) => {
   const task = await taskFor(c, c.req.param('taskId'));
   const db = c.env.DB;
   const row = await db.prepare('SELECT at_uri, at_event_uri, at_error FROM tasks WHERE id = ?').bind(task.id).first<Record<string, string | null>>();
-  const [spots, asks, fields, teams, all] = await Promise.all([
+  const [spots, asks, fields, teams, all, tags] = await Promise.all([
     db.prepare('SELECT s.id, s.status, s.volunteer_id, s.created_at, v.name FROM spots s JOIN volunteers v ON v.id = s.volunteer_id WHERE s.org_id = ? AND s.task_id = ? ORDER BY s.created_at').bind(actor.orgId, task.id).all(),
     db.prepare('SELECT a.id, a.status, a.created_at, a.expires_at, a.volunteer_id, a.batch_no, v.name FROM asks a JOIN volunteers v ON v.id = a.volunteer_id WHERE a.org_id = ? AND a.task_id = ? ORDER BY a.created_at').bind(actor.orgId, task.id).all(),
     loadFields(db, actor.orgId),
     db.prepare('SELECT id, name FROM teams WHERE org_id = ?').bind(actor.orgId).all<{ id: string; name: string }>(),
     candidates(c.env, actor.orgId, task, now),
+    tagIdsOf(db, actor.orgId, 'task', task.id),
   ]);
   const holding = await holdingCount(db, task.id);
   const openSpots = Math.max(0, task.peopleNeeded - holding);
@@ -224,6 +246,7 @@ taskRoutes.get('/tasks/:taskId', async (c) => {
     nextBatch: task.status === 'open' && openSpots > 0 && task.askMode === 'few' ? { fits: fits.length, size: nextGroup.length, at: task.nextRoundAt } : null,
     options: { canSplit, splitFits: Math.max(0, splitFits), partners },
     task,
+    tags,
     requirementLines: task.requirements.map((r) => requirementText(r, fields, (id) => teamName.get(id) ?? 'unknown')),
     holding,
     openSpots,
@@ -293,7 +316,10 @@ taskRoutes.delete('/tasks/:taskId', async (c) => {
   const task = await taskFor(c, c.req.param('taskId'));
   mustManageTask(actor, task.teamId);
   if (task.status !== 'draft') fail(409, 'Only drafts can be deleted. Cancel it instead.');
-  await c.env.DB.prepare('DELETE FROM tasks WHERE id = ? AND org_id = ?').bind(task.id, actor.orgId).run();
+  await c.env.DB.batch([
+    c.env.DB.prepare("DELETE FROM taggings WHERE object_type = 'task' AND object_id = ? AND org_id = ?").bind(task.id, actor.orgId),
+    c.env.DB.prepare('DELETE FROM tasks WHERE id = ? AND org_id = ?').bind(task.id, actor.orgId),
+  ]);
   return c.json({ ok: true });
 });
 

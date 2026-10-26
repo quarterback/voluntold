@@ -11,6 +11,7 @@ import BackIcon from '@mui/icons-material/ArrowBack';
 import { TIER_TEXT, ago, when } from '../format';
 import { AvailabilityFields } from './Availability';
 import type { Field, FieldValue } from '../../shared/types';
+import { TagPicker } from './tags';
 
 function FieldInput({ field, value, onChange }: { field: Field; value: FieldValue | undefined; onChange: (v: FieldValue) => void }) {
   if (field.type === 'one') {
@@ -61,6 +62,7 @@ export function Person() {
   const [saved, setSaved] = useState(false);
   const [pauseUntil, setPauseUntil] = useState('');
   const [teamIds, setTeamIds] = useState<string[]>([]);
+  const [tagIds, setTagIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (data) {
@@ -69,6 +71,7 @@ export function Person() {
         tier: data.volunteer.tier ?? '', hoursWeek: data.volunteer.hoursWeek, days: data.volunteer.days, remoteOk: data.volunteer.remoteOk,
       });
       setTeamIds(data.volunteer.teamIds);
+      setTagIds(data.volunteer.tags ?? []);
     }
   }, [data]);
   if (!data || !form) return <Loading error={error} />;
@@ -135,6 +138,9 @@ export function Person() {
           </Section>
 
           <Stack spacing={2}>
+            <Section title="Tags">
+              <TagPicker kind="volunteers" id={v.id} tagIds={tagIds} onChanged={setTagIds} disabled={!canEdit} />
+            </Section>
             {myTeams.length > 0 && (
               <Section title="Teams">
                 <FormGroup>

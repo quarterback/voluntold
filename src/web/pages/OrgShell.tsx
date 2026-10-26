@@ -12,7 +12,7 @@ import UnfoldIcon from '@mui/icons-material/UnfoldMore';
 import NeedIcon from '@mui/icons-material/FlagOutlined';
 import { api, orgApi } from '../api';
 import { Loading, useLoad } from './common';
-import type { Field } from '../../shared/types';
+import type { Field, Tag } from '../../shared/types';
 
 export interface OrgInfo {
   org: { id: string; name: string; weeklyAskLimit: number; signupUrl: string | null; publishDefault: boolean; timeZone: string; atproto: { did: string; handle: string } | null };
@@ -21,6 +21,7 @@ export interface OrgInfo {
   demo: boolean;
   fields: Field[];
   teams: { id: string; name: string; volunteerIds: string[]; leadMemberIds: string[] }[];
+  tags: (Tag & { count: number })[];
 }
 
 interface Ctx extends OrgInfo {
@@ -50,8 +51,8 @@ export function OrgShell() {
   const theme = useTheme();
   const wide = useMediaQuery(theme.breakpoints.up('md'));
   const { data, error, reload } = useLoad(async () => {
-    const [info, fields, teams] = await Promise.all([api(path('')), api(path('/fields')), api(path('/teams'))]);
-    return { ...info, fields: fields.fields, teams: teams.teams } as OrgInfo;
+    const [info, fields, teams, tags] = await Promise.all([api(path('')), api(path('/fields')), api(path('/teams')), api(path('/tags'))]);
+    return { ...info, fields: fields.fields, teams: teams.teams, tags: tags.tags } as OrgInfo;
   }, [orgId]);
 
   if (!data) return <Loading error={error} />;

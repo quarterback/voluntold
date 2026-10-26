@@ -62,6 +62,8 @@ Its status is draft, open, filled, canceled or done.
 
 **Event log.** Every change, with who made it and when.
 
+**Tag.** A name and a color, on any number of volunteers, tasks and needs. The tool applies tags itself when a model is set up. See the next version spec, section 3.
+
 ## Bringing people in
 
 The coordinator uploads a file: CSV, Excel (.xlsx), XML, JSON, a text file, a Word file (.docx) or a PDF.
@@ -129,7 +131,7 @@ Built for phones first. Navigation: Today, Needs, Tasks, People, with Settings i
   When there's nothing to do, it says so.
 - **Tasks:** open tasks with how full they are, and **New task**. A task's page shows who accepted, who hasn't replied, and the next group to ask.
 - **People:** everyone, with a filter for any field, team or status, sorted by longest since asked. A filter can be saved as a list ("Spanish speakers who can lead"). Each person's row says in a sentence where they stand: "Asked 3 weeks ago, accepted", "Never asked", "Paused until Nov 15".
-- **Settings:** fields, teams, members, the weekly ask limit, the sign-up link, the AT Protocol account, import, and export.
+- **Settings:** fields, tags, teams, members, the weekly ask limit, the sign-up link, the AT Protocol account, import, and export.
 
 Buttons and labels use the standard wording common SaaS and consumer apps use (see `EDITORIAL.md`): "Ask 6 people", "Copy all", "Cancel spot", "Publish", "Save". Status shows as a word, never a code.
 

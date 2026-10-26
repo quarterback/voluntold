@@ -1,6 +1,16 @@
 // Status shown as a plain sentence, never a code (docs/SPEC.md, "Screens").
 
-import type { AskStatus, Volunteer } from './types';
+import type { AskStatus, Tier, Volunteer } from './types';
+
+export const TIER_WORDS: Record<Tier, string> = { one_time: 'One time', seasonal: 'Seasonal', regular: 'Regular', core: 'Core' };
+
+const PART_WORDS: Record<string, string> = { am: 'mornings', pm: 'afternoons', eve: 'evenings' };
+const DAY_WORDS: Record<string, string> = { sun: 'Sun', mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat' };
+
+/** "Sat mornings, Thu afternoons". Empty when the person gave no usual times. */
+export function usualTimesText(days: string[]): string {
+  return days.map((d) => { const [dd, pp] = d.split('_'); return `${DAY_WORDS[dd]} ${PART_WORDS[pp]}`; }).join(', ');
+}
 
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
