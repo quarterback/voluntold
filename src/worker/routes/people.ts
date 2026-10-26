@@ -4,9 +4,10 @@ import { must } from '../auth';
 import { loadFields, loadVolunteer, loadVolunteers, logEvent, toTask } from '../db';
 import { cleanText, fail, newId, normalizeEmail, normalizePhone, parseJson } from '../util';
 import { standing } from '../../shared/sentences';
-import type { AskStatus, Field, FieldValue, Volunteer } from '../../shared/types';
+import type { AskStatus, Field, FieldValue, Tier, Volunteer } from '../../shared/types';
+import { DAY_KEYS, PART_KEYS } from '../../shared/rules';
 import { extractRows, modelConfigured } from '../model';
-import { sweep } from '../engine';
+import { firstOffers, sweep } from '../engine';
 
 export const peopleRoutes = new Hono<AppBindings>();
 
@@ -89,16 +90,33 @@ async function lastAnswers(db: D1Database, orgId: string): Promise<Map<string, A
   return new Map(results.map((r) => [r.volunteer_id, r.status]));
 }
 
-function view(v: Volunteer, lastAnswer: AskStatus | null, now: number) {
-  return { ...v, standing: standing(v, lastAnswer, now) };
+function view(v: Volunteer, lastAnswer: AskStatus | null, now: number, history?: { asked: number; yes: number }) {
+  return { ...v, standing: standing(v, lastAnswer, now), asked: history?.asked ?? 0, yes: history?.yes ?? 0 };
+}
+
+/** How many times each person was asked, and how many times they said yes. */
+async function histories(db: D1Database, orgId: string): Promise<Map<string, { asked: number; yes: number }>> {
+  const { results } = await db
+    .prepare("SELECT volunteer_id, COUNT(*) AS asked, SUM(CASE WHEN status = 'yes' THEN 1 ELSE 0 END) AS yes FROM asks WHERE org_id = ? GROUP BY volunteer_id")
+    .bind(orgId)
+    .all<{ volunteer_id: string; asked: number; yes: number }>();
+  return new Map(results.map((r) => [r.volunteer_id, { asked: r.asked, yes: r.yes ?? 0 }]));
 }
 
 peopleRoutes.get('/volunteers', async (c) => {
   const orgId = c.get('actor').orgId;
   const now = c.get('now');
   await sweep(c.env, now, orgId);
-  const [volunteers, answers] = await Promise.all([loadVolunteers(c.env.DB, orgId), lastAnswers(c.env.DB, orgId)]);
-  return c.json({ volunteers: volunteers.map((v) => view(v, answers.get(v.id) ?? null, now)) });
+  const [volunteers, answers, history, offers] = await Promise.all([
+    loadVolunteers(c.env.DB, orgId),
+    lastAnswers(c.env.DB, orgId),
+    histories(c.env.DB, orgId),
+    firstOffers(c.env, orgId, now, 200),
+  ]);
+  const offerFor = new Set(offers.map((o) => o.volunteer.id));
+  return c.json({
+    volunteers: volunteers.map((v) => ({ ...view(v, answers.get(v.id) ?? null, now, history.get(v.id)), offerReady: offerFor.has(v.id) })),
+  });
 });
 
 peopleRoutes.get('/volunteers/:volunteerId', async (c) => {
@@ -117,13 +135,28 @@ peopleRoutes.get('/volunteers/:volunteerId', async (c) => {
       .bind(orgId, v.id)
       .all(),
   ]);
-  const answers = await lastAnswers(c.env.DB, orgId);
+  const [answers, history] = await Promise.all([lastAnswers(c.env.DB, orgId), histories(c.env.DB, orgId)]);
   return c.json({
-    volunteer: view(v, answers.get(v.id) ?? null, c.get('now')),
+    volunteer: view(v, answers.get(v.id) ?? null, c.get('now'), history.get(v.id)),
     asks: asks.results,
     spots: spots.results.map((r) => ({ id: r.spot_id, status: r.spot_status, task: toTask(r) })),
   });
 });
+
+const TIERS: Tier[] = ['one_time', 'seasonal', 'regular', 'core'];
+const SLOTS = new Set(DAY_KEYS.flatMap((d) => PART_KEYS.map((p) => `${d}_${p}`)));
+
+/** Tier, hours a week, usual times and remote, from a request body. Missing keys keep what's saved. */
+export function readAvailability(body: Record<string, unknown>, current: Pick<Volunteer, 'tier' | 'hoursWeek' | 'days' | 'remoteOk'>) {
+  const tier = body.tier === undefined ? current.tier : body.tier === null || body.tier === '' ? null : (body.tier as Tier);
+  if (tier !== null && !TIERS.includes(tier)) fail(400, 'Choose a tier.');
+  const rawHours = body.hoursWeek === undefined ? current.hoursWeek : body.hoursWeek;
+  const hoursWeek = rawHours === null || rawHours === '' ? null : Number(rawHours);
+  if (hoursWeek !== null && (!Number.isFinite(hoursWeek) || hoursWeek < 0 || hoursWeek > 80)) fail(400, 'Hours must be 0 to 80.');
+  const days = body.days === undefined ? current.days : Array.isArray(body.days) ? [...new Set(body.days.map(String))].filter((d) => SLOTS.has(d)) : [];
+  const remoteOk = body.remoteOk === undefined ? current.remoteOk : Boolean(body.remoteOk);
+  return { tier, hoursWeek, days, remoteOk };
+}
 
 function contactFrom(body: Record<string, unknown>) {
   const email = body.email ? normalizeEmail(body.email) : null;
@@ -184,12 +217,17 @@ peopleRoutes.patch('/volunteers/:volunteerId', async (c) => {
   } else if (body.status === 'stopped') {
     status = 'stopped';
   }
+  const avail = readAvailability(body, v);
   await c.env.DB.prepare(
     `UPDATE volunteers SET name = ?, email = ?, phone = ?, contact_ok_at = ?, values_json = ?, status = ?, paused_until = ?, paused_reason = ?,
-       unanswered_streak = CASE WHEN ? = 'active' THEN 0 ELSE unanswered_streak END, updated_at = ?
+       unanswered_streak = CASE WHEN ? = 'active' THEN 0 ELSE unanswered_streak END, updated_at = ?,
+       tier = ?, hours_week = ?, days_json = ?, remote_ok = ?
      WHERE id = ? AND org_id = ?`,
   )
-    .bind(name, contact.email, contact.phone, contactOkAt, JSON.stringify(values), status, pausedUntil, pausedReason, status, now, v.id, actor.orgId)
+    .bind(
+      name, contact.email, contact.phone, contactOkAt, JSON.stringify(values), status, pausedUntil, pausedReason, status, now,
+      avail.tier, avail.hoursWeek, JSON.stringify(avail.days), avail.remoteOk ? 1 : 0, v.id, actor.orgId,
+    )
     .run();
   await growOptions(c.env.DB, actor.orgId, fields, [values]);
   return c.json({ ok: true });

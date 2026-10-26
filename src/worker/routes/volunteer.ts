@@ -2,9 +2,10 @@ import { Hono, type MiddlewareHandler } from 'hono';
 import { getCookie, setCookie } from 'hono/cookie';
 import type { AppBindings } from '../env';
 import { clientIp, rateLimit } from '../auth';
-import { loadOrg, logEvent, toTask } from '../db';
-import { fail, hashToken, newToken } from '../util';
-import { answerAsk, cantMakeIt, sweep } from '../engine';
+import { loadOrg, loadVolunteer, logEvent, toTask } from '../db';
+import { readAvailability } from './people';
+import { cleanText, fail, hashToken, newId, newToken } from '../util';
+import { answerAsk, candidates, cantMakeIt, sweep, takeOpenWork } from '../engine';
 import { DAY } from '../../shared/rules';
 
 const VOLUNTEER_COOKIE = 'vs';
@@ -93,6 +94,10 @@ function taskForVolunteer(r: Record<string, unknown>) {
     placePublic: t.placePublic,
     placePrivate: t.placePrivate,
     status: t.status,
+    remote: t.remote,
+    effortMinutes: t.effortMinutes,
+    bring: t.bring,
+    files: t.files,
   };
 }
 
@@ -103,7 +108,7 @@ volunteerApi.get('/me', async (c) => {
   await sweep(c.env, now, orgId);
   const [org, v, asks, spots] = await Promise.all([
     loadOrg(db, orgId),
-    db.prepare('SELECT name, status, paused_until, paused_reason FROM volunteers WHERE id = ? AND org_id = ?').bind(volunteerId, orgId).first<Record<string, string | number | null>>(),
+    db.prepare('SELECT * FROM volunteers WHERE id = ? AND org_id = ?').bind(volunteerId, orgId).first<Record<string, any>>(),
     db
       .prepare(
         `SELECT a.id AS ask_id, a.status AS ask_status, a.expires_at, t.* FROM asks a JOIN tasks t ON t.id = a.task_id
@@ -120,10 +125,25 @@ volunteerApi.get('/me', async (c) => {
       .all<Record<string, unknown>>(),
   ]);
   if (!org || !v) fail(404, 'Not found');
+  // Open work this person fits and hasn't been asked about, shortest first.
+  const { results: openRows } = await db.prepare("SELECT * FROM tasks WHERE org_id = ? AND status = 'open'").bind(orgId).all();
+  const openForYou: ReturnType<typeof taskForVolunteer>[] = [];
+  if (v.status === 'active') {
+    for (const row of openRows) {
+      const task = toTask(row);
+      const fit = (await candidates(c.env, orgId, task, now)).find((x) => x.volunteer.id === volunteerId);
+      if (fit && fit.reason === null) openForYou.push(taskForVolunteer(row));
+    }
+  }
+  openForYou.sort((a, b) => (a.remote === b.remote ? (a.effortMinutes ?? 120) - (b.effortMinutes ?? 120) : a.remote ? -1 : 1));
   const holdingTaskIds = new Set(spots.results.filter((s) => s.spot_status === 'holding').map((s) => s.id));
   return c.json({
     org: { name: org.name, timeZone: org.time_zone },
-    volunteer: { name: v.name, status: v.status, pausedUntil: v.paused_until, pausedReason: v.paused_reason },
+    volunteer: {
+      name: v.name, status: v.status, pausedUntil: v.paused_until, pausedReason: v.paused_reason,
+      hoursWeek: v.hours_week, days: JSON.parse(v.days_json || '[]'), remoteOk: v.remote_ok === 1, tier: v.tier,
+    },
+    openForYou: openForYou.slice(0, 5),
     asks: asks.results.map((a) => ({
       id: a.ask_id,
       status: a.ask_status,
@@ -185,6 +205,46 @@ volunteerApi.post('/stop', async (c) => {
     c.env.DB.prepare("UPDATE volunteers SET status = 'stopped', updated_at = ? WHERE id = ? AND org_id = ?").bind(now, volunteerId, orgId),
     c.env.DB.prepare("UPDATE asks SET status = 'closed' WHERE volunteer_id = ? AND org_id = ? AND status = 'waiting'").bind(volunteerId, orgId),
     logEvent(c.env.DB, { orgId, actorKind: 'volunteer', actorId: volunteerId, verb: 'stopped', objectType: 'volunteer', objectId: volunteerId, at: now }),
+  ]);
+  return c.json({ ok: true });
+});
+
+volunteerApi.post('/tasks/:taskId/take', async (c) => {
+  const { orgId, volunteerId } = c.get('volunteer');
+  const result = await takeOpenWork(c.env, orgId, volunteerId, c.req.param('taskId'), c.get('now'));
+  return c.json({ result });
+});
+
+/** The person's own availability: hours this week, usual times, remote. */
+volunteerApi.post('/availability', async (c) => {
+  const { orgId, volunteerId } = c.get('volunteer');
+  const body = await c.req.json().catch(() => ({}));
+  const v = await loadVolunteer(c.env.DB, orgId, volunteerId);
+  if (!v) fail(404, 'Not found');
+  const a = readAvailability(body, v);
+  const now = c.get('now');
+  await c.env.DB.batch([
+    c.env.DB.prepare('UPDATE volunteers SET hours_week = ?, days_json = ?, remote_ok = ?, updated_at = ? WHERE id = ? AND org_id = ?').bind(
+      a.hoursWeek, JSON.stringify(a.days), a.remoteOk ? 1 : 0, now, volunteerId, orgId,
+    ),
+    logEvent(c.env.DB, { orgId, actorKind: 'volunteer', actorId: volunteerId, verb: 'availability', objectType: 'volunteer', objectId: volunteerId, at: now }),
+  ]);
+  return c.json({ ok: true });
+});
+
+/** Something is stopping the work: the coordinator sees it on Today. */
+volunteerApi.post('/spots/:spotId/report', async (c) => {
+  const { orgId, volunteerId } = c.get('volunteer');
+  const body = await c.req.json().catch(() => ({}));
+  const text = cleanText(body.body, 1000);
+  if (!text) fail(400, 'Describe the problem.');
+  const spot = await c.env.DB.prepare('SELECT task_id FROM spots WHERE id = ? AND org_id = ? AND volunteer_id = ?').bind(c.req.param('spotId'), orgId, volunteerId).first<{ task_id: string }>();
+  if (!spot) fail(404, 'Not found');
+  const id = newId();
+  const now = c.get('now');
+  await c.env.DB.batch([
+    c.env.DB.prepare('INSERT INTO reports (id, org_id, spot_id, task_id, volunteer_id, body, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(id, orgId, c.req.param('spotId'), spot.task_id, volunteerId, text, now),
+    logEvent(c.env.DB, { orgId, actorKind: 'volunteer', actorId: volunteerId, verb: 'reported', objectType: 'spot', objectId: c.req.param('spotId'), at: now }),
   ]);
   return c.json({ ok: true });
 });

@@ -5,6 +5,7 @@ import { clock, csrf, finishLogin, logout, requireMember, requireUser, startLogi
 import { accountRoutes, orgRoutes } from './routes/org';
 import { peopleRoutes } from './routes/people';
 import { taskRoutes } from './routes/tasks';
+import { needRoutes } from './routes/needs';
 import { linkRoute, volunteerApi } from './routes/volunteer';
 import { publicRoutes } from './routes/public';
 import { sweep } from './engine';
@@ -54,6 +55,7 @@ org.use('*', requireMember);
 org.route('/', orgRoutes);
 org.route('/', peopleRoutes);
 org.route('/', taskRoutes);
+org.route('/', needRoutes);
 signedIn.route('/orgs/:orgId', org);
 
 // The volunteer API comes first: the signed-in routes below match all of /api.

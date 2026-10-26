@@ -27,6 +27,20 @@ export interface Volunteer {
   teamIds: string[];
   lastAskedAt: number | null;
   unansweredStreak: number;
+  tier: Tier | null;
+  /** Hours a week the person can give, if they said. */
+  hoursWeek: number | null;
+  /** Usual times, as day and part of day: "sat_am", "tue_eve". Empty means any time. */
+  days: string[];
+  remoteOk: boolean;
+  createdAt: number;
+}
+
+export type Tier = 'one_time' | 'seasonal' | 'regular' | 'core';
+
+export interface TaskFile {
+  name: string;
+  url: string;
 }
 
 export type RequirementOp = 'is' | 'includes' | 'atLeast' | 'atMost' | 'isYes';
@@ -59,6 +73,11 @@ export interface Task {
   nextRoundAt: number | null;
   publish: boolean;
   status: TaskStatus;
+  needId: string | null;
+  remote: boolean;
+  effortMinutes: number | null;
+  bring: string;
+  files: TaskFile[];
 }
 
 export type AskStatus = 'waiting' | 'yes' | 'no' | 'expired' | 'closed';

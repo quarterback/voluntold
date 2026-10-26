@@ -117,7 +117,7 @@ There's no timesheet and no "confirm hours" step. A task set for a time is done 
 
 ## Screens for the coordinator
 
-Built for phones first. Navigation: Today, Tasks, People, Settings.
+Built for phones first. Navigation: Today, Needs, Tasks, People, with Settings in the top bar. The demo adds needs, first offers, availability, tiers, batches, splitting and partner sharing ([decision 0010](decisions/0010-activation-demo.md)).
 
 - **Today:** the short list of things to do now:
   - time to ask the next group for a task

@@ -8,7 +8,8 @@ import { api } from '../api';
 import { useOrg } from './OrgShell';
 import { Loading, Page, Section, errorText, useDialogs, useLoad } from './common';
 import BackIcon from '@mui/icons-material/ArrowBack';
-import { ago, when } from '../format';
+import { TIER_TEXT, ago, when } from '../format';
+import { AvailabilityFields } from './Availability';
 import type { Field, FieldValue } from '../../shared/types';
 
 function FieldInput({ field, value, onChange }: { field: Field; value: FieldValue | undefined; onChange: (v: FieldValue) => void }) {
@@ -51,7 +52,7 @@ function FieldInput({ field, value, onChange }: { field: Field; value: FieldValu
 
 export function Person() {
   const { volunteerId } = useParams();
-  const { path, fields, teams, me, reload: reloadOrg } = useOrg();
+  const { path, fields, teams, me, org, reload: reloadOrg } = useOrg();
   const navigate = useNavigate();
   const dialogs = useDialogs();
   const { data, error, reload } = useLoad(() => api(path(`/volunteers/${volunteerId}`)), [volunteerId]);
@@ -63,7 +64,10 @@ export function Person() {
 
   useEffect(() => {
     if (data) {
-      setForm({ name: data.volunteer.name, email: data.volunteer.email ?? '', phone: data.volunteer.phone ?? '', values: data.volunteer.values });
+      setForm({
+        name: data.volunteer.name, email: data.volunteer.email ?? '', phone: data.volunteer.phone ?? '', values: data.volunteer.values,
+        tier: data.volunteer.tier ?? '', hoursWeek: data.volunteer.hoursWeek, days: data.volunteer.days, remoteOk: data.volunteer.remoteOk,
+      });
       setTeamIds(data.volunteer.teamIds);
     }
   }, [data]);
@@ -96,7 +100,7 @@ export function Person() {
   return (
     <Page
       title={v.name}
-      subtitle={v.standing}
+      subtitle={`${v.standing} · accepted ${v.yes} of ${v.asked}`}
       back={<Button size="small" startIcon={<BackIcon fontSize="small" />} onClick={() => navigate('..', { relative: 'path' })} sx={{ color: 'text.secondary', ml: -1 }}>People</Button>}
       action={canEdit && <Button variant="contained" onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: form }), () => { setSaved(true); reloadOrg(); })}>Save</Button>}
     >
@@ -114,6 +118,14 @@ export function Person() {
               {fields.map((f) => (
                 <FieldInput key={f.id} field={f} value={form.values[f.id]} onChange={(val) => setForm({ ...form, values: { ...form.values, [f.id]: val } })} />
               ))}
+              <FormControl fullWidth>
+                <InputLabel id="tier">Tier</InputLabel>
+                <Select labelId="tier" label="Tier" value={form.tier} disabled={!canEdit} onChange={(e) => setForm({ ...form, tier: e.target.value })}>
+                  <MenuItem value="">Not set</MenuItem>
+                  {Object.entries(TIER_TEXT).map(([k, label]) => <MenuItem key={k} value={k}>{label}</MenuItem>)}
+                </Select>
+              </FormControl>
+              <AvailabilityFields value={form} disabled={!canEdit} onChange={(a) => setForm({ ...form, ...a })} />
               {v.contactOkAt === null && canEdit && (
                 <Alert severity="warning" action={<Button color="inherit" size="small" onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: { contactOk: true } }))}>Record consent</Button>}>
                   No consent
@@ -168,7 +180,7 @@ export function Person() {
               )}
               {data.spots.filter((s: any) => s.status === 'done').length > 0 && (
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  Attended: {data.spots.filter((s: any) => s.status === 'done').map((s: any) => `${s.task.title} (${when(s.task)})`).join('; ')}
+                  Attended: {data.spots.filter((s: any) => s.status === 'done').map((s: any) => `${s.task.title} (${when(s.task, org.timeZone)})`).join('; ')}
                 </Typography>
               )}
             </Section>

@@ -12,6 +12,7 @@ const COLUMNS = { xs: '1fr auto', md: 'minmax(0, 2.2fr) minmax(0, 1.6fr) 96px 14
 
 function TaskRows({ tasks }: { tasks: any[] }) {
   const navigate = useNavigate();
+  const { org } = useOrg();
   return (
     <Card>
       <Box sx={{ display: { xs: 'none', md: 'grid' }, gridTemplateColumns: COLUMNS.md, gap: 2, px: 2.5, py: 1, bgcolor: (t) => t.vt.subtle }}>
@@ -23,10 +24,10 @@ function TaskRows({ tasks }: { tasks: any[] }) {
           <ListItemButton onClick={() => navigate(t.id)} sx={{ borderRadius: 0, px: 2.5, py: 1.5, display: 'grid', gridTemplateColumns: COLUMNS, gap: { xs: 1, md: 2 }, alignItems: 'center' }}>
             <Box sx={{ minWidth: 0 }}>
               <Typography variant="h3" component="h2" noWrap>{t.title}</Typography>
-              <Typography variant="body2" color="text.secondary" noWrap sx={{ display: { md: 'none' } }}>{when(t)}</Typography>
+              <Typography variant="body2" color="text.secondary" noWrap sx={{ display: { md: 'none' } }}>{when(t, org.timeZone)}</Typography>
               {t.placePublic && <Typography variant="body2" color="text.secondary" noWrap sx={{ display: { xs: 'none', md: 'block' } }}>{t.placePublic}</Typography>}
             </Box>
-            <Typography variant="body2" color="text.secondary" noWrap sx={{ display: { xs: 'none', md: 'block' } }}>{when(t)}</Typography>
+            <Typography variant="body2" color="text.secondary" noWrap sx={{ display: { xs: 'none', md: 'block' } }}>{when(t, org.timeZone)}</Typography>
             <Box><StatusBadge label={STATUS_TEXT[t.status]} tone={STATUS_TONE[t.status]} /></Box>
             <Box sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
