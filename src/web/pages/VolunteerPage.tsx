@@ -9,6 +9,7 @@ import ClockIcon from '@mui/icons-material/ScheduleOutlined';
 import PlaceIcon from '@mui/icons-material/PlaceOutlined';
 import PersonIcon from '@mui/icons-material/PersonOutlined';
 import { api } from '../api';
+import { FONT_DISPLAY } from '../theme';
 import { Loading, errorText, useDialogs, useLoad } from './common';
 import { effortText, shortDate } from '../format';
 import { timeRange } from '../../shared/time';
@@ -44,12 +45,12 @@ function DateBlock({ ms, tz }: { ms: number | null; tz?: string }) {
   const d = new Date(ms);
   const dayNum = d.toLocaleDateString('en-US', { day: 'numeric', timeZone: tz });
   return (
-    <Box sx={{ width: 56, flexShrink: 0, textAlign: 'center', border: (t) => `1px solid ${t.vt.border}`, borderRadius: 2, overflow: 'hidden', bgcolor: 'background.paper' }}>
-      <Box sx={{ bgcolor: (t) => t.vt.accentSoft, color: 'primary.main', fontSize: '0.6875rem', fontWeight: 600, py: 0.25 }}>
+    <Box sx={{ width: 64, flexShrink: 0, alignSelf: 'flex-start', textAlign: 'center', borderRadius: 3, overflow: 'hidden', bgcolor: (t) => t.vt.ink, color: (t) => t.vt.onInk }}>
+      <Box sx={{ bgcolor: (t) => t.vt.lime, color: (t) => t.vt.onLime, fontSize: '0.75rem', fontWeight: 700, py: 0.375, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
         {d.toLocaleDateString('en-US', { month: 'short', timeZone: tz })}
       </Box>
-      <Typography sx={{ fontSize: '1.375rem', fontWeight: 600, lineHeight: 1.2, pt: 0.25 }}>{dayNum}</Typography>
-      <Typography variant="caption" component="p" sx={{ pb: 0.5 }}>{d.toLocaleDateString('en-US', { weekday: 'short', timeZone: tz })}</Typography>
+      <Typography sx={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: '1.75rem', lineHeight: 1.1, pt: 0.5 }}>{dayNum}</Typography>
+      <Typography component="p" sx={{ fontSize: '0.75rem', fontWeight: 600, pb: 0.75, color: (t) => t.vt.onInk2 }}>{d.toLocaleDateString('en-US', { weekday: 'short', timeZone: tz })}</Typography>
     </Box>
   );
 }
@@ -73,7 +74,7 @@ function TaskInfo({ task, big, tz }: { task: VTask; big?: boolean; tz?: string }
     <Stack direction="row" spacing={2}>
       <DateBlock ms={date} tz={tz} />
       <Box sx={{ minWidth: 0, flex: 1 }}>
-        <Typography sx={{ fontSize: big ? '1.125rem' : '1rem', fontWeight: 600, letterSpacing: '-0.01em', mb: 1 }}>{task.title}</Typography>
+        <Typography sx={big ? { fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: '1.5rem', lineHeight: 1.15, letterSpacing: '-0.02em', mb: 1.25 } : { fontSize: '1.0625rem', fontWeight: 600, mb: 0.75 }}>{task.title}</Typography>
         <Stack spacing={0.75}>
           <Line icon={<ClockIcon />}>{time}</Line>
           {place && <Line icon={<PlaceIcon />}>{place}</Line>}
@@ -163,8 +164,10 @@ export function VolunteerPage() {
 
   return (
     <Box sx={{ maxWidth: 520, mx: 'auto', px: 2, pt: 4, pb: 6 }}>
-      <Typography variant="body2" color="text.secondary">{v.name}</Typography>
-      <Typography variant="h1" component="h1" sx={{ mb: 2.5 }}>{data.org.name}</Typography>
+      <Box sx={{ bgcolor: (t) => t.vt.accent, color: (t) => t.vt.onAccent, borderRadius: 4, px: 2.5, py: 3, mb: 2 }}>
+        <Typography sx={{ fontWeight: 600, color: (t) => t.vt.lime }}>{v.name}</Typography>
+        <Typography variant="h1" component="h1" sx={{ mt: 0.5 }}>{data.org.name}</Typography>
+      </Box>
       <Stack spacing={2}>
         {problem && <Alert severity="error">{problem}</Alert>}
         {stopped && <Alert severity="info">Unsubscribed</Alert>}

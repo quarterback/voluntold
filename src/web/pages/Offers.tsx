@@ -98,7 +98,7 @@ export function Offers() {
           </CardContent>
         </Card>
 
-        <Typography variant="h3" component="h2" color="text.secondary">Offer</Typography>
+        <Typography variant="h2" component="h2">Offer</Typography>
         <Card>
           <CardContent>
             <Stack direction="row" spacing={1} sx={{ justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
@@ -123,7 +123,7 @@ export function Offers() {
           </CardContent>
         </Card>
 
-        <Typography variant="h3" component="h2" color="text.secondary">Message</Typography>
+        <Typography variant="h2" component="h2">Message</Typography>
         <Box sx={{ bgcolor: (th) => th.vt.subtle, border: (th) => `1px solid ${th.vt.border}`, borderRadius: 2.5, p: 1.75 }}>
           <Typography variant="body2" data-testid="offer-message">{o.message}</Typography>
         </Box>

@@ -42,19 +42,21 @@ linkRoute.get('/:token', async (c) => {
 export function page(title: string, body: string): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer"><title>${escapeHtml(title)}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
 <style>
-:root{--bg:#F6F8FA;--surface:#fff;--border:#E3E8EE;--text:#1A1F36;--text2:#5B6474;--accent:#0E7C74;--soft:#E6F5F3}
-@media (prefers-color-scheme:dark){:root{--bg:#0E1217;--surface:#151B22;--border:#28313C;--text:#E7EBF0;--text2:#A4AEBB;--accent:#3CC9BA;--soft:#12312E}}
-body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-main{max-width:520px;margin:0 auto;padding:40px 16px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px;box-shadow:0 1px 2px rgba(26,31,54,.06)}
-h1{font-size:1.25rem;font-weight:600;letter-spacing:-.01em;margin:0 0 12px}
-.meta{color:var(--text2);font-size:.875rem;margin:0 0 4px}
-.row{margin:6px 0}.row b{font-weight:500}
-.status{display:inline-block;background:var(--soft);color:var(--accent);border-radius:6px;padding:2px 8px;font-size:.8125rem;font-weight:500;margin:12px 0}
-ul{padding-left:20px;margin:4px 0}a{color:var(--accent)}
-.foot{color:var(--text2);font-size:.875rem;margin-top:16px}
+@font-face{font-family:"Object Sans";src:url(/fonts/PPObjectSans-Heavy.woff2) format("woff2");font-weight:800;font-display:swap}
+@font-face{font-family:"Neue Montreal";src:url(/fonts/PPNeueMontreal-Book.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Neue Montreal";src:url(/fonts/PPNeueMontreal-Semibold.woff2) format("woff2");font-weight:600;font-display:swap}
+:root{--bg:#F1EEFF;--surface:#fff;--ink:#14112B;--text:#14112B;--text2:#4A4668;--accent:#3D3BF3;--lime:#C6F432;--soft:#E4E3FE}
+@media (prefers-color-scheme:dark){:root{--bg:#0D0B1C;--surface:#17142C;--text:#F2F0FF;--text2:#B6B1D6;--accent:#8F8DFF;--soft:#23215A}}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 "Neue Montreal",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:520px;margin:0 auto;padding:32px 16px}
+.card{background:var(--surface);border-radius:20px;padding:28px 24px}
+h1{font-family:"Object Sans",system-ui,sans-serif;font-weight:800;font-size:2rem;line-height:1.05;letter-spacing:-.025em;margin:0 0 16px}
+.meta{color:var(--text2);font-size:.9375rem;margin:0 0 4px}
+.row{margin:6px 0}.row b{font-weight:600}
+.status{display:inline-block;background:var(--lime);color:var(--ink);border-radius:999px;padding:4px 12px;font-size:.875rem;font-weight:600;margin:12px 0}
+ul{padding-left:20px;margin:4px 0}a{color:var(--accent);font-weight:600}
+.foot{color:var(--text2);font-size:.9375rem;margin-top:16px}
 </style></head><body><main><div class="card"><h1>${escapeHtml(title)}</h1>${body}</div></main></body></html>`;
 }
 
