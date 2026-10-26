@@ -327,16 +327,8 @@ function DeleteOrgSection() {
   const [problem, setProblem] = useState<string | null>(null);
 
   async function remove() {
-    const typed = await dialogs.prompt({
-      title: `Delete ${org.name}?`,
-      label: 'Type the name to confirm',
-      confirm: 'Delete organization',
-    });
-    if (typed === null) return;
-    if (typed.trim().toLowerCase() !== org.name.trim().toLowerCase()) {
-      setProblem('That name does not match.');
-      return;
-    }
+    const ok = await dialogs.confirm({ title: `Delete ${org.name}?`, confirm: 'Delete organization', destructive: true });
+    if (!ok) return;
     try {
       await api(path(''), { method: 'DELETE' });
       location.href = '/';
@@ -346,7 +338,7 @@ function DeleteOrgSection() {
   }
 
   return (
-    <Section title="Delete organization" note="Removes the organization and everyone and everything in it. It cannot be undone.">
+    <Section title="Delete organization">
       {problem && <Alert severity="error" sx={{ mb: 2 }}>{problem}</Alert>}
       <Button color="error" variant="outlined" onClick={remove}>Delete organization</Button>
     </Section>

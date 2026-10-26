@@ -152,12 +152,7 @@ export function TaskDetail() {
   }
 
   async function deleteTask() {
-    const ok = await dialogs.confirm({
-      title: `Delete ${task.title}?`,
-      body: 'This removes the task, its spots and its asks. It cannot be undone.',
-      confirm: 'Delete task',
-      destructive: true,
-    });
+    const ok = await dialogs.confirm({ title: `Delete ${task.title}?`, confirm: 'Delete task', destructive: true });
     if (ok) act(async () => { await api(path(`/tasks/${taskId}`), { method: 'DELETE' }); navigate('..', { relative: 'path' }); });
   }
 

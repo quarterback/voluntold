@@ -300,12 +300,7 @@ function NeedEditor({ need, onClose }: { need: any; onClose: (id?: string) => vo
     }
   }
   async function remove() {
-    const ok = await dialogs.confirm({
-      title: `Delete ${need.title}?`,
-      body: 'This removes the need and its supplies. Tasks already made from it stay.',
-      confirm: 'Delete need',
-      destructive: true,
-    });
+    const ok = await dialogs.confirm({ title: `Delete ${need.title}?`, confirm: 'Delete need', destructive: true });
     if (!ok) return;
     try {
       await api(path(`/needs/${need.id}`), { method: 'DELETE' });
