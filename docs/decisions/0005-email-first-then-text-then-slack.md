@@ -4,6 +4,8 @@ Date: 2026-10-24
 
 Status: Proposed
 
+Changed by [0011](0011-product-model-and-direction.md) on 2026-10-25: the tool notifies people inside the app, and sends email only to people who ask for it.
+
 Changed by [0007](0007-pilot-scope.md) on 2026-10-24: the pilot sends nothing itself. Coordinators copy links. Email, then text, then Slack come later in that order.
 
 ## Context
