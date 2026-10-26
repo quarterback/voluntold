@@ -6,7 +6,8 @@ APP_SECRET=change-me-to-a-long-random-string
 # Optional: email for sign-in codes (Resend). Without it, DEV_MODE shows the code.
 RESEND_API_KEY=
 EMAIL_FROM=
-# Optional: model for reading text, Word and PDF imports.
+# Optional: model for reading text, Word and PDF imports, and for tagging
+# people, tasks and needs as they come in.
 MODEL_PROVIDER=
 MODEL_API_KEY=
 MODEL_NAME=

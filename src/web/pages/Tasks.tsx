@@ -5,6 +5,7 @@ import { api } from '../api';
 import { useOrg } from './OrgShell';
 import { EmptyState, Loading, Page, StatusBadge, useLoad, type Tone } from './common';
 import { STATUS_TEXT, when } from '../format';
+import { TagRow } from './tags';
 
 export const STATUS_TONE: Record<string, Tone> = { draft: 'neutral', open: 'accent', filled: 'success', canceled: 'danger', done: 'neutral' };
 
@@ -26,6 +27,7 @@ function TaskRows({ tasks }: { tasks: any[] }) {
               <Typography variant="h3" component="h2" noWrap>{t.title}</Typography>
               <Typography variant="body2" color="text.secondary" noWrap sx={{ display: { md: 'none' } }}>{when(t, org.timeZone)}</Typography>
               {t.placePublic && <Typography variant="body2" color="text.secondary" noWrap sx={{ display: { xs: 'none', md: 'block' } }}>{t.placePublic}</Typography>}
+              <TagRow tagIds={t.tags ?? []} max={3} sx={{ mt: 0.5 }} />
             </Box>
             <Typography variant="body2" color="text.secondary" noWrap sx={{ display: { xs: 'none', md: 'block' } }}>{when(t, org.timeZone)}</Typography>
             <Box><StatusBadge label={STATUS_TEXT[t.status]} tone={STATUS_TONE[t.status]} /></Box>

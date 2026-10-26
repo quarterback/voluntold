@@ -9,6 +9,7 @@ import { loadFields } from './db';
 import { hashToken, newId, newToken } from './util';
 import { STARTER_FIELDS } from './routes/org';
 import { DAY, HOUR, LINK_LIFETIME } from '../shared/rules';
+import { ensureTags, addTagStatements } from './tags';
 
 const TZ = 'America/Los_Angeles';
 
@@ -87,6 +88,23 @@ export async function createSampleOrg(env: Env, userId: string, now: number): Pr
   const skills = ['Bookkeeping', 'Cooking', 'Design', 'Driving', 'Food safety', 'Forklift', 'Medicine', 'Spanish', 'Writing'];
   const { orgId, id } = await makeOrg(env, userId, now, 'Sample: Eastside Pantry', skills);
   const S: D1PreparedStatement[] = [];
+
+  // Tags, as the model would have left them: a settled set, plus two it made
+  // that nobody has looked at yet. "kitchen help" duplicates "Kitchen", so the
+  // merge has something to do.
+  const settled = await ensureTags(db, orgId, ['Driving', 'Kitchen', 'Spanish', 'Remote', 'Writing', 'Events'], 'sample', now - 30 * DAY);
+  const fresh = await ensureTags(db, orgId, ['kitchen help', 'Office'], 'model', now - 2 * HOUR);
+  const tag = (name: string) => (settled.get(name.toLowerCase()) ?? fresh.get(name.toLowerCase()))!.id;
+  const tagsFor = (p: P): string[] => {
+    const out: string[] = [];
+    if (p.skills.includes('Driving')) out.push('Driving');
+    if (p.skills.includes('Spanish')) out.push('Spanish');
+    if (p.skills.includes('Cooking') || p.skills.includes('Food safety')) out.push(['Zoe Martin', 'Lena Brooks'].includes(p.name) ? 'kitchen help' : 'Kitchen');
+    if (p.skills.includes('Writing') || p.skills.includes('Design')) out.push('Writing');
+    if (p.skills.includes('Bookkeeping')) out.push('Office');
+    if (p.remote) out.push('Remote');
+    return out.slice(0, 3);
+  };
   const vid = new Map<string, string>();
   const DAYS_TEXT: Record<string, string> = { sat_am: 'Saturday mornings', sun_pm: 'Sunday afternoons', thu_pm: 'Thursday afternoons' };
 
@@ -110,6 +128,7 @@ export async function createSampleOrg(env: Env, userId: string, now: number): Pr
         p.asked === undefined ? null : now - p.asked * DAY, streak, p.tier, p.hours, JSON.stringify(p.days), p.remote ? 1 : 0, now - p.joined * DAY, now,
       ),
     );
+    S.push(...addTagStatements(db, orgId, 'volunteer', v, tagsFor(p).map(tag), now - p.joined * DAY));
   }
   const teamId = newId();
   S.push(db.prepare('INSERT INTO teams (id, org_id, name, created_at) VALUES (?, ?, ?, ?)').bind(teamId, orgId, 'Drivers', now));
@@ -120,9 +139,10 @@ export async function createSampleOrg(env: Env, userId: string, now: number): Pr
   const task = (t: {
     title: string; desc?: string; contact?: string; start?: number; end?: number; due?: number; place?: string; address?: string; people: number;
     reqs?: unknown[]; status: string; need?: string | null; remote?: boolean; effort?: number; bring?: string; files?: { name: string; url: string }[];
-    nextRound?: number | null;
+    nextRound?: number | null; tags?: string[];
   }) => {
     const tid = newId();
+    S.push(...addTagStatements(db, orgId, 'task', tid, (t.tags ?? []).map(tag), now - 10 * DAY));
     S.push(
       db.prepare(
         `INSERT INTO tasks (id, org_id, title, description, contact, timing, starts_at, ends_at, due_at, place_public, place_private, people_needed,
@@ -156,25 +176,25 @@ export async function createSampleOrg(env: Env, userId: string, now: number): Pr
   };
 
   // Past work, so people have a history.
-  const sortSep = task({ title: 'Sort donations', start: at(now, -30, 9), end: at(now, -30, 11), place: 'East Side branch', people: 4, status: 'done', bring: 'Closed-toe shoes' });
+  const sortSep = task({ title: 'Sort donations', start: at(now, -30, 9), end: at(now, -30, 11), place: 'East Side branch', people: 4, status: 'done', bring: 'Closed-toe shoes', tags: ['Events'] });
   for (const n of ['Sam Tran', 'Zoe Martin', 'Ivy Chen', 'Aisha Bello']) await ask(sortSep, n, 'yes', now - 37 * DAY, 1, 'done');
-  const intakeSep = task({ title: 'Spanish intake desk', start: at(now, -16, 9), end: at(now, -16, 13), place: 'East Side branch', people: 2, reqs: [spanish], status: 'done' });
+  const intakeSep = task({ title: 'Spanish intake desk', start: at(now, -16, 9), end: at(now, -16, 13), place: 'East Side branch', people: 2, reqs: [spanish], status: 'done', tags: ['Spanish'] });
   for (const n of ['Ivy Chen', 'Tess Alvarez']) await ask(intakeSep, n, 'yes', now - 20 * DAY, 1, 'done');
-  const cookOct = task({ title: 'Community dinner prep', start: at(now, -18, 13), end: at(now, -18, 17), place: 'Church kitchen', people: 3, status: 'done' });
+  const cookOct = task({ title: 'Community dinner prep', start: at(now, -18, 13), end: at(now, -18, 17), place: 'Church kitchen', people: 3, status: 'done', tags: ['Kitchen'] });
   for (const n of ['Dev Okafor', 'Elena Petrova']) await ask(cookOct, n, 'yes', now - 23 * DAY, 1, 'done');
   await ask(cookOct, 'Zoe Martin', 'no', now - 23 * DAY, 1);
-  const books = task({ title: 'Reconcile the donation log', due: at(now, -12, 17), people: 1, status: 'done', remote: true, effort: 90 });
+  const books = task({ title: 'Reconcile the donation log', due: at(now, -12, 17), people: 1, status: 'done', remote: true, effort: 90, tags: ['Remote', 'Office'] });
   await ask(books, 'Nina Hoang', 'yes', now - 19 * DAY, 1, 'done');
   await ask(books, 'Sam Tran', 'no', now - 19 * DAY, 1);
-  const drives = task({ title: 'Grocery rescue run', start: at(now, -11, 14), end: at(now, -11, 16), place: 'Fred Meyer, Hawthorne', people: 2, reqs: [driving], status: 'done' });
+  const drives = task({ title: 'Grocery rescue run', start: at(now, -11, 14), end: at(now, -11, 16), place: 'Fred Meyer, Hawthorne', people: 2, reqs: [driving], status: 'done', tags: ['Driving'] });
   for (const n of ['Jordan Kim', 'Luis Ortega']) await ask(drives, n, 'yes', now - 14 * DAY, 1, 'done');
   for (const n of ['Rae Morgan', 'Kofi Asante']) await ask(drives, n, 'expired', now - 14 * DAY, 1);
 
   // This week.
   const sat = until(now, 6);
-  const dist = task({ title: 'Saturday distribution', start: at(now, sat, 9), end: at(now, sat, 13), place: 'East Side branch', people: 4, status: 'filled', bring: 'Closed-toe shoes' });
+  const dist = task({ title: 'Saturday distribution', start: at(now, sat, 9), end: at(now, sat, 13), place: 'East Side branch', people: 4, status: 'filled', bring: 'Closed-toe shoes', tags: ['Events'] });
   for (const n of ['Priya Nair', 'Elena Petrova', 'Omar Haddad', 'Caleb Ross']) await ask(dist, n, 'yes', now - 6 * DAY, 1, 'holding');
-  const desk = task({ title: 'Spanish intake desk', start: at(now, sat, 9), end: at(now, sat, 13), place: 'East Side branch', people: 2, reqs: [spanish], status: 'open', nextRound: now - HOUR });
+  const desk = task({ title: 'Spanish intake desk', start: at(now, sat, 9), end: at(now, sat, 13), place: 'East Side branch', people: 2, reqs: [spanish], status: 'open', nextRound: now - HOUR, tags: ['Spanish'] });
   await ask(desk, 'Tess Alvarez', 'yes', now - 5 * DAY, 1, 'holding');
   await ask(desk, 'Aisha Bello', 'no', now - 5 * DAY, 1);
 
@@ -183,7 +203,7 @@ export async function createSampleOrg(env: Env, userId: string, now: number): Pr
   const pickup = task({
     title: 'Donation pickups driver', desc: 'Pick up from three grocery partners and bring it back to the pantry.', start: at(now, thu, 16), end: at(now, thu, 18),
     place: 'East Side branch', address: '4410 SE Division St, side door', people: 2, reqs: [driving], status: 'open', bring: "Driver's license", nextRound: now + 2 * HOUR,
-    files: [{ name: 'Pickup list', url: 'https://example.com/pickup-list.pdf' }],
+    files: [{ name: 'Pickup list', url: 'https://example.com/pickup-list.pdf' }], tags: ['Driving'],
   });
   await ask(pickup, 'Jordan Kim', 'yes', now - 3 * DAY, 1, 'holding');
   await ask(pickup, 'Kofi Asante', 'no', now - 3 * DAY, 1);
@@ -197,9 +217,10 @@ export async function createSampleOrg(env: Env, userId: string, now: number): Pr
   const satNext = sat + 7;
   S.push(db.prepare("INSERT INTO needs (id, org_id, title, starts_at, repeat, status, created_at, updated_at) VALUES (?, ?, 'Saturday delivery', ?, 'weekly', 'draft', ?, ?)")
     .bind(delivery, orgId, at(now, satNext, 9), now - DAY, now));
-  task({ title: 'Delivery driver', desc: 'Deliver boxes to 6 homes on the east side route.', start: at(now, satNext, 9), end: at(now, satNext, 11), place: 'East Side branch', people: 1, reqs: [driving], status: 'draft', need: delivery, bring: "Driver's license" });
-  task({ title: 'Delivery driver', desc: 'Deliver boxes to 6 homes on the north route.', start: at(now, satNext, 13), end: at(now, satNext, 15), place: 'East Side branch', people: 1, reqs: [driving], status: 'draft', need: delivery, bring: "Driver's license" });
-  task({ title: 'Dispatcher', desc: 'Answer driver calls and update the route sheet.', start: at(now, satNext, 9), end: at(now, satNext, 10, 30), people: 1, status: 'draft', need: delivery, remote: true, effort: 90 });
+  S.push(...addTagStatements(db, orgId, 'need', delivery, [tag('Driving')], now - DAY));
+  task({ title: 'Delivery driver', desc: 'Deliver boxes to 6 homes on the east side route.', start: at(now, satNext, 9), end: at(now, satNext, 11), place: 'East Side branch', people: 1, reqs: [driving], status: 'draft', need: delivery, bring: "Driver's license", tags: ['Driving'] });
+  task({ title: 'Delivery driver', desc: 'Deliver boxes to 6 homes on the north route.', start: at(now, satNext, 13), end: at(now, satNext, 15), place: 'East Side branch', people: 1, reqs: [driving], status: 'draft', need: delivery, bring: "Driver's license", tags: ['Driving'] });
+  task({ title: 'Dispatcher', desc: 'Answer driver calls and update the route sheet.', start: at(now, satNext, 9), end: at(now, satNext, 10, 30), people: 1, status: 'draft', need: delivery, remote: true, effort: 90, tags: ['Remote'] });
   S.push(
     db.prepare("INSERT INTO need_items (id, org_id, need_id, kind, title, detail, created_at) VALUES (?, ?, ?, 'supply', 'Food containers', '12 reusable', ?)").bind(newId(), orgId, delivery, now),
     db.prepare("INSERT INTO need_items (id, org_id, need_id, kind, title, detail, created_at) VALUES (?, ?, ?, 'info', 'Route instructions', 'Before the first Saturday', ?)").bind(newId(), orgId, delivery, now),
@@ -209,12 +230,13 @@ export async function createSampleOrg(env: Env, userId: string, now: number): Pr
   const drive = newId();
   S.push(db.prepare("INSERT INTO needs (id, org_id, title, starts_at, repeat, status, created_at, updated_at) VALUES (?, ?, 'Fall food drive', ?, 'none', 'active', ?, ?)")
     .bind(drive, orgId, at(now, 5, 9), now - 3 * DAY, now));
+  S.push(...addTagStatements(db, orgId, 'need', drive, [tag('Events'), tag('Remote')], now - 3 * DAY));
   task({
     title: 'Check Spanish event instructions', desc: 'Read the Spanish instructions for the food drive and fix anything unclear.', due: at(now, 5, 17), people: 1,
-    reqs: [spanish], status: 'open', need: drive, remote: true, effort: 60, files: [{ name: 'Instructions', url: 'https://example.com/instructions.docx' }],
+    reqs: [spanish], status: 'open', need: drive, remote: true, effort: 60, files: [{ name: 'Instructions', url: 'https://example.com/instructions.docx' }], tags: ['Spanish', 'Remote'],
   });
-  task({ title: 'Proofread the flyer', desc: 'Check the food drive flyer for mistakes.', due: at(now, 4, 17), people: 2, status: 'open', need: drive, remote: true, effort: 30, files: [{ name: 'Flyer', url: 'https://example.com/flyer.pdf' }] });
-  task({ title: 'Count the donation bins', desc: 'Count and log items in the lobby bins.', due: at(now, 6, 17), people: 1, status: 'open', need: drive, effort: 60, place: 'East Side branch' });
+  task({ title: 'Proofread the flyer', desc: 'Check the food drive flyer for mistakes.', due: at(now, 4, 17), people: 2, status: 'open', need: drive, remote: true, effort: 30, files: [{ name: 'Flyer', url: 'https://example.com/flyer.pdf' }], tags: ['Writing', 'Remote'] });
+  task({ title: 'Count the donation bins', desc: 'Count and log items in the lobby bins.', due: at(now, 6, 17), people: 1, status: 'open', need: drive, effort: 60, place: 'East Side branch', tags: ['Events'] });
   S.push(db.prepare("INSERT INTO need_items (id, org_id, need_id, kind, title, detail, status, created_at) VALUES (?, ?, ?, 'supply', 'Collection bins', '4 bins', 'covered', ?)").bind(newId(), orgId, drive, now));
 
   await db.batch(S);
