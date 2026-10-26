@@ -166,13 +166,15 @@ The owner reviews the tokens before any screen changes.
 
 ## Build order
 
-1. Tags (section 3), because the views and filters depend on them.
-2. Activity log and notifications in the app (rule 1, section 9).
-3. Needs inbox and notes into tasks (sections 1 and 2).
-4. Task list views and task builder (sections 4 and 5).
-5. Rules for handing out work and the volunteer page (sections 8 and 10).
-6. The look (section 11), after the owner approves the tokens.
-7. Assign screen, coverage strip and scope line (sections 6 and 7), after the owner reviews them.
+1. Tags (section 3, #9), because the views and filters depend on them.
+2. Activity log and notifications in the app (rule 1 and section 9, #10 and #11).
+3. Needs inbox and notes into tasks (sections 1 and 2, #12 and #13).
+4. Task list views and task builder (sections 4 and 5, #14 and #15).
+5. Rules for handing out work and the volunteer page (sections 8 and 10, #16 and #17).
+6. The look (section 11, #18), after the owner approves the tokens.
+7. Assign screen, coverage strip and scope line (sections 6 and 7, #19 and #20), after the owner reviews them.
+
+Open questions are in #21.
 
 ## For the coding agent
 
