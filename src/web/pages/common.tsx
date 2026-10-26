@@ -4,6 +4,7 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { ApiError } from '../api';
+import { FONT_DISPLAY } from '../theme';
 
 /** Loads data and reloads on demand. Sends a 401 to the sign-in page. */
 export function useLoad<T>(load: () => Promise<T>, deps: unknown[]) {
@@ -49,7 +50,7 @@ export function Page({ title, subtitle, action, back, children, width = 960 }: {
   return (
     <Box sx={{ maxWidth: width, mx: 'auto', px: { xs: 2, md: 4 }, pt: { xs: 2, md: 4 }, pb: { xs: 11, md: 6 } }}>
       {back && <Box sx={{ mb: 1 }}>{back}</Box>}
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'flex-start', justifyContent: 'space-between', mb: 2.5 }}>
+      <Stack direction="row" spacing={2} sx={{ alignItems: 'flex-end', justifyContent: 'space-between', mb: 3 }}>
         <Box sx={{ minWidth: 0 }}>
           <Typography variant="h1" component="h1">{title}</Typography>
           {subtitle && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{subtitle}</Typography>}
@@ -95,21 +96,32 @@ export function StatusBadge({ label, tone = 'neutral' }: { label: string; tone?:
   const [bg, fg] = colors[tone];
   return (
     <Box component="span" sx={{
-      display: 'inline-flex', alignItems: 'center', height: 22, px: 1, borderRadius: 1.5, bgcolor: bg, color: fg,
-      fontSize: '0.75rem', fontWeight: 500, whiteSpace: 'nowrap', border: tone === 'neutral' ? `1px solid ${vt.border}` : 'none',
+      display: 'inline-flex', alignItems: 'center', height: 24, px: 1.25, borderRadius: 999, bgcolor: bg, color: fg,
+      fontSize: '0.8125rem', fontWeight: 600, whiteSpace: 'nowrap', border: tone === 'neutral' ? `1.5px solid ${vt.border}` : 'none',
     }}>
       {label}
     </Box>
   );
 }
 
-/** A KPI tile: a sentence-case label and one number in the text color. */
-export function StatTile({ label, value }: { label: string; value: number | string }) {
+export type TileTone = 'plain' | 'lime' | 'blue' | 'ink';
+
+/** A big number on a solid tile, with its label under it. The label carries
+ *  the meaning; the tile color only groups tiles at a glance. */
+export function StatTile({ label, value, tone = 'plain' }: { label: string; value: number | string; tone?: TileTone }) {
+  const { vt } = useTheme();
+  const colors: Record<TileTone, [string, string, string]> = {
+    plain: [vt.surface, vt.text, vt.text2],
+    lime: [vt.lime, vt.onLime, vt.onLime],
+    blue: [vt.accent, vt.onAccent, vt.onAccent],
+    ink: [vt.ink, vt.onInk, vt.onInk2],
+  };
+  const [bg, fg, sub] = colors[tone];
   return (
-    <Card sx={{ flex: 1, minWidth: 0 }}>
-      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-        <Typography variant="body2" color="text.secondary" noWrap>{label}</Typography>
-        <Typography sx={{ fontSize: '1.5rem', fontWeight: 600, letterSpacing: '-0.02em', mt: 0.5 }}>{value}</Typography>
+    <Card sx={{ flex: 1, minWidth: 0, bgcolor: bg, color: fg }}>
+      <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
+        <Typography sx={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: { xs: '2.25rem', md: '2.75rem' }, lineHeight: 1, letterSpacing: '-0.03em' }}>{value}</Typography>
+        <Typography variant="body2" noWrap sx={{ mt: 1, fontWeight: 600, color: sub }}>{label}</Typography>
       </CardContent>
     </Card>
   );
@@ -211,8 +223,8 @@ export function IconTile({ icon, tone = 'neutral' }: { icon: ReactNode; tone?: T
   };
   const [bg, fg] = colors[tone];
   return (
-    <Box aria-hidden sx={{ width: 32, height: 32, flexShrink: 0, borderRadius: 2, bgcolor: bg, color: fg, display: 'grid', placeItems: 'center',
-      border: tone === 'neutral' ? `1px solid ${vt.border}` : 'none', '& svg': { fontSize: 18 } }}>{icon}</Box>
+    <Box aria-hidden sx={{ width: 36, height: 36, flexShrink: 0, borderRadius: 999, bgcolor: bg, color: fg, display: 'grid', placeItems: 'center',
+      border: tone === 'neutral' ? `1.5px solid ${vt.border}` : 'none', '& svg': { fontSize: 19 } }}>{icon}</Box>
   );
 }
 
@@ -222,7 +234,7 @@ export function Initials({ name, muted, size = 36 }: { name: string; muted?: boo
   const letters = name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join('');
   return (
     <Box aria-hidden sx={{ width: size, height: size, flexShrink: 0, borderRadius: '50%', display: 'grid', placeItems: 'center',
-      fontSize: size < 32 ? '0.6875rem' : '0.8125rem', fontWeight: 600,
+      fontSize: size < 32 ? '0.6875rem' : '0.8125rem', fontWeight: 800, fontFamily: FONT_DISPLAY,
       bgcolor: muted ? vt.subtle : vt.accentSoft, color: muted ? vt.text3 : vt.accent, border: muted ? `1px solid ${vt.border}` : 'none' }}>
       {letters}
     </Box>
@@ -233,9 +245,9 @@ export function Initials({ name, muted, size = 36 }: { name: string; muted?: boo
 export function SpotBar({ filled, total, label }: { filled: number; total: number; label: string }) {
   const { vt } = useTheme();
   return (
-    <Box role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={total} aria-valuenow={filled} sx={{ display: 'flex', gap: 0.5, height: 6 }}>
+    <Box role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={total} aria-valuenow={filled} sx={{ display: 'flex', gap: 0.5, height: 8 }}>
       {Array.from({ length: Math.min(total, 40) }, (_, i) => (
-        <Box key={i} sx={{ flex: 1, borderRadius: 3, bgcolor: i < filled ? vt.accent : vt.border }} />
+        <Box key={i} sx={{ flex: 1, borderRadius: 4, bgcolor: i < filled ? vt.accent : vt.border }} />
       ))}
     </Box>
   );

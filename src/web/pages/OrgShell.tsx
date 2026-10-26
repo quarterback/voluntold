@@ -4,6 +4,7 @@ import {
   AppBar, BottomNavigation, BottomNavigationAction, Box, Button, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Paper, Toolbar, Typography, useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { FONT_DISPLAY } from '../theme';
 import TodayIcon from '@mui/icons-material/TodayOutlined';
 import TaskIcon from '@mui/icons-material/AssignmentOutlined';
 import PeopleIcon from '@mui/icons-material/GroupOutlined';
@@ -64,32 +65,33 @@ export function OrgShell() {
     <OrgContext.Provider value={{ ...data, path, reload }}>
       {wide ? (
         <Box component="nav" aria-label="Main" sx={{
-          position: 'fixed', inset: '0 auto 0 0', width: SIDEBAR, bgcolor: 'background.paper', borderRight: `1px solid ${theme.vt.border}`, p: 1.5, display: 'flex', flexDirection: 'column',
+          position: 'fixed', inset: '0 auto 0 0', width: SIDEBAR, bgcolor: theme.vt.ink, color: theme.vt.onInk, p: 1.5, display: 'flex', flexDirection: 'column',
         }}>
           <Button onClick={() => navigate('/?choose=1')} endIcon={<UnfoldIcon fontSize="small" />}
-            sx={{ justifyContent: 'space-between', color: 'text.primary', fontWeight: 600, px: 1.25, mb: 1.5, minHeight: 40 }}>
-            <Typography component="span" noWrap sx={{ fontWeight: 600 }}>{data.org.name}</Typography>
+            sx={{ justifyContent: 'space-between', color: theme.vt.onInk, px: 1.25, mb: 2, minHeight: 48, borderRadius: 2.5, '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' } }}>
+            <Typography component="span" noWrap sx={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: '1.0625rem', letterSpacing: '-0.01em' }}>{data.org.name}</Typography>
           </Button>
           <List disablePadding>
             {[...TABS, SETTINGS].map((t) => (
               <ListItemButton key={t.key} selected={tab === t.key} onClick={() => go(t.key)}
                 aria-current={tab === t.key ? 'page' : undefined}
-                sx={{ mb: 0.25, py: 0.75, '&.Mui-selected': { bgcolor: theme.vt.accentSoft, color: theme.vt.accent, '& .MuiListItemIcon-root': { color: theme.vt.accent } } }}>
-                <ListItemIcon sx={{ minWidth: 32, color: 'text.secondary' }}>{t.icon}</ListItemIcon>
+                sx={{ mb: 0.5, py: 1, color: theme.vt.onInk, '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
+                  '&.Mui-selected, &.Mui-selected:hover': { bgcolor: theme.vt.lime, color: theme.vt.onLime, '& .MuiListItemIcon-root': { color: theme.vt.onLime } } }}>
+                <ListItemIcon sx={{ minWidth: 34, color: theme.vt.onInk2 }}>{t.icon}</ListItemIcon>
                 <ListItemText primary={t.label} />
               </ListItemButton>
             ))}
           </List>
           <Box sx={{ flex: 1 }} />
-          <Typography variant="caption" sx={{ px: 1.25 }} noWrap>{data.me.email}</Typography>
+          <Typography variant="caption" sx={{ px: 1.25, color: theme.vt.onInk2 }} noWrap>{data.me.email}</Typography>
         </Box>
       ) : (
         <AppBar position="sticky">
           <Toolbar sx={{ gap: 1, justifyContent: 'space-between' }}>
-            <Button onClick={() => navigate('/?choose=1')} endIcon={<UnfoldIcon fontSize="small" />} sx={{ color: 'text.primary', fontWeight: 600, px: 0.5, minWidth: 0, maxWidth: '100%' }}>
-              <Typography component="span" noWrap sx={{ fontWeight: 600 }}>{data.org.name}</Typography>
+            <Button onClick={() => navigate('/?choose=1')} endIcon={<UnfoldIcon fontSize="small" />} sx={{ color: theme.vt.onInk, px: 0.5, minWidth: 0, maxWidth: '100%' }}>
+              <Typography component="span" noWrap sx={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: '1.0625rem' }}>{data.org.name}</Typography>
             </Button>
-            <IconButton aria-label="Settings" onClick={() => go('settings')} sx={{ color: tab === 'settings' ? 'primary.main' : 'text.secondary' }}><SettingsIcon fontSize="small" /></IconButton>
+            <IconButton aria-label="Settings" onClick={() => go('settings')} sx={{ color: tab === 'settings' ? theme.vt.lime : theme.vt.onInk2 }}><SettingsIcon fontSize="small" /></IconButton>
           </Toolbar>
         </AppBar>
       )}
