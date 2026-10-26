@@ -16,7 +16,7 @@ import SplitIcon from '@mui/icons-material/CallSplit';
 import HubIcon from '@mui/icons-material/HubOutlined';
 import { api } from '../api';
 import { useOrg } from './OrgShell';
-import { EmptyState, IconTile, Initials, Loading, StatTile, StatusBadge, errorText, useLoad, type Tone } from './common';
+import { EmptyState, IconTile, Initials, Loading, StatTile, StatusBadge, errorText, useDialogs, useLoad, type Tone } from './common';
 import { CopyList } from './TaskDetail';
 import { effortText } from '../format';
 import { day, timeRange } from '../../shared/time';
@@ -277,6 +277,7 @@ function NeedDetail({ id, onChanged, onEdit }: { id: string; onChanged: () => vo
 
 function NeedEditor({ need, onClose }: { need: any; onClose: (id?: string) => void }) {
   const { path } = useOrg();
+  const dialogs = useDialogs();
   const [form, setForm] = useState({
     title: need.title ?? '',
     startsAt: need.startsAt ? new Date(need.startsAt).toISOString().slice(0, 10) : '',
@@ -294,6 +295,21 @@ function NeedEditor({ need, onClose }: { need: any; onClose: (id?: string) => vo
         const res = await api(path('/needs'), { body });
         onClose(res.id);
       }
+    } catch (e) {
+      setProblem(errorText(e));
+    }
+  }
+  async function remove() {
+    const ok = await dialogs.confirm({
+      title: `Delete ${need.title}?`,
+      body: 'This removes the need and its supplies. Tasks already made from it stay.',
+      confirm: 'Delete need',
+      destructive: true,
+    });
+    if (!ok) return;
+    try {
+      await api(path(`/needs/${need.id}`), { method: 'DELETE' });
+      onClose();
     } catch (e) {
       setProblem(errorText(e));
     }
@@ -327,6 +343,7 @@ function NeedEditor({ need, onClose }: { need: any; onClose: (id?: string) => vo
         </Stack>
       </DialogContent>
       <DialogActions>
+        {need.id && <Button color="error" onClick={remove} sx={{ mr: 'auto' }}>Delete</Button>}
         <Button variant="outlined" onClick={() => onClose()}>Cancel</Button>
         <Button variant="contained" disabled={!form.title.trim()} onClick={save}>{need.id ? 'Save' : 'Create need'}</Button>
       </DialogActions>

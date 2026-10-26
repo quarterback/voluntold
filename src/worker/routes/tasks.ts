@@ -315,10 +315,16 @@ taskRoutes.delete('/tasks/:taskId', async (c) => {
   const actor = c.get('actor');
   const task = await taskFor(c, c.req.param('taskId'));
   mustManageTask(actor, task.teamId);
-  if (task.status !== 'draft') fail(409, 'Only drafts can be deleted. Cancel it instead.');
+  // Everything the task owns goes with it. Spots come before asks: a spot
+  // points at the ask it came from.
+  const del = (sql: string) => c.env.DB.prepare(sql).bind(task.id, actor.orgId);
   await c.env.DB.batch([
+    del('DELETE FROM spots WHERE task_id = ? AND org_id = ?'),
+    del('DELETE FROM asks WHERE task_id = ? AND org_id = ?'),
+    del('DELETE FROM reports WHERE task_id = ? AND org_id = ?'),
+    del('DELETE FROM offer_skips WHERE task_id = ? AND org_id = ?'),
     c.env.DB.prepare("DELETE FROM taggings WHERE object_type = 'task' AND object_id = ? AND org_id = ?").bind(task.id, actor.orgId),
-    c.env.DB.prepare('DELETE FROM tasks WHERE id = ? AND org_id = ?').bind(task.id, actor.orgId),
+    del('DELETE FROM tasks WHERE id = ? AND org_id = ?'),
   ]);
   return c.json({ ok: true });
 });

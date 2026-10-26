@@ -312,10 +312,43 @@ export function Settings() {
             </Stack>
           </Section>
         )}
+        {me.role === 'admin' && <DeleteOrgSection />}
         <Box>
           <Button onClick={async () => { await api('/api/auth/logout', { body: {} }); location.href = '/login'; }}>Sign out</Button>
         </Box>
       </Stack>
     </Page>
+  );
+}
+
+function DeleteOrgSection() {
+  const { org, path } = useOrg();
+  const dialogs = useDialogs();
+  const [problem, setProblem] = useState<string | null>(null);
+
+  async function remove() {
+    const typed = await dialogs.prompt({
+      title: `Delete ${org.name}?`,
+      label: 'Type the name to confirm',
+      confirm: 'Delete organization',
+    });
+    if (typed === null) return;
+    if (typed.trim().toLowerCase() !== org.name.trim().toLowerCase()) {
+      setProblem('That name does not match.');
+      return;
+    }
+    try {
+      await api(path(''), { method: 'DELETE' });
+      location.href = '/';
+    } catch (e) {
+      setProblem(errorText(e));
+    }
+  }
+
+  return (
+    <Section title="Delete organization" note="Removes the organization and everyone and everything in it. It cannot be undone.">
+      {problem && <Alert severity="error" sx={{ mb: 2 }}>{problem}</Alert>}
+      <Button color="error" variant="outlined" onClick={remove}>Delete organization</Button>
+    </Section>
   );
 }
