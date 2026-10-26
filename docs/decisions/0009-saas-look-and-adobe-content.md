@@ -4,6 +4,8 @@ Date: 2026-10-25
 
 Status: Accepted, decided by the owner on 2026-10-25. The agent chose the specific values below, for the owner to review.
 
+Changed by [0011](0011-product-model-and-direction.md) on 2026-10-25: the look is under review in [the next version spec](../specs/next-version.md).
+
 ## Context
 
 The owner said the design should look more like SaaS software such as Stripe, or a consumer app such as Tock or OpenTable. The interface text should keep to a content guide like Adobe's.

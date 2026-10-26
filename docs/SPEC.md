@@ -5,6 +5,8 @@
 
 This is the only document a coding agent needs to build the pilot. The pilot is built: see the README for how to run it. Ideas that are not in the pilot are in [LATER.md](LATER.md). The reasons behind each choice are in [decisions/](decisions/). The October 21 to 24 planning docs are in [archive/](archive/) for reference. Where they disagree with this spec, this spec wins.
 
+The next version is in [specs/next-version.md](specs/next-version.md), from [decision 0011](decisions/0011-product-model-and-direction.md).
+
 ## What it does
 
 Organizations already have volunteers. Most don't know how to put them to work, so people who said they'd help are never asked. This tool does three things:
