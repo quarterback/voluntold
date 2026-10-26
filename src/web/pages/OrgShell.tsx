@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react';
 import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
-  AppBar, BottomNavigation, BottomNavigationAction, Box, Button, List, ListItemButton, ListItemIcon, ListItemText, Paper, Toolbar, Typography, useMediaQuery,
+  AppBar, BottomNavigation, BottomNavigationAction, Box, Button, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Paper, Toolbar, Typography, useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import TodayIcon from '@mui/icons-material/TodayOutlined';
@@ -9,6 +9,7 @@ import TaskIcon from '@mui/icons-material/AssignmentOutlined';
 import PeopleIcon from '@mui/icons-material/GroupOutlined';
 import SettingsIcon from '@mui/icons-material/SettingsOutlined';
 import UnfoldIcon from '@mui/icons-material/UnfoldMore';
+import NeedIcon from '@mui/icons-material/FlagOutlined';
 import { api, orgApi } from '../api';
 import { Loading, useLoad } from './common';
 import type { Field } from '../../shared/types';
@@ -17,6 +18,7 @@ export interface OrgInfo {
   org: { id: string; name: string; weeklyAskLimit: number; signupUrl: string | null; publishDefault: boolean; timeZone: string; atproto: { did: string; handle: string } | null };
   me: { role: 'admin' | 'coordinator' | 'lead'; memberId: string; leadTeamIds: string[]; email: string };
   atprotoReady: boolean;
+  demo: boolean;
   fields: Field[];
   teams: { id: string; name: string; volunteerIds: string[]; leadMemberIds: string[] }[];
 }
@@ -31,10 +33,12 @@ export const useOrg = () => useContext(OrgContext)!;
 
 const TABS = [
   { key: 'today', label: 'Today', icon: <TodayIcon fontSize="small" /> },
+  { key: 'needs', label: 'Needs', icon: <NeedIcon fontSize="small" /> },
   { key: 'tasks', label: 'Tasks', icon: <TaskIcon fontSize="small" /> },
   { key: 'people', label: 'People', icon: <PeopleIcon fontSize="small" /> },
-  { key: 'settings', label: 'Settings', icon: <SettingsIcon fontSize="small" /> },
 ];
+const SETTINGS = { key: 'settings', label: 'Settings', icon: <SettingsIcon fontSize="small" /> };
+const ALL_TABS = [...TABS, SETTINGS, { key: 'offers', label: 'Today', icon: null }];
 
 const SIDEBAR = 232;
 
@@ -51,7 +55,8 @@ export function OrgShell() {
   }, [orgId]);
 
   if (!data) return <Loading error={error} />;
-  const tab = TABS.find((t) => location.pathname.includes(`/${t.key}`))?.key ?? 'today';
+  const found = ALL_TABS.find((t) => location.pathname.includes(`/${t.key}`))?.key ?? 'today';
+  const tab = found === 'offers' ? 'today' : found;
   const go = (key: string) => navigate(`/o/${orgId}/${key}`);
 
   return (
@@ -65,7 +70,7 @@ export function OrgShell() {
             <Typography component="span" noWrap sx={{ fontWeight: 600 }}>{data.org.name}</Typography>
           </Button>
           <List disablePadding>
-            {TABS.map((t) => (
+            {[...TABS, SETTINGS].map((t) => (
               <ListItemButton key={t.key} selected={tab === t.key} onClick={() => go(t.key)}
                 aria-current={tab === t.key ? 'page' : undefined}
                 sx={{ mb: 0.25, py: 0.75, '&.Mui-selected': { bgcolor: theme.vt.accentSoft, color: theme.vt.accent, '& .MuiListItemIcon-root': { color: theme.vt.accent } } }}>
@@ -79,10 +84,11 @@ export function OrgShell() {
         </Box>
       ) : (
         <AppBar position="sticky">
-          <Toolbar sx={{ gap: 1 }}>
+          <Toolbar sx={{ gap: 1, justifyContent: 'space-between' }}>
             <Button onClick={() => navigate('/?choose=1')} endIcon={<UnfoldIcon fontSize="small" />} sx={{ color: 'text.primary', fontWeight: 600, px: 0.5, minWidth: 0, maxWidth: '100%' }}>
               <Typography component="span" noWrap sx={{ fontWeight: 600 }}>{data.org.name}</Typography>
             </Button>
+            <IconButton aria-label="Settings" onClick={() => go('settings')} sx={{ color: tab === 'settings' ? 'primary.main' : 'text.secondary' }}><SettingsIcon fontSize="small" /></IconButton>
           </Toolbar>
         </AppBar>
       )}
@@ -91,7 +97,7 @@ export function OrgShell() {
       </Box>
       {!wide && (
         <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10 }} elevation={0}>
-          <BottomNavigation showLabels value={tab} onChange={(_, v) => go(v)} component="nav" aria-label="Main">
+          <BottomNavigation showLabels value={tab === 'settings' ? false : tab} onChange={(_, v) => go(v)} component="nav" aria-label="Main">
             {TABS.map((t) => <BottomNavigationAction key={t.key} label={t.label} value={t.key} icon={t.icon} />)}
           </BottomNavigation>
         </Paper>

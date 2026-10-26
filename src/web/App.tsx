@@ -11,6 +11,8 @@ import { Person } from './pages/Person';
 import { Settings } from './pages/Settings';
 import { Import } from './pages/Import';
 import { VolunteerPage } from './pages/VolunteerPage';
+import { Needs } from './pages/Needs';
+import { Offers } from './pages/Offers';
 
 export function App() {
   return (
@@ -21,6 +23,9 @@ export function App() {
       <Route path="/o/:orgId" element={<OrgShell />}>
         <Route index element={<Navigate to="today" replace />} />
         <Route path="today" element={<Today />} />
+        <Route path="needs" element={<Needs />} />
+        <Route path="needs/:needId" element={<Needs />} />
+        <Route path="offers" element={<Offers />} />
         <Route path="tasks" element={<Tasks />} />
         <Route path="tasks/new" element={<TaskEdit />} />
         <Route path="tasks/:taskId" element={<TaskDetail />} />

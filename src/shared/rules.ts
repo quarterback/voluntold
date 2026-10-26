@@ -92,6 +92,8 @@ export interface FitContext {
   busy: Busy[];
   /** Already asked about this task. */
   alreadyAsked: boolean;
+  /** The organization's time zone, for matching usual days. */
+  timeZone?: string;
 }
 
 export type NoFitReason =
@@ -101,6 +103,7 @@ export type NoFitReason =
   | 'stopped'
   | 'weekly_limit'
   | 'busy'
+  | 'unavailable'
   | 'already_asked';
 
 /** Returns null when the volunteer can be asked, or the first reason they can't. */
@@ -118,7 +121,45 @@ export function whyNotFit(
   if (ctx.asksLast7Days >= ctx.weeklyLimit) return 'weekly_limit';
   const span = taskSpan(task);
   if (span && ctx.busy.some((b) => b.start < span.end && span.start < b.end)) return 'busy';
+  if (!available(volunteer, task, ctx.timeZone)) return 'unavailable';
   return null;
+}
+
+export const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
+export const PART_KEYS = ['am', 'pm', 'eve'] as const;
+
+/** "sat_am" for a Saturday morning in the given time zone. Mornings end at noon, afternoons at 5pm. */
+export function slotOf(ms: number, timeZone?: string): string {
+  const f = new Intl.DateTimeFormat('en-US', { weekday: 'short', hour: 'numeric', hour12: false, timeZone });
+  const p = Object.fromEntries(f.formatToParts(new Date(ms)).map((x) => [x.type, x.value]));
+  const hour = Number(p.hour) % 24;
+  const part = hour < 12 ? 'am' : hour < 17 ? 'pm' : 'eve';
+  return `${String(p.weekday).slice(0, 3).toLowerCase()}_${part}`;
+}
+
+/** How long the work takes, in minutes, if known. */
+export function effortOf(task: Pick<Task, 'timing' | 'startsAt' | 'endsAt' | 'effortMinutes'>): number | null {
+  if (task.effortMinutes) return task.effortMinutes;
+  const span = taskSpan(task);
+  return span ? Math.round((span.end - span.start) / 60000) : null;
+}
+
+/**
+ * Whether the work fits the time the person said they have. Work longer than
+ * their hours a week doesn't fit. Remote work fits any day. In-person work at
+ * a set time must fall in one of their usual times, when they gave any.
+ */
+export function available(
+  volunteer: Pick<Volunteer, 'days' | 'hoursWeek' | 'remoteOk'>,
+  task: Pick<Task, 'timing' | 'startsAt' | 'endsAt' | 'remote' | 'effortMinutes'>,
+  timeZone?: string,
+): boolean {
+  const effort = effortOf(task);
+  if (volunteer.hoursWeek !== null && volunteer.hoursWeek !== undefined && effort !== null && effort > volunteer.hoursWeek * 60) return false;
+  if (task.remote) return true;
+  const span = taskSpan(task);
+  if (!span || volunteer.days.length === 0) return true;
+  return volunteer.days.includes(slotOf(span.start, timeZone));
 }
 
 export function pauseOver(volunteer: Pick<Volunteer, 'status' | 'pausedUntil'>, now: number): boolean {

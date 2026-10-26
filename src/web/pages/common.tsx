@@ -201,3 +201,42 @@ export function DialogProvider({ children }: { children: ReactNode }) {
     </DialogContext.Provider>
   );
 }
+
+/** A colored square holding an icon, at the start of a decision row. */
+export function IconTile({ icon, tone = 'neutral' }: { icon: ReactNode; tone?: Tone }) {
+  const { vt } = useTheme();
+  const colors: Record<Tone, [string, string]> = {
+    neutral: [vt.subtle, vt.text2], accent: [vt.accentSoft, vt.accent], success: [vt.successSoft, vt.success],
+    warning: [vt.warningSoft, vt.warning], danger: [vt.dangerSoft, vt.danger], info: [vt.infoSoft, vt.info],
+  };
+  const [bg, fg] = colors[tone];
+  return (
+    <Box aria-hidden sx={{ width: 32, height: 32, flexShrink: 0, borderRadius: 2, bgcolor: bg, color: fg, display: 'grid', placeItems: 'center',
+      border: tone === 'neutral' ? `1px solid ${vt.border}` : 'none', '& svg': { fontSize: 18 } }}>{icon}</Box>
+  );
+}
+
+/** Initials in a circle. Gray when the person can't be asked right now. */
+export function Initials({ name, muted, size = 36 }: { name: string; muted?: boolean; size?: number }) {
+  const { vt } = useTheme();
+  const letters = name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join('');
+  return (
+    <Box aria-hidden sx={{ width: size, height: size, flexShrink: 0, borderRadius: '50%', display: 'grid', placeItems: 'center',
+      fontSize: size < 32 ? '0.6875rem' : '0.8125rem', fontWeight: 600,
+      bgcolor: muted ? vt.subtle : vt.accentSoft, color: muted ? vt.text3 : vt.accent, border: muted ? `1px solid ${vt.border}` : 'none' }}>
+      {letters}
+    </Box>
+  );
+}
+
+/** A progress bar split into one piece per spot. */
+export function SpotBar({ filled, total, label }: { filled: number; total: number; label: string }) {
+  const { vt } = useTheme();
+  return (
+    <Box role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={total} aria-valuenow={filled} sx={{ display: 'flex', gap: 0.5, height: 6 }}>
+      {Array.from({ length: Math.min(total, 40) }, (_, i) => (
+        <Box key={i} sx={{ flex: 1, borderRadius: 3, bgcolor: i < filled ? vt.accent : vt.border }} />
+      ))}
+    </Box>
+  );
+}

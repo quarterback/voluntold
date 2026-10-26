@@ -24,6 +24,11 @@ function volunteer(over: Partial<Volunteer> = {}): Volunteer {
     teamIds: ['desk'],
     lastAskedAt: null,
     unansweredStreak: 0,
+    tier: null,
+    hoursWeek: null,
+    days: [],
+    remoteOk: false,
+    createdAt: 0,
     ...over,
   };
 }
@@ -50,6 +55,11 @@ function task(over: Partial<Task> = {}): Task {
     nextRoundAt: null,
     publish: false,
     status: 'open',
+    needId: null,
+    remote: false,
+    effortMinutes: null,
+    bring: '',
+    files: [],
     ...over,
   };
 }

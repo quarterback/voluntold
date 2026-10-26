@@ -45,6 +45,12 @@ interface Form {
   askWaitHours: number;
   teamId: string;
   publish: boolean;
+  needId: string | null;
+  remote: boolean;
+  effortMinutes: string;
+  bring: string;
+  fileName: string;
+  fileUrl: string;
 }
 
 
@@ -58,12 +64,18 @@ export function TaskEdit() {
   const [status, setStatus] = useState('draft');
   const leadOnly = me.role === 'lead';
 
+  const query = new URLSearchParams(location.search);
+  const urgent = query.has('urgent');
   useEffect(() => {
     if (!taskId) {
+      // An urgent ask starts soon and asks everyone who fits at once.
+      const soon = new Date(Date.now() + 3 * 60 * 60 * 1000);
+      soon.setMinutes(0, 0, 0);
       setForm({
-        title: '', description: '', contact: '', timing: 'at_time', startsAt: '', endsAt: '', dueAt: '', placePublic: '', placePrivate: '',
-        peopleNeeded: 2, requirements: [], askMode: 'few', askBatch: '', askWaitHours: 24, teamId: leadOnly ? me.leadTeamIds[0] ?? '' : '',
-        publish: Boolean(org.atproto) && org.publishDefault,
+        title: '', description: '', contact: '', timing: 'at_time', startsAt: urgent ? toLocalInput(soon.getTime()) : '',
+        endsAt: urgent ? toLocalInput(soon.getTime() + 2 * 60 * 60 * 1000) : '', dueAt: '', placePublic: '', placePrivate: '',
+        peopleNeeded: urgent ? 1 : 2, requirements: [], askMode: urgent ? 'everyone' : 'few', askBatch: '', askWaitHours: 24, teamId: leadOnly ? me.leadTeamIds[0] ?? '' : '',
+        publish: Boolean(org.atproto) && org.publishDefault, needId: query.get('need'), remote: false, effortMinutes: '', bring: '', fileName: '', fileUrl: '',
       });
       return;
     }
@@ -76,6 +88,9 @@ export function TaskEdit() {
         dueAt: toLocalDate(task.dueAt),
         askBatch: task.askBatch ? String(task.askBatch) : '',
         teamId: task.teamId ?? '',
+        effortMinutes: task.effortMinutes ? String(task.effortMinutes) : '',
+        fileName: task.files[0]?.name ?? '',
+        fileUrl: task.files[0]?.url ?? '',
       });
     }, (e) => setError(errorText(e)));
   }, [taskId]);
@@ -93,6 +108,8 @@ export function TaskEdit() {
       dueAt: form!.dueAt ? new Date(`${form!.dueAt}T23:59`).getTime() : null,
       askBatch: form!.askBatch ? Number(form!.askBatch) : null,
       teamId: form!.teamId || null,
+      effortMinutes: form!.effortMinutes ? Number(form!.effortMinutes) : null,
+      files: form!.fileUrl ? [{ name: form!.fileName || 'File', url: form!.fileUrl }] : [],
     };
   }
 
@@ -106,7 +123,7 @@ export function TaskEdit() {
         navigate(`/o/${org.id}/tasks/${taskId}`);
       } else {
         const res = await api(path('/tasks'), { body: { ...payload(), open } });
-        navigate(`/o/${org.id}/tasks/${res.id}`);
+        navigate(form!.needId ? `/o/${org.id}/needs/${form!.needId}` : `/o/${org.id}/tasks/${res.id}`);
       }
     } catch (e) {
       setError(errorText(e));
@@ -136,7 +153,7 @@ export function TaskEdit() {
 
   return (
     <Page
-      title={taskId ? 'Edit task' : 'New task'}
+      title={taskId ? 'Edit task' : urgent ? 'Urgent ask' : form.needId ? 'New assignment' : 'New task'}
       width={760}
       back={<Button size="small" startIcon={<BackIcon fontSize="small" />} onClick={() => navigate(-1)} sx={{ color: 'text.secondary', ml: -1 }}>Back</Button>}
     >
@@ -171,6 +188,16 @@ export function TaskEdit() {
               <TextField label="Volunteers needed" type="number" value={form.peopleNeeded} onChange={(e) => set('peopleNeeded', Number(e.target.value))}
                 slotProps={{ htmlInput: { min: 1, max: 500 } }} sx={{ width: 170, flexShrink: 0 }} />
               <TextField label="Contact" value={form.contact} onChange={(e) => set('contact', e.target.value)} />
+            </Stack>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ alignItems: { sm: 'flex-end' } }}>
+              <TextField label="Effort in minutes" type="number" value={form.effortMinutes} onChange={(e) => set('effortMinutes', e.target.value)}
+                slotProps={{ htmlInput: { min: 5, max: 1440 } }} sx={{ width: { sm: 170 }, flexShrink: 0 }} />
+              <TextField label="Bring" value={form.bring} onChange={(e) => set('bring', e.target.value)} />
+              <FormControlLabel control={<Switch checked={form.remote} onChange={(e) => set('remote', e.target.checked)} />} label="Remote" sx={{ flexShrink: 0, mb: 0.5 }} />
+            </Stack>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <TextField label="File name" value={form.fileName} onChange={(e) => set('fileName', e.target.value)} sx={{ width: { sm: 220 }, flexShrink: 0 }} />
+              <TextField label="File link" type="url" value={form.fileUrl} onChange={(e) => set('fileUrl', e.target.value)} />
             </Stack>
           </Stack>
         </Section>

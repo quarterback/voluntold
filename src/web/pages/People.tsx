@@ -9,15 +9,17 @@ import SearchIcon from '@mui/icons-material/Search';
 import FilterIcon from '@mui/icons-material/FilterList';
 import { api } from '../api';
 import { useOrg } from './OrgShell';
-import { EmptyState, Loading, Page, StatusBadge, errorText, useDialogs, useLoad, type Tone } from './common';
+import { EmptyState, Initials, Loading, Page, StatusBadge, errorText, useDialogs, useLoad, type Tone } from './common';
+import { TIER_TEXT, usualTimes } from '../format';
 import { meetsRequirement, byLongestWait } from '../../shared/rules';
 import type { Requirement, Volunteer } from '../../shared/types';
 
-type Row = Volunteer & { standing: string };
+type Row = Volunteer & { standing: string; asked: number; yes: number; offerReady: boolean };
 
 interface Filter {
   q?: string;
   status?: 'never' | 'paused' | 'stopped' | '';
+  tier?: string;
   teamId?: string;
   fieldId?: string;
   value?: string;
@@ -28,6 +30,7 @@ function matches(v: Row, f: Filter, fields: ReturnType<typeof useOrg>['fields'])
   if (f.status === 'never' && v.lastAskedAt !== null) return false;
   if (f.status === 'paused' && v.status !== 'paused') return false;
   if (f.status === 'stopped' && v.status !== 'stopped') return false;
+  if (f.tier && v.tier !== f.tier) return false;
   if (f.teamId && !v.teamIds.includes(f.teamId)) return false;
   if (f.fieldId && f.value) {
     const field = fields.find((x) => x.id === f.fieldId);
@@ -39,15 +42,32 @@ function matches(v: Row, f: Filter, fields: ReturnType<typeof useOrg>['fields'])
   return true;
 }
 
-/** A short status for the badge column. The full sentence sits under it. */
-function badge(v: Row): [string, Tone] {
+/** A short status, only when there's something to act on. */
+function badge(v: Row): [string, Tone] | null {
   if (v.status === 'stopped') return ['Stopped', 'danger'];
   if (v.status === 'paused') return ['Paused', 'warning'];
-  if (v.lastAskedAt === null) return ['Ready', 'info'];
-  return ['Active', 'success'];
+  if (v.offerReady) return ['Offer ready', 'accent'];
+  return null;
 }
 
-const COLUMNS = { xs: '1fr auto', md: 'minmax(0, 1.5fr) minmax(0, 1.6fr) minmax(0, 1.4fr) 112px' };
+const md = (ms: number) => new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+/** What the person does and when they're free. */
+function about(v: Row, fields: ReturnType<typeof useOrg>['fields']): string {
+  const skills = fields.filter((f) => f.type === 'many').flatMap((f) => [v.values[f.id] ?? []].flat()).map(String).slice(0, 3).join(', ');
+  const times = v.days.length ? usualTimes(v.days.slice(0, 2)) : '';
+  const extra = [v.remoteOk ? 'remote' : '', v.hoursWeek ? `${v.hoursWeek} hr` : ''].filter(Boolean).join(', ');
+  return [skills, [times, extra].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+}
+
+/** When they were last asked, and how they answer. */
+function history(v: Row): string {
+  if (v.status === 'paused' && v.pausedReason === 'no_answer') return 'No reply to 3 asks';
+  if (v.status === 'paused' && v.pausedUntil) return `Paused until ${md(v.pausedUntil)}`;
+  if (v.status === 'stopped') return 'Unsubscribed';
+  if (v.lastAskedAt === null) return `Joined ${md(v.createdAt)} · never offered`;
+  return v.asked ? `Last asked ${md(v.lastAskedAt)} · yes ${v.yes} of ${v.asked}` : `Last asked ${md(v.lastAskedAt)}`;
+}
 
 export function People() {
   const { path, fields, teams, me } = useOrg();
@@ -95,8 +115,15 @@ export function People() {
               <Button variant="outlined" startIcon={<FilterIcon fontSize="small" />} onClick={() => setShowFilters(!showFilters)}>Filters</Button>
             </Stack>
             <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
-              {[['', 'All'], ['never', 'Never asked'], ['paused', 'Paused'], ['stopped', 'Stopped']].map(([k, label]) => (
-                <Chip key={k} label={label} color={filter.status === k ? 'primary' : 'default'} onClick={() => setFilter({ ...filter, status: k as Filter['status'] })} />
+              {([['', 'All'], ['never', 'Never offered'], ['paused', 'Paused'], ['stopped', 'Stopped']] as const).map(([k, label]) => (
+                <Chip key={k} label={`${label} ${data.volunteers.filter((v) => matches(v, { status: k }, fields)).length}`}
+                  color={filter.status === k ? 'primary' : 'default'} onClick={() => setFilter({ ...filter, status: k })} />
+              ))}
+            </Stack>
+            <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
+              {Object.entries(TIER_TEXT).map(([k, label]) => (
+                <Chip key={k} variant="outlined" label={`${label} ${data.volunteers.filter((v) => v.tier === k).length}`}
+                  color={filter.tier === k ? 'primary' : 'default'} onClick={() => setFilter({ ...filter, tier: filter.tier === k ? '' : k })} />
               ))}
               {data.lists.map((l) => (
                 <Chip key={l.id} label={l.name} variant="outlined" onClick={() => setFilter(l.filter)} onDelete={() => api(path(`/lists/${l.id}`), { method: 'DELETE' }).then(reload)} />
@@ -137,29 +164,26 @@ export function People() {
             )}
           </Stack>
 
+          <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Typography variant="body2" color="text.secondary">Longest wait first</Typography>
+            <Typography variant="body2" color="text.secondary">{shown.length} shown</Typography>
+          </Stack>
           <Card>
-            <Box sx={{ display: { xs: 'none', md: 'grid' }, gridTemplateColumns: COLUMNS.md, gap: 2, px: 2.5, py: 1, bgcolor: (t) => t.vt.subtle }}>
-              {['Name', 'Last asked', shownFields.map((f) => f.label).join(' and ') || 'Details', 'Status'].map((h) => (
-                <Typography key={h} variant="caption" sx={{ fontWeight: 500, color: 'text.secondary' }}>{h}</Typography>
-              ))}
-            </Box>
             {shown.length === 0 && <Typography color="text.secondary" sx={{ p: 2.5 }}>No results</Typography>}
             {shown.map((v, i) => {
-              const details = shownFields.flatMap((f) => [v.values[f.id]].flat()).filter(Boolean).join(', ');
-              const [label, tone] = badge(v);
+              const b = badge(v);
+              const muted = v.status !== 'active';
               return (
                 <Box key={v.id}>
-                  <Divider sx={{ display: i === 0 ? { xs: 'none', md: 'block' } : 'block' }} />
-                  <ListItemButton onClick={() => navigate(v.id)} sx={{ borderRadius: 0, px: 2.5, py: 1.25, display: 'grid', gridTemplateColumns: COLUMNS, gap: { xs: 0.5, md: 2 }, alignItems: 'center' }}>
-                    <Box sx={{ minWidth: 0 }}>
-                      <Typography variant="h3" noWrap>{v.name}</Typography>
-                      <Typography variant="body2" color="text.secondary" noWrap>{[v.email ?? v.phone, ...v.teamIds.map((id) => teamName.get(id))].filter(Boolean).join(' · ')}</Typography>
+                  {i > 0 && <Divider />}
+                  <ListItemButton onClick={() => navigate(v.id)} sx={{ borderRadius: 0, px: 2, py: 1.25, gap: 1.5, alignItems: 'flex-start' }}>
+                    <Initials name={v.name} muted={muted} />
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="h3" noWrap>{v.name}{v.tier ? <Typography component="span" variant="body2" color="text.secondary"> · {TIER_TEXT[v.tier]}</Typography> : null}</Typography>
+                      {about(v, fields) && <Typography variant="body2" color="text.secondary" noWrap>{about(v, fields)}</Typography>}
+                      <Typography variant="body2" sx={{ color: 'text.disabled' }} noWrap>{history(v)}</Typography>
                     </Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ gridRow: { xs: 2, md: 'auto' }, gridColumn: { xs: '1 / -1', md: 'auto' } }}>
-                      {v.standing}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" noWrap sx={{ display: { xs: 'none', md: 'block' } }}>{details}</Typography>
-                    <Box sx={{ gridRow: { xs: 1, md: 'auto' }, gridColumn: { xs: 2, md: 'auto' } }}><StatusBadge label={label} tone={tone} /></Box>
+                    {b && <StatusBadge label={b[0]} tone={b[1]} />}
                   </ListItemButton>
                 </Box>
               );

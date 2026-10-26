@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import type { AppBindings } from '../env';
 import { must, mustManageTeam } from '../auth';
 import { loadFields, loadOrg, logEvent, publicOrg } from '../db';
-import { cleanText, fail, newId, normalizeEmail, optionalText } from '../util';
+import { cleanText, fail, isDev, newId, normalizeEmail, optionalText } from '../util';
 import { connectAccount, disconnectAccount, syncTask } from '../atproto';
 import type { FieldType, Requirement } from '../../shared/types';
 
@@ -72,6 +72,7 @@ orgRoutes.get('/', async (c) => {
     org: publicOrg(org!),
     me: { role: actor.role, memberId: actor.memberId, leadTeamIds: actor.leadTeamIds, email: actor.email },
     atprotoReady: Boolean(c.env.ATPROTO_TASK_NSID),
+    demo: isDev(c.env),
   });
 });
 

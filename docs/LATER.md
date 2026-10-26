@@ -6,7 +6,7 @@ Ideas that are not in the pilot, one line each. When a pilot organization needs 
 
 - **Notes into tasks:** paste a list, notes or a document, and a model drafts tasks for the coordinator to edit.
 - **Warm, small tasks:** suggest small, easy tasks for people who haven't done anything in a while, to keep them involved.
-- **Work for people who fit nothing open:** suggest a task built from a person's skills and the organization's needs.
+- **Work for people who fit nothing open:** suggest a task built from a person's skills and the organization's needs. The demo's first offers only propose work that already exists ([0010](decisions/0010-activation-demo.md)).
 - **Weekly drafts:** once a week, draft asks for people who have waited longest, ready for the coordinator to approve.
 
 ## Sending asks
@@ -20,7 +20,7 @@ Ideas that are not in the pilot, one line each. When a pilot organization needs 
 ## People and requirements
 
 - **Requirements that expire:** training or checks with an end date, and a warning before they run out.
-- **Tiers:** how often each person wants to be asked (one time, seasonal, regular, core).
+- **Tiers that change who fits:** how often each person wants to be asked (one time, seasonal, regular, core). The demo shows tiers but doesn't use them for matching ([0010](decisions/0010-activation-demo.md)).
 - **Standing roles:** roles such as show host, with yearly requirements and renewal.
 - **Hours outside the schedule:** a one-line note of extra hours, for organizations that must report them.
 - **Several coordinators:** each sees only their own tasks on Today, and the weekly limit still holds across all of them.

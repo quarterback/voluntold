@@ -2,13 +2,19 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Alert, Box, Button, Card, CardContent, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider,
-  LinearProgress, Link, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Snackbar, Stack, Typography,
+  Link, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Snackbar, Stack, Typography,
 } from '@mui/material';
 import BackIcon from '@mui/icons-material/ArrowBack';
 import { api } from '../api';
 import { useOrg } from './OrgShell';
-import { Loading, Page, StatusBadge, errorText, useDialogs, useLoad } from './common';
-import { REASON_TEXT, STATUS_TEXT, when } from '../format';
+import { IconTile, Initials, Loading, Page, SpotBar, StatusBadge, errorText, useDialogs, useLoad } from './common';
+import { REASON_TEXT, STATUS_TEXT, effortText, when } from '../format';
+import { day, time } from '../../shared/time';
+import PendingIcon from '@mui/icons-material/Pending';
+import DoneIcon from '@mui/icons-material/CheckCircle';
+import ScheduleIcon from '@mui/icons-material/ScheduleOutlined';
+import SplitIcon from '@mui/icons-material/CallSplit';
+import HubIcon from '@mui/icons-material/HubOutlined';
 import { STATUS_TONE } from './Tasks';
 
 interface NewAsk {
@@ -46,6 +52,7 @@ async function copy(text: string): Promise<boolean> {
 
 /** The links to send, one per person, with copy buttons. */
 export function CopyList({ asks, onClose }: { asks: NewAsk[]; onClose: () => void }) {
+  const { demo } = useOrg();
   const [copied, setCopied] = useState<string | null>(null);
   const all = asks.map((a) => a.message).join('\n\n');
   return (
@@ -60,6 +67,7 @@ export function CopyList({ asks, onClose }: { asks: NewAsk[]; onClose: () => voi
                   <Typography variant="h3">{a.name}</Typography>
                   <Typography variant="caption" noWrap component="p">{[a.email, a.phone].filter(Boolean).join(' · ')}</Typography>
                 </Box>
+                {demo && <Button size="small" href={a.link} target="_blank" rel="noopener" aria-label={`Open page for ${a.name}`}>Open</Button>}
                 <Button variant="outlined" size="small" aria-label={`Copy for ${a.name}`} onClick={async () => setCopied((await copy(a.message)) ? `Copied for ${a.name}` : "Couldn't copy")}>
                   Copy
                 </Button>
@@ -89,7 +97,7 @@ function Detail({ label, children }: { label: string; children: React.ReactNode 
 
 export function TaskDetail() {
   const { taskId } = useParams();
-  const { path } = useOrg();
+  const { path, org } = useOrg();
   const navigate = useNavigate();
   const dialogs = useDialogs();
   const { data, error, reload } = useLoad(() => api(path(`/tasks/${taskId}`)), [taskId]);
@@ -97,6 +105,7 @@ export function TaskDetail() {
   const [sent, setSent] = useState<NewAsk[] | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [shared, setShared] = useState<string | null>(null);
 
   if (!data) return <Loading error={error} />;
   const { task } = data;
@@ -170,7 +179,7 @@ export function TaskDetail() {
             <Card>
               <CardContent>
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-                  <Detail label="When">{when(task)}</Detail>
+                  <Detail label="When">{when(task, org.timeZone)}</Detail>
                   {task.placePublic && <Detail label="Location">{task.placePublic}</Detail>}
                   {task.placePrivate && <Detail label="Address">{task.placePrivate}</Detail>}
                   {task.contact && <Detail label="Contact">{task.contact}</Detail>}
@@ -184,12 +193,31 @@ export function TaskDetail() {
                     </Stack>
                   </Box>
                 )}
+                {(task.bring || task.files.length > 0 || task.remote || task.effortMinutes) && (
+                  <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap', mt: 2 }}>
+                    {task.remote && <Chip label="Remote" />}
+                    {task.effortMinutes && <Chip label={`About ${effortText(task.effortMinutes)}`} />}
+                    {task.bring && <Chip label={`Bring: ${task.bring}`} />}
+                    {task.files.map((f: any) => <Chip key={f.url} label={f.name} component="a" href={f.url} target="_blank" rel="noopener" clickable />)}
+                  </Stack>
+                )}
                 <Divider sx={{ my: 2 }} />
-                <Stack direction="row" sx={{ justifyContent: 'space-between', mb: 0.75 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{data.holding} of {task.peopleNeeded} filled</Typography>
-                  {canAsk && task.askMode === 'few' && !data.roundDue && <Typography variant="body2" color="text.secondary">Awaiting replies</Typography>}
+                <Stack direction="row" sx={{ justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>{data.holding} of {task.peopleNeeded} confirmed</Typography>
+                  {canAsk && task.askMode === 'few' && !data.roundDue && <Typography variant="body2" color="text.secondary">Waiting on replies</Typography>}
                 </Stack>
-                <LinearProgress variant="determinate" value={Math.min(100, (data.holding / task.peopleNeeded) * 100)} aria-label="Spots filled" />
+                <SpotBar filled={data.holding} total={task.peopleNeeded} label="Spots filled" />
+                {data.spots.filter((x: any) => x.status === 'holding').length > 0 && (
+                  <Stack spacing={1} sx={{ mt: 1.5 }}>
+                    {data.spots.filter((x: any) => x.status === 'holding').map((x: any) => (
+                      <Stack key={x.id} direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                        <Initials name={x.name} size={26} />
+                        <Typography variant="body2">{x.name}</Typography>
+                        <Typography variant="body2" color="text.secondary">{day(x.created_at, org.timeZone)}, {time(x.created_at, org.timeZone)}</Typography>
+                      </Stack>
+                    ))}
+                  </Stack>
+                )}
               </CardContent>
             </Card>
 
@@ -210,6 +238,53 @@ export function TaskDetail() {
           </Stack>
 
           <Stack spacing={2}>
+            {(data.batches.length > 0 || data.nextBatch) && (
+              <Card>
+                <CardContent>
+                  <Typography variant="h2" component="h2" sx={{ mb: 1 }}>Batches</Typography>
+                  <Box sx={{ position: 'relative', pl: 3.5, '&::before': { content: '""', position: 'absolute', left: 10, top: 10, bottom: 10, width: 2, bgcolor: (t) => t.vt.border } }}>
+                    {data.batches.map((b: any) => (
+                      <Box key={b.no} sx={{ position: 'relative', py: 0.75 }}>
+                        <Box sx={{ position: 'absolute', left: -28, top: 8, display: 'flex', bgcolor: 'background.paper', color: b.waiting ? 'primary.main' : 'success.main' }}>
+                          {b.waiting ? <PendingIcon fontSize="small" /> : <DoneIcon fontSize="small" />}
+                        </Box>
+                        <Typography variant="h3">Batch {b.no} · {b.asked} asked</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {day(b.at, org.timeZone)}, {time(b.at, org.timeZone)} · {[b.yes && `${b.yes} yes`, b.declined && `${b.declined} no`, b.waiting && `${b.waiting} waiting`, b.noReply && `${b.noReply} no reply`].filter(Boolean).join(', ')}
+                        </Typography>
+                      </Box>
+                    ))}
+                    {data.nextBatch && (
+                      <Box sx={{ position: 'relative', py: 0.75 }}>
+                        <Box sx={{ position: 'absolute', left: -28, top: 8, display: 'flex', bgcolor: 'background.paper', color: 'text.disabled' }}><ScheduleIcon fontSize="small" /></Box>
+                        <Typography variant="h3">Batch {data.batches.length + 1} · {data.nextBatch.fits} fit</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {data.nextBatch.at && data.nextBatch.at > Date.now() ? `${day(data.nextBatch.at, org.timeZone)}, ${time(data.nextBatch.at, org.timeZone)}` : 'Ready now'}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                </CardContent>
+              </Card>
+            )}
+            {canAsk && (data.options.canSplit || data.options.partners.length > 0) && (
+              <Card>
+                <Typography variant="h2" component="h2" sx={{ px: 2.5, pt: 2, pb: 1 }}>If it stays open</Typography>
+                {data.options.canSplit && (
+                  <ListItemButton disabled={busy} onClick={() => act(async () => { await api(path(`/tasks/${taskId}/split`), { body: { parts: 2 } }); setShared('Split in 2'); })} sx={{ borderRadius: 0, px: 2.5, gap: 1.5 }}>
+                    <IconTile icon={<SplitIcon />} />
+                    <ListItemText primary="Split in 2 shorter shifts" secondary={data.options.splitFits ? `${data.options.splitFits} more people fit` : 'Shorter shifts'} />
+                  </ListItemButton>
+                )}
+                {data.options.partners.map((p: any) => (
+                  <ListItemButton key={p.id} disabled={busy} onClick={() => act(async () => { await api(path(`/tasks/${taskId}/share`), { body: { partnerOrgId: p.id } }); setShared(`Sent to ${p.name.replace(/^Sample: /, '')}`); })} sx={{ borderRadius: 0, px: 2.5, gap: 1.5 }}>
+                    <IconTile icon={<HubIcon />} />
+                    <ListItemText primary={`Share with ${p.name.replace(/^Sample: /, '')}`} secondary={`${p.active} active · partner`} />
+                  </ListItemButton>
+                ))}
+                <Box sx={{ height: 8 }} />
+              </Card>
+            )}
             <Card>
               <CardContent>
                 <Typography variant="h2" component="h2">Volunteers</Typography>
@@ -280,6 +355,7 @@ export function TaskDetail() {
         </Dialog>
       )}
       {sent && <CopyList asks={sent} onClose={() => setSent(null)} />}
+      <Snackbar open={!!shared} autoHideDuration={3000} onClose={() => setShared(null)} message={shared} />
     </Page>
   );
 }

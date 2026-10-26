@@ -1,7 +1,7 @@
 // Row mappers and loaders. Every loader takes orgId and filters on it, so a
 // route can't read another organization's rows by passing a foreign id.
 
-import type { Field, FieldValue, Requirement, Task, Volunteer } from '../shared/types';
+import type { Field, FieldValue, Requirement, Task, TaskFile, Volunteer } from '../shared/types';
 import { newId, parseJson } from './util';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -25,6 +25,11 @@ export function toVolunteer(r: Row, teamIds: string[] = []): Volunteer {
     teamIds,
     lastAskedAt: r.last_asked_at,
     unansweredStreak: r.unanswered_streak,
+    tier: r.tier ?? null,
+    hoursWeek: r.hours_week ?? null,
+    days: parseJson<string[]>(r.days_json, []),
+    remoteOk: r.remote_ok === 1,
+    createdAt: r.created_at,
   };
 }
 
@@ -49,6 +54,11 @@ export function toTask(r: Row): Task {
     nextRoundAt: r.next_round_at,
     publish: r.publish === 1,
     status: r.status,
+    needId: r.need_id ?? null,
+    remote: r.remote === 1,
+    effortMinutes: r.effort_minutes ?? null,
+    bring: r.bring ?? '',
+    files: parseJson<TaskFile[]>(r.files_json, []),
   };
 }
 

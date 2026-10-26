@@ -5,9 +5,10 @@ import { loadFields, loadOrg, loadTask, logEvent, toTask } from '../db';
 import { cleanText, fail, newId } from '../util';
 import { batchSize, DAY, requirementText } from '../../shared/rules';
 import type { AskMode, Field, Requirement, RequirementOp, Task, Timing } from '../../shared/types';
-import { candidates, createAsks, holdingCount, renewLink, sweep } from '../engine';
+import { activeCount, askMessage, candidates, createAsks, firstOffers, holdingCount, renewLink, shareTask, splitTask, sweep } from '../engine';
 import { syncTask } from '../atproto';
 import { standing } from '../../shared/sentences';
+import { summarizeNeed } from './needs';
 
 export const taskRoutes = new Hono<AppBindings>();
 
@@ -70,7 +71,25 @@ async function readTaskInput(db: D1Database, orgId: string, body: Record<string,
     return { kind: 'field', fieldId: field.id, op, value };
   });
 
+  const rawNeed = pick('needId', body.needId) as string | null | undefined;
+  const needId = rawNeed ? String(rawNeed) : null;
+  if (needId && !(await db.prepare('SELECT 1 FROM needs WHERE id = ? AND org_id = ?').bind(needId, orgId).first())) fail(400, "That need doesn't exist.");
+  const rawEffort = pick('effortMinutes', body.effortMinutes);
+  const effortMinutes = rawEffort === null || rawEffort === undefined || rawEffort === '' ? null : Number(rawEffort);
+  if (effortMinutes !== null && (!Number.isInteger(effortMinutes) || effortMinutes < 5 || effortMinutes > 24 * 60)) fail(400, 'Effort must be 5 minutes to 24 hours.');
+  const rawFiles = pick('files', body.files);
+  const files = (Array.isArray(rawFiles) ? rawFiles : []).slice(0, 10).map((f: Record<string, unknown>) => {
+    const url = cleanText(f?.url, 1000);
+    if (!/^https?:\/\//.test(url)) fail(400, 'File links must start with https://');
+    return { name: cleanText(f?.name, 120) || url.split('/').pop() || 'File', url };
+  });
+
   return {
+    needId,
+    remote: Boolean(pick('remote', body.remote)),
+    effortMinutes,
+    bring: cleanText(pick('bring', body.bring), 300),
+    files,
     title,
     description: cleanText(pick('description', body.description), 4000),
     contact: cleanText(pick('contact', body.contact), 300),
@@ -121,12 +140,14 @@ taskRoutes.post('/tasks', async (c) => {
   await c.env.DB.batch([
     c.env.DB.prepare(
       `INSERT INTO tasks (id, org_id, team_id, title, description, contact, timing, starts_at, ends_at, due_at, place_public, place_private,
-        people_needed, requirements_json, ask_mode, ask_batch, ask_wait_hours, publish, status, created_by, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?)`,
+        people_needed, requirements_json, ask_mode, ask_batch, ask_wait_hours, publish, status, created_by, created_at, updated_at,
+        need_id, remote, effort_minutes, bring, files_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).bind(
       id, actor.orgId, input.teamId, input.title, input.description, input.contact, input.timing, input.startsAt, input.endsAt, input.dueAt,
       input.placePublic, input.placePrivate, input.peopleNeeded, JSON.stringify(input.requirements), input.askMode, input.askBatch,
       input.askWaitHours, input.publish ? 1 : 0, actor.memberId, now, now,
+      input.needId, input.remote ? 1 : 0, input.effortMinutes, input.bring, JSON.stringify(input.files),
     ),
     logEvent(c.env.DB, { orgId: actor.orgId, actorKind: 'member', actorId: actor.memberId, verb: 'created', objectType: 'task', objectId: id, at: now }),
   ]);
@@ -155,8 +176,8 @@ taskRoutes.get('/tasks/:taskId', async (c) => {
   const db = c.env.DB;
   const row = await db.prepare('SELECT at_uri, at_event_uri, at_error FROM tasks WHERE id = ?').bind(task.id).first<Record<string, string | null>>();
   const [spots, asks, fields, teams, all] = await Promise.all([
-    db.prepare('SELECT s.id, s.status, s.volunteer_id, v.name FROM spots s JOIN volunteers v ON v.id = s.volunteer_id WHERE s.org_id = ? AND s.task_id = ? ORDER BY s.created_at').bind(actor.orgId, task.id).all(),
-    db.prepare('SELECT a.id, a.status, a.created_at, a.expires_at, a.volunteer_id, v.name FROM asks a JOIN volunteers v ON v.id = a.volunteer_id WHERE a.org_id = ? AND a.task_id = ? ORDER BY a.created_at').bind(actor.orgId, task.id).all(),
+    db.prepare('SELECT s.id, s.status, s.volunteer_id, s.created_at, v.name FROM spots s JOIN volunteers v ON v.id = s.volunteer_id WHERE s.org_id = ? AND s.task_id = ? ORDER BY s.created_at').bind(actor.orgId, task.id).all(),
+    db.prepare('SELECT a.id, a.status, a.created_at, a.expires_at, a.volunteer_id, a.batch_no, v.name FROM asks a JOIN volunteers v ON v.id = a.volunteer_id WHERE a.org_id = ? AND a.task_id = ? ORDER BY a.created_at').bind(actor.orgId, task.id).all(),
     loadFields(db, actor.orgId),
     db.prepare('SELECT id, name FROM teams WHERE org_id = ?').bind(actor.orgId).all<{ id: string; name: string }>(),
     candidates(c.env, actor.orgId, task, now),
@@ -173,7 +194,35 @@ taskRoutes.get('/tasks/:taskId', async (c) => {
           ? fits.slice(0, batchSize(task, openSpots)).map((x) => x.volunteer.id)
           : [];
   const teamName = new Map(teams.results.map((t) => [t.id, t.name]));
+  // Each batch of asks, with how it went.
+  const batches = new Map<number, { no: number; at: number; asked: number; yes: number; declined: number; waiting: number; noReply: number }>();
+  for (const a of asks.results as { status: string; created_at: number; batch_no?: number }[]) {
+    const n = (a as { batch_no?: number }).batch_no ?? 1;
+    if (n === 0) continue;
+    const b = batches.get(n) ?? { no: n, at: a.created_at, asked: 0, yes: 0, declined: 0, waiting: 0, noReply: 0 };
+    b.asked++;
+    if (a.status === 'yes') b.yes++;
+    else if (a.status === 'no') b.declined++;
+    else if (a.status === 'waiting') b.waiting++;
+    else b.noReply++;
+    batches.set(n, b);
+  }
+  const { results: partnerRows } = await db
+    .prepare('SELECT o.id, o.name FROM partners p JOIN orgs o ON o.id = p.partner_org_id WHERE p.org_id = ? ORDER BY o.name')
+    .bind(actor.orgId)
+    .all<{ id: string; name: string }>();
+  const partners = await Promise.all(partnerRows.map(async (p) => ({ ...p, active: await activeCount(db, p.id) })));
+  const span = task.timing === 'at_time' && task.startsAt && task.endsAt ? task.endsAt - task.startsAt : 0;
+  const canSplit = ['open', 'draft'].includes(task.status) && openSpots > 0 && span >= 2 * 60 * 60 * 1000;
+  let splitFits = 0;
+  if (canSplit) {
+    const half = { ...task, endsAt: task.startsAt! + Math.floor(span / 2), effortMinutes: null };
+    splitFits = (await candidates(c.env, actor.orgId, half, now)).filter((x) => x.reason === null).length - fits.length;
+  }
   return c.json({
+    batches: [...batches.values()].sort((a, b) => a.no - b.no),
+    nextBatch: task.status === 'open' && openSpots > 0 && task.askMode === 'few' ? { fits: fits.length, size: nextGroup.length, at: task.nextRoundAt } : null,
+    options: { canSplit, splitFits: Math.max(0, splitFits), partners },
     task,
     requirementLines: task.requirements.map((r) => requirementText(r, fields, (id) => teamName.get(id) ?? 'unknown')),
     holding,
@@ -202,13 +251,15 @@ taskRoutes.patch('/tasks/:taskId', async (c) => {
   const status = task.status === 'filled' && input.peopleNeeded > holding ? 'open' : task.status === 'open' && input.peopleNeeded <= holding ? 'filled' : task.status;
   await c.env.DB.prepare(
     `UPDATE tasks SET team_id = ?, title = ?, description = ?, contact = ?, timing = ?, starts_at = ?, ends_at = ?, due_at = ?, place_public = ?,
-      place_private = ?, people_needed = ?, requirements_json = ?, ask_mode = ?, ask_batch = ?, ask_wait_hours = ?, publish = ?, status = ?, updated_at = ?
+      place_private = ?, people_needed = ?, requirements_json = ?, ask_mode = ?, ask_batch = ?, ask_wait_hours = ?, publish = ?, status = ?, updated_at = ?,
+      need_id = ?, remote = ?, effort_minutes = ?, bring = ?, files_json = ?
      WHERE id = ? AND org_id = ?`,
   )
     .bind(
       input.teamId, input.title, input.description, input.contact, input.timing, input.startsAt, input.endsAt, input.dueAt, input.placePublic,
       input.placePrivate, input.peopleNeeded, JSON.stringify(input.requirements), input.askMode, input.askBatch, input.askWaitHours,
-      input.publish ? 1 : 0, status, now, task.id, actor.orgId,
+      input.publish ? 1 : 0, status, now, input.needId, input.remote ? 1 : 0, input.effortMinutes, input.bring, JSON.stringify(input.files),
+      task.id, actor.orgId,
     )
     .run();
   await syncTask(c.env, actor.orgId, task.id);
@@ -282,82 +333,167 @@ taskRoutes.post('/spots/:spotId/missed', async (c) => {
   return c.json({ ok: true });
 });
 
-/** The short list of things to do now. */
+taskRoutes.post('/tasks/:taskId/split', async (c) => {
+  const actor = c.get('actor');
+  const task = await taskFor(c, c.req.param('taskId'));
+  mustManageTask(actor, task.teamId);
+  const body = await c.req.json().catch(() => ({}));
+  const ids = await splitTask(c.env, actor.orgId, task.id, Number(body.parts ?? 2), actor.memberId, c.get('now'));
+  for (const id of ids) await syncTask(c.env, actor.orgId, id);
+  return c.json({ ids });
+});
+
+taskRoutes.post('/tasks/:taskId/share', async (c) => {
+  const actor = c.get('actor');
+  const task = await taskFor(c, c.req.param('taskId'));
+  mustManageTask(actor, task.teamId);
+  const body = await c.req.json().catch(() => ({}));
+  const fields = await loadFields(c.env.DB, actor.orgId);
+  const { results: teams } = await c.env.DB.prepare('SELECT id, name FROM teams WHERE org_id = ?').bind(actor.orgId).all<{ id: string; name: string }>();
+  const teamName = new Map(teams.map((t) => [t.id, t.name]));
+  const lines = task.requirements.map((r) => requirementText(r, fields, (id) => teamName.get(id) ?? 'team'));
+  const id = await shareTask(c.env, actor.orgId, task.id, String(body.partnerOrgId ?? ''), lines, actor.memberId, c.get('now'));
+  return c.json({ id });
+});
+
+/** First offers waiting for a coordinator's approval. */
+taskRoutes.get('/offers', async (c) => {
+  const actor = c.get('actor');
+  const now = c.get('now');
+  await sweep(c.env, now, actor.orgId);
+  const [offers, fields, org] = await Promise.all([firstOffers(c.env, actor.orgId, now), loadFields(c.env.DB, actor.orgId), loadOrg(c.env.DB, actor.orgId)]);
+  const needs = new Map<string, string>();
+  for (const o of offers) {
+    if (o.task.needId && !needs.has(o.task.needId)) {
+      const n = await c.env.DB.prepare('SELECT title FROM needs WHERE id = ?').bind(o.task.needId).first<{ title: string }>();
+      if (n) needs.set(o.task.needId, n.title);
+    }
+  }
+  const skills = fields.find((f) => f.type === 'many');
+  return c.json({
+    offers: offers.map((o) => ({
+      volunteer: {
+        id: o.volunteer.id, name: o.volunteer.name, createdAt: o.volunteer.createdAt, tier: o.volunteer.tier, hoursWeek: o.volunteer.hoursWeek,
+        days: o.volunteer.days, remoteOk: o.volunteer.remoteOk, skills: skills ? [o.volunteer.values[skills.id] ?? []].flat() : [],
+      },
+      task: o.task,
+      needTitle: o.task.needId ? needs.get(o.task.needId) ?? null : null,
+      message: askMessage(o.volunteer.name, o.task, org!.name, '[link]', org!.time_zone),
+    })),
+  });
+});
+
+taskRoutes.post('/offers/skip', async (c) => {
+  const actor = c.get('actor');
+  const body = await c.req.json().catch(() => ({}));
+  await c.env.DB.prepare('INSERT OR REPLACE INTO offer_skips (org_id, volunteer_id, task_id, at) VALUES (?, ?, ?, ?)')
+    .bind(actor.orgId, String(body.volunteerId ?? ''), String(body.taskId ?? ''), c.get('now'))
+    .run();
+  return c.json({ ok: true });
+});
+
+taskRoutes.post('/reports/:reportId/resolve', async (c) => {
+  const actor = c.get('actor');
+  await c.env.DB.prepare('UPDATE reports SET resolved_at = ? WHERE id = ? AND org_id = ?').bind(c.get('now'), c.req.param('reportId'), actor.orgId).run();
+  return c.json({ ok: true });
+});
+
+/** The decisions to make now, this week's work, and how capacity is being used. */
 taskRoutes.get('/today', async (c) => {
   const actor = c.get('actor');
   const now = c.get('now');
   const db = c.env.DB;
   await sweep(c.env, now, actor.orgId);
   const org = (await loadOrg(db, actor.orgId))!;
-  const { results } = await db.prepare("SELECT * FROM tasks WHERE org_id = ? AND status IN ('draft', 'open', 'filled')").bind(actor.orgId).all();
   const items: Record<string, unknown>[] = [];
-  const { taken, waiting } = await counts(db, actor.orgId);
 
+  const offers = await firstOffers(c.env, actor.orgId, now);
+  if (offers.length) items.push({ kind: 'first_offers', count: offers.length, names: offers.slice(0, 3).map((o) => o.volunteer.name) });
+
+  const { results: needRows } = await db.prepare("SELECT id FROM needs WHERE org_id = ? AND status != 'done'").bind(actor.orgId).all<{ id: string }>();
+  for (const r of needRows) {
+    const n = await summarizeNeed(c.env, actor.orgId, r.id, now);
+    if (n && (n.counts.canOffer > 0 || n.counts.gaps > 0)) {
+      items.push({ kind: 'need', needId: r.id, title: n.need.title, canOffer: n.counts.canOffer, assignments: n.counts.assignments, gaps: n.counts.gaps });
+    }
+  }
+
+  const { results } = await db.prepare("SELECT * FROM tasks WHERE org_id = ? AND status IN ('draft', 'open', 'filled')").bind(actor.orgId).all();
+  const { taken, waiting } = await counts(db, actor.orgId);
   for (const row of results) {
     const task = toTask(row);
     const atError = (row as { at_error: string | null }).at_error;
     if (atError) items.push({ kind: 'atproto_error', taskId: task.id, title: task.title, message: atError });
     if (task.status === 'draft') {
-      items.push({ kind: 'draft', taskId: task.id, title: task.title });
+      if (!task.needId) items.push({ kind: 'draft', taskId: task.id, title: task.title });
       continue;
     }
     if (task.status !== 'open') continue;
     const holding = taken.get(task.id) ?? 0;
-    const openSpots = task.peopleNeeded - holding;
-    if (openSpots <= 0) continue;
-    const soon = task.timing === 'at_time' && task.startsAt !== null && task.startsAt - now < 2 * DAY;
+    if (task.peopleNeeded - holding <= 0) continue;
+    // Work in a need shows on the need's row until its first batch goes out.
+    if (task.needId && task.nextRoundAt === null) continue;
     const roundDue = task.nextRoundAt === null || task.nextRoundAt <= now || (waiting.get(task.id) ?? 0) === 0;
+    const soon = task.timing === 'at_time' && task.startsAt !== null && task.startsAt - now < 7 * DAY;
     if (!roundDue && !soon) continue;
     const fits = (await candidates(c.env, actor.orgId, task, now)).filter((x) => x.reason === null).length;
+    const batch = await db.prepare('SELECT MAX(batch_no) AS n FROM asks WHERE task_id = ?').bind(task.id).first<{ n: number | null }>();
     items.push({
       kind: fits > 0 ? 'ask_next' : 'no_one_left',
-      taskId: task.id,
-      title: task.title,
-      openSpots,
-      fits,
-      startsAt: task.startsAt,
-      soon,
-      firstRound: task.nextRoundAt === null,
+      taskId: task.id, title: task.title, startsAt: task.startsAt, endsAt: task.endsAt, timing: task.timing, dueAt: task.dueAt,
+      holding, peopleNeeded: task.peopleNeeded, fits, nextBatch: (batch?.n ?? 0) + 1, nextAt: roundDue ? null : task.nextRoundAt,
     });
   }
 
-  const people = await db
+  const { results: reports } = await db
     .prepare(
-      `SELECT
-         SUM(CASE WHEN last_asked_at IS NULL AND status = 'active' AND contact_ok_at IS NOT NULL AND (email IS NOT NULL OR phone IS NOT NULL) THEN 1 ELSE 0 END) AS never_asked,
-         SUM(CASE WHEN status = 'paused' AND paused_reason = 'no_answer' THEN 1 ELSE 0 END) AS paused_no_answer
-       FROM volunteers WHERE org_id = ?`,
+      `SELECT r.id, r.body, r.task_id, t.title, v.name FROM reports r JOIN tasks t ON t.id = r.task_id JOIN volunteers v ON v.id = r.volunteer_id
+       WHERE r.org_id = ? AND r.resolved_at IS NULL ORDER BY r.created_at DESC LIMIT 5`,
     )
     .bind(actor.orgId)
-    .first<{ never_asked: number | null; paused_no_answer: number | null }>();
-  if (people?.never_asked) items.push({ kind: 'never_asked', count: people.never_asked });
-  if (people?.paused_no_answer) {
-    const { results: names } = await db
-      .prepare("SELECT id, name FROM volunteers WHERE org_id = ? AND status = 'paused' AND paused_reason = 'no_answer' ORDER BY name LIMIT 5")
-      .bind(actor.orgId)
-      .all();
-    items.push({ kind: 'paused_no_answer', count: people.paused_no_answer, people: names });
-  }
+    .all();
+  for (const r of reports) items.push({ kind: 'report', reportId: r.id, taskId: r.task_id, title: r.title, name: r.name, body: r.body });
+
+  const { results: paused } = await db
+    .prepare("SELECT id, name FROM volunteers WHERE org_id = ? AND status = 'paused' AND paused_reason = 'no_answer' ORDER BY name")
+    .bind(actor.orgId)
+    .all<{ id: string; name: string }>();
+  if (paused.length > 0 && paused.length <= 2) for (const p of paused) items.push({ kind: 'paused_person', volunteerId: p.id, name: p.name });
+  else if (paused.length > 2) items.push({ kind: 'paused_no_answer', count: paused.length, people: paused.slice(0, 3) });
+
   const { results: imports } = await db
     .prepare("SELECT id, file_name, set_aside_json FROM imports WHERE org_id = ? AND set_aside_cleared = 0 AND set_aside_json != '[]' ORDER BY created_at DESC LIMIT 5")
     .bind(actor.orgId)
     .all<{ id: string; file_name: string; set_aside_json: string }>();
-  for (const imp of imports) {
-    items.push({ kind: 'set_aside', importId: imp.id, fileName: imp.file_name, count: JSON.parse(imp.set_aside_json).length });
-  }
+  for (const imp of imports) items.push({ kind: 'set_aside', importId: imp.id, fileName: imp.file_name, count: JSON.parse(imp.set_aside_json).length });
 
-  // Measures each organization sees on its own (docs/SPEC.md, "How we'll know").
-  const since = now - 30 * DAY;
-  const m = await db
+  // This week's work at a set time, with how full it is.
+  const { results: week } = await db
+    .prepare("SELECT * FROM tasks WHERE org_id = ? AND status IN ('open', 'filled') AND timing = 'at_time' AND starts_at >= ? AND starts_at < ? ORDER BY starts_at")
+    .bind(actor.orgId, now, now + 7 * DAY)
+    .all();
+  const thisWeek = week.map((r) => {
+    const t = toTask(r);
+    return { id: t.id, title: t.title, startsAt: t.startsAt, endsAt: t.endsAt, holding: taken.get(t.id) ?? 0, peopleNeeded: t.peopleNeeded };
+  });
+
+  // Capacity: are approved people getting offered work, and coming back?
+  const cap = await db
     .prepare(
       `SELECT
-        (SELECT COUNT(*) FROM volunteers WHERE org_id = ?1) AS people,
-        (SELECT COUNT(DISTINCT volunteer_id) FROM asks WHERE org_id = ?1 AND created_at > ?2) AS asked,
-        (SELECT COUNT(DISTINCT volunteer_id) FROM spots WHERE org_id = ?1 AND created_at > ?2) AS said_yes,
-        (SELECT COUNT(*) FROM tasks WHERE org_id = ?1 AND updated_at > ?2 AND (status = 'filled' OR (status = 'done' AND id IN (SELECT task_id FROM spots WHERE org_id = ?1)))) AS filled`,
+        (SELECT COUNT(*) FROM volunteers WHERE org_id = ?1 AND status != 'stopped' AND contact_ok_at IS NOT NULL) AS approved,
+        (SELECT COUNT(*) FROM volunteers WHERE org_id = ?1 AND status = 'active' AND contact_ok_at IS NOT NULL AND last_asked_at IS NULL) AS never_offered,
+        (SELECT COUNT(*) FROM (SELECT volunteer_id FROM spots WHERE org_id = ?1 AND status IN ('holding', 'done') GROUP BY volunteer_id HAVING COUNT(*) >= 2)) AS yes_twice`,
     )
-    .bind(actor.orgId, since)
-    .first<{ people: number; asked: number; said_yes: number; filled: number }>();
+    .bind(actor.orgId)
+    .first<{ approved: number; never_offered: number; yes_twice: number }>();
+  const { results: firstAsks } = await db
+    // People who joined in the last 90 days: how long until their first ask.
+    .prepare('SELECT (MIN(a.created_at) - v.created_at) AS wait FROM asks a JOIN volunteers v ON v.id = a.volunteer_id WHERE a.org_id = ? AND v.created_at > ? GROUP BY a.volunteer_id')
+    .bind(actor.orgId, now - 90 * DAY)
+    .all<{ wait: number }>();
+  const waits = firstAsks.map((r) => Math.max(0, r.wait)).sort((a, b) => a - b);
+  const medianDays = waits.length ? Math.round(waits[Math.floor(waits.length / 2)] / DAY) : null;
 
-  return c.json({ orgName: org.name, items, measures: m });
+  return c.json({ orgName: org.name, timeZone: org.time_zone, items, thisWeek, capacity: { ...cap, daysToFirstOffer: medianDays } });
 });
