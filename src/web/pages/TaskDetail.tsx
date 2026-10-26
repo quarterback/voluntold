@@ -151,6 +151,11 @@ export function TaskDetail() {
     if (ok) await act(() => api(path(`/tasks/${taskId}/cancel`), { body: {} }));
   }
 
+  async function deleteTask() {
+    const ok = await dialogs.confirm({ title: `Delete ${task.title}?`, confirm: 'Delete task', destructive: true });
+    if (ok) act(async () => { await api(path(`/tasks/${taskId}`), { method: 'DELETE' }); navigate('..', { relative: 'path' }); });
+  }
+
   const people = (n: number) => `${n} ${n === 1 ? 'person' : 'people'}`;
   const startLabel = task.askMode === 'hand' ? 'Select people' : `Ask ${people(data.nextGroup.length)}`;
   const canAsk = task.status === 'open' && data.openSpots > 0;
@@ -235,11 +240,9 @@ export function TaskDetail() {
             )}
 
             {['open', 'filled'].includes(task.status) && <Box><Button color="error" disabled={busy} onClick={cancelTask}>Cancel task</Button></Box>}
-            {task.status === 'draft' && (
-              <Box>
-                <Button color="error" onClick={() => act(async () => { await api(path(`/tasks/${taskId}`), { method: 'DELETE' }); navigate('..', { relative: 'path' }); })}>Delete draft</Button>
-              </Box>
-            )}
+            <Box>
+              <Button color="error" disabled={busy} onClick={deleteTask}>Delete task</Button>
+            </Box>
           </Stack>
 
           <Stack spacing={2}>

@@ -179,6 +179,23 @@ needRoutes.delete('/need-items/:itemId', async (c) => {
   return c.json({ ok: true });
 });
 
+needRoutes.delete('/needs/:needId', async (c) => {
+  const actor = c.get('actor');
+  mustManageTask(actor, null);
+  const needId = c.req.param('needId');
+  const found = await c.env.DB.prepare('SELECT id FROM needs WHERE id = ? AND org_id = ?').bind(needId, actor.orgId).first();
+  if (!found) fail(404, 'Not found');
+  // The tasks made from a need outlive it: they keep their own spots and asks,
+  // and are deleted one by one from the task page.
+  await c.env.DB.batch([
+    c.env.DB.prepare('DELETE FROM need_items WHERE need_id = ? AND org_id = ?').bind(needId, actor.orgId),
+    c.env.DB.prepare("DELETE FROM taggings WHERE object_type = 'need' AND object_id = ? AND org_id = ?").bind(needId, actor.orgId),
+    c.env.DB.prepare('UPDATE tasks SET need_id = NULL WHERE need_id = ? AND org_id = ?').bind(needId, actor.orgId),
+    c.env.DB.prepare('DELETE FROM needs WHERE id = ? AND org_id = ?').bind(needId, actor.orgId),
+  ]);
+  return c.json({ ok: true });
+});
+
 /**
  * Offer every assignment that has people who fit: drafts are published, and
  * each one asks its first batch. Returns the links to send.

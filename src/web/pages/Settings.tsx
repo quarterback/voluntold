@@ -312,10 +312,35 @@ export function Settings() {
             </Stack>
           </Section>
         )}
+        {me.role === 'admin' && <DeleteOrgSection />}
         <Box>
           <Button onClick={async () => { await api('/api/auth/logout', { body: {} }); location.href = '/login'; }}>Sign out</Button>
         </Box>
       </Stack>
     </Page>
+  );
+}
+
+function DeleteOrgSection() {
+  const { org, path } = useOrg();
+  const dialogs = useDialogs();
+  const [problem, setProblem] = useState<string | null>(null);
+
+  async function remove() {
+    const ok = await dialogs.confirm({ title: `Delete ${org.name}?`, confirm: 'Delete organization', destructive: true });
+    if (!ok) return;
+    try {
+      await api(path(''), { method: 'DELETE' });
+      location.href = '/';
+    } catch (e) {
+      setProblem(errorText(e));
+    }
+  }
+
+  return (
+    <Section title="Delete organization">
+      {problem && <Alert severity="error" sx={{ mb: 2 }}>{problem}</Alert>}
+      <Button color="error" variant="outlined" onClick={remove}>Delete organization</Button>
+    </Section>
   );
 }

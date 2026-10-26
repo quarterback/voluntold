@@ -154,6 +154,29 @@ orgRoutes.patch('/members/:memberId', async (c) => {
   return c.json({ ok: true });
 });
 
+/**
+ * Delete the organization and everything in it. Admins only, and it cannot be
+ * undone. The order matters: a row is removed before whatever it points at,
+ * so spots go before asks, and everything goes before the organization.
+ */
+orgRoutes.delete('/', async (c) => {
+  const actor = c.get('actor');
+  if (actor.role !== 'admin') fail(403, "You don't have permission to do that.");
+  const db = c.env.DB;
+  const owned = [
+    'spots', 'asks', 'events', 'fields', 'imports', 'lists', 'need_items', 'offer_skips',
+    'reports', 'taggings', 'volunteer_sessions', 'team_leads', 'team_members', 'tasks',
+    'needs', 'tags', 'teams', 'volunteers',
+  ];
+  await db.batch([
+    ...owned.map((t) => db.prepare(`DELETE FROM ${t} WHERE org_id = ?`).bind(actor.orgId)),
+    db.prepare('DELETE FROM partners WHERE org_id = ? OR partner_org_id = ?').bind(actor.orgId, actor.orgId),
+    db.prepare('DELETE FROM members WHERE org_id = ?').bind(actor.orgId),
+    db.prepare('DELETE FROM orgs WHERE id = ?').bind(actor.orgId),
+  ]);
+  return c.json({ ok: true });
+});
+
 orgRoutes.delete('/members/:memberId', async (c) => {
   const actor = c.get('actor');
   must(actor, 'manage_org');
