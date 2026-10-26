@@ -86,10 +86,10 @@ export function Today() {
     .filter(Boolean) as NonNullable<ReturnType<typeof describe>>[];
   const go = (to: string) => navigate(`../${to}`, { relative: 'path' });
   const cap = data.capacity;
-  const date = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: tz });
+  const date = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: tz });
 
   return (
-    <Page title="Today" action={<Typography variant="body2" color="text.secondary" sx={{ pt: 0.75 }}>{date}</Typography>} width={880}>
+    <Page title={date} width={880}>
       <Typography variant="h2" component="h2" sx={{ mb: 1 }}>To do</Typography>
       <Card>
         {items.length === 0 && <Typography variant="body2" color="text.secondary" sx={{ p: 2.5 }}>Nothing to do</Typography>}
