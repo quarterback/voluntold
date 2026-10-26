@@ -237,7 +237,7 @@ volunteerApi.post('/spots/:spotId/report', async (c) => {
   const { orgId, volunteerId } = c.get('volunteer');
   const body = await c.req.json().catch(() => ({}));
   const text = cleanText(body.body, 1000);
-  if (!text) fail(400, 'Say what the problem is.');
+  if (!text) fail(400, 'Describe the problem.');
   const spot = await c.env.DB.prepare('SELECT task_id FROM spots WHERE id = ? AND org_id = ? AND volunteer_id = ?').bind(c.req.param('spotId'), orgId, volunteerId).first<{ task_id: string }>();
   if (!spot) fail(404, 'Not found');
   const id = newId();

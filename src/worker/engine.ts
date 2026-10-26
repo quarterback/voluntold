@@ -515,7 +515,7 @@ export async function takeOpenWork(env: Env, orgId: string, volunteerId: string,
   if (!task || task.status !== 'open') fail(404, 'Not found');
   const all = await candidates(env, orgId, task, now);
   const me = all.find((c) => c.volunteer.id === volunteerId);
-  if (!me || me.reason) fail(409, "This one isn't open to you.");
+  if (!me || me.reason) fail(409, "You aren't eligible for this task.");
   const askId = newId();
   await db.batch([
     db

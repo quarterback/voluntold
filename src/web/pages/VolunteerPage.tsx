@@ -136,7 +136,7 @@ export function VolunteerPage() {
   }
 
   async function report(spotId: string) {
-    const text = await dialogs.prompt({ title: 'Report a problem', label: 'What is wrong?', confirm: 'Send report' });
+    const text = await dialogs.prompt({ title: 'Report a problem', label: 'Problem', confirm: 'Send report' });
     if (text) await run(async () => { await api(`/api/v/spots/${spotId}/report`, { body: { body: text } }); setNote('Report sent'); });
   }
 
@@ -198,7 +198,7 @@ export function VolunteerPage() {
         })}
 
         <Box>
-          <Typography variant="h2" component="h2" sx={{ mb: 1 }}>Coming up</Typography>
+          <Typography variant="h2" component="h2" sx={{ mb: 1 }}>Upcoming</Typography>
           {data.upcoming.length === 0 ? <Typography variant="body2" color="text.secondary">No upcoming tasks</Typography> : (
             <Card>
               {data.upcoming.map((s: any, i: number) => (
@@ -210,7 +210,7 @@ export function VolunteerPage() {
                       <Alert severity="warning" sx={{ mt: 1.5 }}>Canceled</Alert>
                     ) : (
                       <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
-                        <Button variant="outlined" disabled={busy} onClick={() => giveUp(s.id)} sx={{ flex: 1 }}>Can't make it</Button>
+                        <Button variant="outlined" disabled={busy} onClick={() => giveUp(s.id)} sx={{ flex: 1 }}>Cancel spot</Button>
                         <Button variant="outlined" startIcon={<ReportIcon fontSize="small" />} disabled={busy} onClick={() => report(s.id)} sx={{ flex: 1 }}>Report a problem</Button>
                       </Stack>
                     )}
@@ -223,7 +223,7 @@ export function VolunteerPage() {
 
         {!stopped && data.openForYou.length > 0 && (
           <Box>
-            <Typography variant="h2" component="h2" sx={{ mb: 1 }}>Open for you</Typography>
+            <Typography variant="h2" component="h2" sx={{ mb: 1 }}>Open tasks</Typography>
             <Card>
               {data.openForYou.map((t: VTask, i: number) => (
                 <Box key={t.id}>

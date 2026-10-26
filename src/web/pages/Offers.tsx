@@ -85,7 +85,7 @@ export function Offers() {
               <Initials name={v.name} size={40} />
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography sx={{ fontSize: '1rem', fontWeight: 600 }}>{v.name}</Typography>
-                <Typography variant="body2" color="text.secondary">Joined {joined} · never offered</Typography>
+                <Typography variant="body2" color="text.secondary">Joined {joined} · never asked</Typography>
               </Box>
               {v.tier && <StatusBadge label={TIER_TEXT[v.tier]} />}
             </Stack>
@@ -110,7 +110,7 @@ export function Offers() {
             {t.effortMinutes && <Row label="Effort">About {effortText(t.effortMinutes)}</Row>}
             {o.needTitle && <Row label="Need">{o.needTitle}</Row>}
             {t.contact && <Row label="Contact">{t.contact}</Row>}
-            {t.placePublic && <Row label="Place">{t.placePublic}</Row>}
+            {t.placePublic && <Row label="Location">{t.placePublic}</Row>}
             {t.files.length > 0 && (
               <Row label="Files">
                 {t.files.map((f: any) => (

@@ -100,7 +100,7 @@ export function Person() {
   return (
     <Page
       title={v.name}
-      subtitle={`${v.standing} · yes ${v.yes} of ${v.asked}`}
+      subtitle={`${v.standing} · accepted ${v.yes} of ${v.asked}`}
       back={<Button size="small" startIcon={<BackIcon fontSize="small" />} onClick={() => navigate('..', { relative: 'path' })} sx={{ color: 'text.secondary', ml: -1 }}>People</Button>}
       action={canEdit && <Button variant="contained" onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: form }), () => { setSaved(true); reloadOrg(); })}>Save</Button>}
     >

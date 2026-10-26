@@ -25,7 +25,7 @@ export const REASON_TEXT: Record<string, string> = {
   stopped: 'Unsubscribed',
   weekly_limit: 'Weekly limit reached',
   busy: 'Schedule conflict',
-  unavailable: 'Not their usual time',
+  unavailable: 'Outside availability',
   already_asked: 'Already asked',
 };
 

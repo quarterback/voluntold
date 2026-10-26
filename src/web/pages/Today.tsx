@@ -37,12 +37,12 @@ function describe(i: Item, tz: string): { icon: ReactNode; tone: Tone; title: st
     case 'first_offers':
       return {
         icon: <SendIcon />, tone: 'accent', title: `${plural(i.count, 'first offer')} ready`,
-        body: `${i.names.map(first).join(', ')}${i.count > i.names.length ? ' and more' : ''} · never offered`, to: 'offers',
+        body: `${i.names.map(first).join(', ')}${i.count > i.names.length ? ' and more' : ''} · never asked`, to: 'offers',
       };
     case 'need':
       return {
         icon: <FlagIcon />, tone: 'info', title: i.title,
-        body: [`${i.canOffer} of ${plural(i.assignments, 'assignment')} can be offered`, i.gaps ? plural(i.gaps, 'gap') : ''].filter(Boolean).join(' · '),
+        body: [`${i.canOffer} of ${plural(i.assignments, 'assignment')} ready`, i.gaps ? plural(i.gaps, 'gap') : ''].filter(Boolean).join(' · '),
         to: `needs/${i.needId}`,
       };
     case 'ask_next':
@@ -52,13 +52,13 @@ function describe(i: Item, tz: string): { icon: ReactNode; tone: Tone; title: st
         to: `tasks/${i.taskId}`,
       };
     case 'no_one_left':
-      return { icon: <BlockIcon />, tone: 'danger', title: i.title, body: [whenOf(i, tz), `${i.holding} of ${i.peopleNeeded}`, 'no one left'].filter(Boolean).join(' · '), to: `tasks/${i.taskId}` };
+      return { icon: <BlockIcon />, tone: 'danger', title: i.title, body: [whenOf(i, tz), `${i.holding} of ${i.peopleNeeded}`, 'no eligible people'].filter(Boolean).join(' · '), to: `tasks/${i.taskId}` };
     case 'report':
       return { icon: <ReportIcon />, tone: 'danger', title: `${first(i.name)}: ${i.title}`, body: i.body, to: `tasks/${i.taskId}` };
     case 'paused_person':
-      return { icon: <PauseIcon />, tone: 'neutral', title: `${i.name} paused`, body: 'No reply to 3 asks', to: `people/${i.volunteerId}` };
+      return { icon: <PauseIcon />, tone: 'neutral', title: `${i.name} paused`, body: '3 unanswered asks', to: `people/${i.volunteerId}` };
     case 'paused_no_answer':
-      return { icon: <PauseIcon />, tone: 'neutral', title: `${plural(i.count, 'person', 'people')} paused`, body: 'No reply to 3 asks', to: 'people?filter=paused' };
+      return { icon: <PauseIcon />, tone: 'neutral', title: `${plural(i.count, 'person', 'people')} paused`, body: '3 unanswered asks', to: 'people?filter=paused' };
     case 'draft':
       return { icon: <DraftIcon />, tone: 'neutral', title: i.title, body: 'Draft', to: `tasks/${i.taskId}` };
     case 'set_aside':
@@ -90,9 +90,9 @@ export function Today() {
 
   return (
     <Page title="Today" action={<Typography variant="body2" color="text.secondary" sx={{ pt: 0.75 }}>{date}</Typography>} width={880}>
-      <Typography variant="h3" component="h2" color="text.secondary" sx={{ mb: 1 }}>To decide</Typography>
+      <Typography variant="h3" component="h2" color="text.secondary" sx={{ mb: 1 }}>To do</Typography>
       <Card>
-        {items.length === 0 && <Typography variant="body2" color="text.secondary" sx={{ p: 2.5 }}>Nothing to decide</Typography>}
+        {items.length === 0 && <Typography variant="body2" color="text.secondary" sx={{ p: 2.5 }}>Nothing to do</Typography>}
         {items.map((item, i) => (
           <Box key={i}>
             {i > 0 && <Divider />}
@@ -135,9 +135,9 @@ export function Today() {
       </Stack>
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' }, gap: 1, mb: 8 }}>
         <StatTile label="Approved" value={cap.approved} />
-        <StatTile label="Never offered" value={cap.never_offered} />
-        <StatTile label="Days to 1st offer" value={cap.daysToFirstOffer ?? 'None'} />
-        <StatTile label="Said yes twice" value={cap.yes_twice} />
+        <StatTile label="Never asked" value={cap.never_offered} />
+        <StatTile label="Days to first ask" value={cap.daysToFirstOffer ?? 'None'} />
+        <StatTile label="Accepted twice" value={cap.yes_twice} />
       </Box>
 
       <Fab variant="extended" color="primary" onClick={() => navigate('../tasks/new?urgent=1', { relative: 'path' })}

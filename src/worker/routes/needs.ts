@@ -149,7 +149,7 @@ needRoutes.post('/needs/:needId/items', async (c) => {
   mustManageTask(actor, null);
   const body = await c.req.json().catch(() => ({}));
   const title = cleanText(body.title, 200);
-  if (!title) fail(400, 'Name what is needed.');
+  if (!title) fail(400, 'Enter a name.');
   const need = await c.env.DB.prepare('SELECT 1 FROM needs WHERE id = ? AND org_id = ?').bind(c.req.param('needId'), actor.orgId).first();
   if (!need) fail(404, 'Not found');
   const id = newId();

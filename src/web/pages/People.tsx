@@ -62,11 +62,11 @@ function about(v: Row, fields: ReturnType<typeof useOrg>['fields']): string {
 
 /** When they were last asked, and how they answer. */
 function history(v: Row): string {
-  if (v.status === 'paused' && v.pausedReason === 'no_answer') return 'No reply to 3 asks';
+  if (v.status === 'paused' && v.pausedReason === 'no_answer') return 'Paused: 3 unanswered asks';
   if (v.status === 'paused' && v.pausedUntil) return `Paused until ${md(v.pausedUntil)}`;
   if (v.status === 'stopped') return 'Unsubscribed';
-  if (v.lastAskedAt === null) return `Joined ${md(v.createdAt)} · never offered`;
-  return v.asked ? `Last asked ${md(v.lastAskedAt)} · yes ${v.yes} of ${v.asked}` : `Last asked ${md(v.lastAskedAt)}`;
+  if (v.lastAskedAt === null) return `Joined ${md(v.createdAt)} · never asked`;
+  return v.asked ? `Last asked ${md(v.lastAskedAt)} · accepted ${v.yes} of ${v.asked}` : `Last asked ${md(v.lastAskedAt)}`;
 }
 
 export function People() {
@@ -115,7 +115,7 @@ export function People() {
               <Button variant="outlined" startIcon={<FilterIcon fontSize="small" />} onClick={() => setShowFilters(!showFilters)}>Filters</Button>
             </Stack>
             <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
-              {([['', 'All'], ['never', 'Never offered'], ['paused', 'Paused'], ['stopped', 'Stopped']] as const).map(([k, label]) => (
+              {([['', 'All'], ['never', 'Never asked'], ['paused', 'Paused'], ['stopped', 'Stopped']] as const).map(([k, label]) => (
                 <Chip key={k} label={`${label} ${data.volunteers.filter((v) => matches(v, { status: k }, fields)).length}`}
                   color={filter.status === k ? 'primary' : 'default'} onClick={() => setFilter({ ...filter, status: k })} />
               ))}

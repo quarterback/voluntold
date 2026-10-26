@@ -22,8 +22,8 @@ import { effortText } from '../format';
 import { day, timeRange } from '../../shared/time';
 
 const STATE: Record<string, [string, Tone]> = {
-  offer: ['Can be offered', 'accent'],
-  asked: ['Asked', 'info'],
+  offer: ['Ready', 'accent'],
+  asked: ['Pending', 'info'],
   covered: ['Covered', 'success'],
   gap: ['Gap', 'warning'],
 };
@@ -57,7 +57,7 @@ export function Needs() {
       {data.needs.length === 0 ? <EmptyState title="No needs yet" /> : (
         <Card>
           {data.needs.map((n: any, i: number) => {
-            const badge: [string, Tone] = n.status === 'done' ? ['Done', 'neutral'] : n.counts.canOffer ? [`${n.counts.canOffer} can offer`, 'info'] :
+            const badge: [string, Tone] = n.status === 'done' ? ['Done', 'neutral'] : n.counts.canOffer ? [`${n.counts.canOffer} ready`, 'info'] :
               n.counts.gaps ? [`${n.counts.gaps} gaps`, 'warning'] : [`${n.filled} of ${n.spots} filled`, 'success'];
             return (
               <Box key={n.id}>
@@ -151,7 +151,7 @@ function NeedDetail({ id, onChanged, onEdit }: { id: string; onChanged: () => vo
     <Stack direction="row" spacing={1}>
       <Button variant="outlined" onClick={() => onEdit(need)}>Edit need</Button>
       <Button variant="contained" disabled={busy || counts.canOffer === 0} onClick={offer}>
-        {counts.canOffer ? `Offer ${counts.canOffer} ${counts.canOffer === 1 ? 'assignment' : 'assignments'}` : 'Nothing to offer'}
+        {counts.canOffer ? `Offer ${counts.canOffer} ${counts.canOffer === 1 ? 'assignment' : 'assignments'}` : 'Offer assignments'}
       </Button>
     </Stack>
   );
@@ -178,7 +178,7 @@ function NeedDetail({ id, onChanged, onEdit }: { id: string; onChanged: () => vo
                       <Typography variant="body2">{a.holding} of {a.peopleNeeded} confirmed</Typography>
                     ) : a.match ? (
                       <><Initials name={a.match.name} size={26} /><Typography variant="body2">{a.match.name}</Typography>
-                        {a.fits > 1 && <Typography variant="body2" color="text.secondary">+{a.fits - 1} fit</Typography>}</>
+                        {a.fits > 1 && <Typography variant="body2" color="text.secondary">+{a.fits - 1} eligible</Typography>}</>
                     ) : (
                       <><Box sx={{ color: 'text.disabled', display: 'flex' }}><PersonOffIcon fontSize="small" /></Box><Typography variant="body2" color="text.secondary">No match</Typography></>
                     )}
@@ -191,7 +191,7 @@ function NeedDetail({ id, onChanged, onEdit }: { id: string; onChanged: () => vo
                   <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
                     {a.canSplit && (
                       <Button size="small" variant="outlined" startIcon={<SplitIcon fontSize="small" />} disabled={busy}
-                        onClick={() => act(() => api(path(`/tasks/${a.id}/split`), { body: { parts: 2 } }))}>Split in 2</Button>
+                        onClick={() => act(() => api(path(`/tasks/${a.id}/split`), { body: { parts: 2 } }))}>Split into 2</Button>
                     )}
                     {data.partners.map((p: any) => (
                       <Button key={p.id} size="small" variant="outlined" startIcon={<HubIcon fontSize="small" />} disabled={busy}
@@ -249,9 +249,9 @@ function NeedDetail({ id, onChanged, onEdit }: { id: string; onChanged: () => vo
       </Stack>
       {problem && <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setProblem(null)}>{problem}</Alert>}
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 1, mb: 2.5, maxWidth: 520 }}>
-        <StatTile label="Can offer" value={counts.canOffer} />
+        <StatTile label="Ready" value={counts.canOffer} />
         <StatTile label="Gaps" value={counts.gaps} />
-        <StatTile label="Who fits" value={counts.fit} />
+        <StatTile label="Eligible" value={counts.fit} />
       </Box>
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.3fr 1fr' }, gap: 2.5, alignItems: 'start' }}>
         {assignmentList}

@@ -8,7 +8,7 @@
 
 ## 1. Intent: what was supposed to happen
 **Instruction given (actual wording):** "okay so build that funcitonality into the demo now, this is approved for the next stage of the demo update so i can share it"
-**What "that" refers to:** the seven boards in the "Next demo, current app look" row of the "Volunteer activation screens" canvas, made after the owner shared a research note on activation gaps. The owner said the October 23 mockups' structure, not their wording, was what the app had lost.
+**Scope:** the seven boards in the "Next demo, current app look" row of the "Volunteer activation screens" canvas, made after the owner shared a research note on activation gaps. The owner said the October 23 mockups' structure, not their wording, was what the app had lost.
 **Success defined in advance as:** the demo does what the boards show, in the current look, on phones and desktop, and can be shared.
 **Authority granted to the agent:** change the app, its sample data and docs on a branch, and open a pull request.
 **Out of scope:** test runs. The owner said on October 25: "No more tests... Screenshots yes, tests no."
@@ -21,7 +21,7 @@
 4. Added to the engine: first offers, splitting work at a set time, sharing with a partner, and a volunteer taking open work from their own page.
 5. Added the needs routes, and to the task routes: batches, next batch, options when work stays open, first offers, skips, problem reports and a new Today with decisions, this week and capacity.
 6. Built the screens: Today, Needs (list and detail, two panes on desktop), First offers, the task page's batches and options, People rows with history, counts and tiers, the person's tier and availability, and the volunteer page's details, problem report, open work and availability.
-7. Rewrote the sample data as Eastside Pantry, with a partner, Westside Pantry, so each screen has something real to show.
+7. Rewrote the sample data as Eastside Pantry, with a partner, Westside Pantry, so each screen has data on it.
 8. Wrote decision 0010 and updated `SPEC.md` and `LATER.md`.
 9. Ran the type checks and the build, ran it locally, walked the screens in a phone-sized and a desktop browser, and called the split, share, offer, take and report routes once each.
 
@@ -38,7 +38,6 @@
 - Splitting keeps people who said yes on the original and moves open spots to the new pieces.
 - Sharing sends the partner a draft copy with requirements as text.
 - "Days to 1st offer" counts only people who joined in the last 90 days.
-- The volunteer page's "Can't make it" replaces the label "Cancel spot".
 - The "Open" link button on shared links shows only in dev mode, so a demo viewer can see the volunteer's page.
 
 **Points where it should have escalated and didn't:** none known.
@@ -55,6 +54,7 @@
 **Risk:** the demo runs in dev mode, so anyone with the link can sign in as anyone. It's safe only with made-up data. The research's point that scheduled work isn't proof of attendance is still open.
 
 ## 6. Change: what happens next
+- A follow-up run put the screen text through `check:docs` at the owner's request. It fixed two standard-wording failures and replaced invented labels with the standard ones in `EDITORIAL.md` (Accepted, Declined, Pending, Expired, Eligible, Never asked, Cancel spot, Upcoming, To do).
 1. Run `scripts/deploy-demo.sh` from a session or machine with `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. It applies migration 0002 and deploys. Then press "Use sample data" for the new story.
 2. The owner reviews decision 0010.
 3. Decide whether tiers should change who fits, and how attendance is told apart from scheduled work.

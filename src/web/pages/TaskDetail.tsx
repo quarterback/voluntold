@@ -204,7 +204,7 @@ export function TaskDetail() {
                 <Divider sx={{ my: 2 }} />
                 <Stack direction="row" sx={{ justifyContent: 'space-between', mb: 1 }}>
                   <Typography variant="body2" sx={{ fontWeight: 600 }}>{data.holding} of {task.peopleNeeded} confirmed</Typography>
-                  {canAsk && task.askMode === 'few' && !data.roundDue && <Typography variant="body2" color="text.secondary">Waiting on replies</Typography>}
+                  {canAsk && task.askMode === 'few' && !data.roundDue && <Typography variant="body2" color="text.secondary">Awaiting replies</Typography>}
                 </Stack>
                 <SpotBar filled={data.holding} total={task.peopleNeeded} label="Spots filled" />
                 {data.spots.filter((x: any) => x.status === 'holding').length > 0 && (
@@ -250,14 +250,14 @@ export function TaskDetail() {
                         </Box>
                         <Typography variant="h3">Batch {b.no} · {b.asked} asked</Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {day(b.at, org.timeZone)}, {time(b.at, org.timeZone)} · {[b.yes && `${b.yes} yes`, b.declined && `${b.declined} no`, b.waiting && `${b.waiting} waiting`, b.noReply && `${b.noReply} no reply`].filter(Boolean).join(', ')}
+                          {day(b.at, org.timeZone)}, {time(b.at, org.timeZone)} · {[b.yes && `${b.yes} accepted`, b.declined && `${b.declined} declined`, b.waiting && `${b.waiting} pending`, b.noReply && `${b.noReply} expired`].filter(Boolean).join(', ')}
                         </Typography>
                       </Box>
                     ))}
                     {data.nextBatch && (
                       <Box sx={{ position: 'relative', py: 0.75 }}>
                         <Box sx={{ position: 'absolute', left: -28, top: 8, display: 'flex', bgcolor: 'background.paper', color: 'text.disabled' }}><ScheduleIcon fontSize="small" /></Box>
-                        <Typography variant="h3">Batch {data.batches.length + 1} · {data.nextBatch.fits} fit</Typography>
+                        <Typography variant="h3">Batch {data.batches.length + 1} · {data.nextBatch.fits} eligible</Typography>
                         <Typography variant="body2" color="text.secondary">
                           {data.nextBatch.at && data.nextBatch.at > Date.now() ? `${day(data.nextBatch.at, org.timeZone)}, ${time(data.nextBatch.at, org.timeZone)}` : 'Ready now'}
                         </Typography>
@@ -269,17 +269,17 @@ export function TaskDetail() {
             )}
             {canAsk && (data.options.canSplit || data.options.partners.length > 0) && (
               <Card>
-                <Typography variant="h2" component="h2" sx={{ px: 2.5, pt: 2, pb: 1 }}>If it stays open</Typography>
+                <Typography variant="h2" component="h2" sx={{ px: 2.5, pt: 2, pb: 1 }}>Options</Typography>
                 {data.options.canSplit && (
-                  <ListItemButton disabled={busy} onClick={() => act(async () => { await api(path(`/tasks/${taskId}/split`), { body: { parts: 2 } }); setShared('Split in 2'); })} sx={{ borderRadius: 0, px: 2.5, gap: 1.5 }}>
+                  <ListItemButton disabled={busy} onClick={() => act(async () => { await api(path(`/tasks/${taskId}/split`), { body: { parts: 2 } }); setShared('Split into 2 shifts'); })} sx={{ borderRadius: 0, px: 2.5, gap: 1.5 }}>
                     <IconTile icon={<SplitIcon />} />
-                    <ListItemText primary="Split in 2 shorter shifts" secondary={data.options.splitFits ? `${data.options.splitFits} more people fit` : 'Shorter shifts'} />
+                    <ListItemText primary="Split into 2 shifts" secondary={data.options.splitFits ? `${data.options.splitFits} more eligible` : undefined} />
                   </ListItemButton>
                 )}
                 {data.options.partners.map((p: any) => (
                   <ListItemButton key={p.id} disabled={busy} onClick={() => act(async () => { await api(path(`/tasks/${taskId}/share`), { body: { partnerOrgId: p.id } }); setShared(`Sent to ${p.name.replace(/^Sample: /, '')}`); })} sx={{ borderRadius: 0, px: 2.5, gap: 1.5 }}>
                     <IconTile icon={<HubIcon />} />
-                    <ListItemText primary={`Share with ${p.name.replace(/^Sample: /, '')}`} secondary={`${p.active} active · partner`} />
+                    <ListItemText primary={`Share with ${p.name.replace(/^Sample: /, '')}`} secondary={`Partner · ${p.active} active volunteers`} />
                   </ListItemButton>
                 ))}
                 <Box sx={{ height: 8 }} />
