@@ -63,6 +63,8 @@
 
 15. The owner pointed at "people never asked" as robotic construction and said to read a plain language guide on writing headlines narratively. The agent reread `.claude/skills/plain-language-default/SKILL.md` and rewrote every stop: headings as statements about what the reader does or sees ("Start with what needs a decision", "Send each person a private link", "See who fits, and why the others don't") instead of stacked nouns ("The to-do list", "Private links", "Who fits and who doesn't"); sentences with the actor named ("You paste the links…", "Volley tells you…"); compressed phrases unpacked ("people never asked" became "people you've never asked" and "new volunteers are ready for their first ask"; "tasks whose next batch is due" became "a task is due for its next round of asks"). Prosekeep ran clean. Redeployed.
 
+16. The owner said the paired headings ("Who runs the tool, and what can leave it") are couplets, which are banned, and sent Temple University's editorial style guide. The agent read the guide: it follows AP, with no serial comma unless a series holds more than one "and", which matches the app's rules. Every heading is now one clause ("Add the people who run the tool", "See why someone can't be asked", "Group people by what they can do"), and every question for the visitor is one question instead of two ("Which of these numbers would you look at?"). Redeployed.
+
 ## 4. Deviation: the gaps
 - The agent built on a merged, stale branch without checking `main` first. The repository's rule for a merged branch is to restart it from `main`. Next run: `git fetch` and compare before any work.
 - No test runs, as the owner asked. The type checks and the build ran so the deploy won't fail.
