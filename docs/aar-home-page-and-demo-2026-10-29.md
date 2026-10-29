@@ -47,6 +47,8 @@
 
 **Left to the owner:** The feature headings and copy on the home page. The wording of the five stops. Whether the questions should stay on the card or move to a facilitator script.
 
+10. The owner replaced the home page's two sentences with his own line: "Volley is a AI native volunteer activation tool helping organizatons develop tasks, engage volunteers & outsource tedious tasks." It is on the hero with the mechanics fixed: "an AI-native", "organizations", "and" for the ampersand, and no serial comma, since AP governs the app. The same line is the subtitle on vloora.com/volley.
+
 ## 4. Deviation: the gaps
 - The agent built on a merged, stale branch without checking `main` first. The repository's rule for a merged branch is to restart it from `main`. Next run: `git fetch` and compare before any work.
 - No test runs, as the owner asked. The type checks and the build ran so the deploy won't fail.
