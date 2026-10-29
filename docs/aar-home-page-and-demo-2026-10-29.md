@@ -49,6 +49,8 @@
 
 10. The owner replaced the home page's two sentences with his own line: "Volley is a AI native volunteer activation tool helping organizatons develop tasks, engage volunteers & outsource tedious tasks." It is on the hero with the mechanics fixed: "an AI-native", "organizations", "and" for the ampersand, and no serial comma, since AP governs the app. The same line is the subtitle on vloora.com/volley.
 
+11. The owner opened the demo address and found the old sign-in screen, because nothing from this branch had been deployed. This session's environment now carried the Cloudflare secrets, so the agent ran `scripts/deploy-demo.sh` from the branch. It applied migration 0004 to the demo database, kept the existing `APP_SECRET`, built, and deployed version `714501f4-874d-4314-8a36-365963adddfb` to `voluntold-demo.square-dawn-9932.workers.dev`. The agent then ran the same screenshot walk against the live address: the home page, "Try the demo", the five stops, and the volunteer page from stop 4.
+
 ## 4. Deviation: the gaps
 - The agent built on a merged, stale branch without checking `main` first. The repository's rule for a merged branch is to restart it from `main`. Next run: `git fetch` and compare before any work.
 - No test runs, as the owner asked. The type checks and the build ran so the deploy won't fail.
