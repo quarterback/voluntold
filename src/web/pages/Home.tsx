@@ -37,8 +37,7 @@ export function Home() {
               Volunteers <Box component="em" sx={{ fontStyle: 'italic', color: vt.tangerine }}>activated</Box>
             </Typography>
             <Typography sx={{ fontSize: { xs: '1.0625rem', md: '1.25rem' }, color: vt.onInk2, maxWidth: 600, mb: 4 }}>
-              Coordinators keep track of who's in the volunteer queue, write tasks and hand out work.
-              Volunteers see what's needed and answer from a link on their phone, with no account to make.
+              Volley is an AI-native volunteer activation tool that helps organizations develop tasks, engage volunteers and outsource tedious tasks.
             </Typography>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
               <Button variant="contained" size="large" onClick={demo} sx={lime}>Try the demo</Button>
