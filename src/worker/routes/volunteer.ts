@@ -39,9 +39,25 @@ linkRoute.get('/:token', async (c) => {
   return c.redirect(`/me?ask=${ask.id}`, 302);
 });
 
-export function page(title: string, body: string): string {
+/** Link tags for a page that may be shared. Private pages pass none. */
+export interface PageMeta {
+  description: string;
+  url: string;
+  image: string;
+}
+
+export function page(title: string, body: string, meta?: PageMeta): string {
+  const tags = meta
+    ? `<meta name="description" content="${escapeHtml(meta.description)}">
+<meta property="og:site_name" content="Volley"><meta property="og:type" content="website">
+<meta property="og:title" content="${escapeHtml(title)}"><meta property="og:description" content="${escapeHtml(meta.description)}">
+<meta property="og:url" content="${escapeHtml(meta.url)}"><meta property="og:image" content="${escapeHtml(meta.image)}">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escapeHtml(title)}">
+<meta name="twitter:description" content="${escapeHtml(meta.description)}"><meta name="twitter:image" content="${escapeHtml(meta.image)}">`
+    : '<meta name="robots" content="noindex">';
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="referrer" content="no-referrer"><title>${escapeHtml(title)}</title>
+<meta name="referrer" content="no-referrer"><title>${escapeHtml(title)}</title>${tags}
 <style>
 @font-face{font-family:"Object Sans";src:url(/fonts/PPObjectSans-Heavy.woff2) format("woff2");font-weight:800;font-display:swap}
 @font-face{font-family:"Neue Montreal";src:url(/fonts/PPNeueMontreal-Book.woff2) format("woff2");font-weight:400;font-display:swap}

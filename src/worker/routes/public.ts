@@ -40,6 +40,11 @@ publicRoutes.get('/:taskId', async (c) => {
        ${reqs ? `<p class="row"><b>What it needs</b></p><ul>${reqs}</ul>` : ''}
        <span class="status">${escapeHtml(status)}</span>
        ${signup ? `<p class="foot">${signup}</p>` : ''}`,
+      {
+        description: [org.name, when?.replace(/^on /, ''), task.placePublic, status].filter(Boolean).join(' · '),
+        url: `${c.env.APP_URL}/t/${task.id}`,
+        image: `${c.env.APP_URL}/og.png`,
+      },
     ),
   );
 });

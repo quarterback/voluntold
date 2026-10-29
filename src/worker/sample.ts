@@ -1,4 +1,4 @@
-// Sample data for trying the tool (dev mode only). Everything uses example.com
+// Sample data for the demo. Everything uses example.com
 // addresses and made-up people. The story: Eastside Pantry has approved
 // volunteers, some never offered anything; a new Saturday delivery service
 // needs drivers, a dispatcher, containers and route notes; and Westside Pantry
@@ -87,6 +87,7 @@ export async function createSampleOrg(env: Env, userId: string, now: number): Pr
   const db = env.DB;
   const skills = ['Bookkeeping', 'Cooking', 'Design', 'Driving', 'Food safety', 'Forklift', 'Medicine', 'Spanish', 'Writing'];
   const { orgId, id } = await makeOrg(env, userId, now, 'Sample: Eastside Pantry', skills);
+  await db.prepare('UPDATE orgs SET sample = 1 WHERE id = ?').bind(orgId).run();
   const S: D1PreparedStatement[] = [];
 
   // Tags, as the model would have left them: a settled set, plus two it made

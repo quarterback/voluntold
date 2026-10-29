@@ -14,9 +14,10 @@ import NeedIcon from '@mui/icons-material/FlagOutlined';
 import { api, orgApi } from '../api';
 import { Loading, useLoad } from './common';
 import type { Field, Tag } from '../../shared/types';
+import { DemoTour } from './DemoTour';
 
 export interface OrgInfo {
-  org: { id: string; name: string; weeklyAskLimit: number; signupUrl: string | null; publishDefault: boolean; timeZone: string; atproto: { did: string; handle: string } | null };
+  org: { id: string; name: string; weeklyAskLimit: number; signupUrl: string | null; publishDefault: boolean; timeZone: string; sample: boolean; atproto: { did: string; handle: string } | null };
   me: { role: 'admin' | 'coordinator' | 'lead'; memberId: string; leadTeamIds: string[]; email: string };
   atprotoReady: boolean;
   demo: boolean;
@@ -67,7 +68,7 @@ export function OrgShell() {
         <Box component="nav" aria-label="Main" sx={{
           position: 'fixed', inset: '0 auto 0 0', width: SIDEBAR, bgcolor: theme.vt.ink, color: theme.vt.onInk, p: 1.5, display: 'flex', flexDirection: 'column',
         }}>
-          <Button onClick={() => navigate('/?choose=1')} endIcon={<UnfoldIcon fontSize="small" />}
+          <Button onClick={() => navigate('/start?choose=1')} endIcon={<UnfoldIcon fontSize="small" />}
             sx={{ justifyContent: 'space-between', color: theme.vt.onInk, px: 1.25, mb: 2, minHeight: 48, borderRadius: 2.5, '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' } }}>
             <Typography component="span" noWrap sx={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: '1.0625rem', letterSpacing: '-0.01em' }}>{data.org.name}</Typography>
           </Button>
@@ -88,7 +89,7 @@ export function OrgShell() {
       ) : (
         <AppBar position="sticky">
           <Toolbar sx={{ gap: 1, justifyContent: 'space-between' }}>
-            <Button onClick={() => navigate('/?choose=1')} endIcon={<UnfoldIcon fontSize="small" />} sx={{ color: theme.vt.onInk, px: 0.5, minWidth: 0, maxWidth: '100%' }}>
+            <Button onClick={() => navigate('/start?choose=1')} endIcon={<UnfoldIcon fontSize="small" />} sx={{ color: theme.vt.onInk, px: 0.5, minWidth: 0, maxWidth: '100%' }}>
               <Typography component="span" noWrap sx={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: '1.0625rem' }}>{data.org.name}</Typography>
             </Button>
             <IconButton aria-label="Settings" onClick={() => go('settings')} sx={{ color: tab === 'settings' ? theme.vt.lime : theme.vt.onInk2 }}><SettingsIcon fontSize="small" /></IconButton>
@@ -98,6 +99,7 @@ export function OrgShell() {
       <Box component="main" sx={{ ml: wide ? `${SIDEBAR}px` : 0 }}>
         <Outlet />
       </Box>
+      <DemoTour />
       {!wide && (
         <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10 }} elevation={0}>
           <BottomNavigation showLabels value={tab === 'settings' ? false : tab} onChange={(_, v) => go(v)} component="nav" aria-label="Main">

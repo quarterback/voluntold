@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { Home } from './pages/Home';
 import { Login } from './pages/Login';
 import { Start } from './pages/Start';
 import { OrgShell } from './pages/OrgShell';
@@ -19,7 +20,8 @@ export function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/me" element={<VolunteerPage />} />
-      <Route path="/" element={<Start />} />
+      <Route path="/" element={<Home />} />
+      <Route path="/start" element={<Start />} />
       <Route path="/o/:orgId" element={<OrgShell />}>
         <Route index element={<Navigate to="today" replace />} />
         <Route path="today" element={<Today />} />
