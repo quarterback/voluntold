@@ -35,7 +35,7 @@ export const accountRoutes = new Hono<AppBindings>();
 
 accountRoutes.get('/me', async (c) => {
   const { results } = await c.env.DB.prepare(
-    'SELECT o.id, o.name, o.sample, m.role FROM members m JOIN orgs o ON o.id = m.org_id WHERE m.user_id = ? ORDER BY o.created_at',
+    'SELECT o.id, o.name, o.sample, o.sample_kind, m.role FROM members m JOIN orgs o ON o.id = m.org_id WHERE m.user_id = ? ORDER BY o.created_at',
   )
     .bind(c.get('userId'))
     .all();

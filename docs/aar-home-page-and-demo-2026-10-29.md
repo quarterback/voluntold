@@ -53,6 +53,12 @@
 
 12. The owner opened the link and still landed in the app, because the home page sent anyone with a session straight to their organizations, and he had one. He said the product page must be what everyone sees first, like any product's front page, with the demo behind it. The home page no longer redirects. A signed-in person sees the same page with "Open Volley" in place of "Sign in", and "Try the demo" takes them straight to the sample organization. Deployed to the demo and checked live while signed in.
 
+13. The owner said the demo had been made up without asking him, and described how it should work. The agent wrote that up as `docs/specs/demo.md`, asked three questions, got the answers and rebuilt the demo to the spec:
+   - Six sample organizations, each a full organization with people, fields, tags, tiers, availability, teams, an import on record, needs with supplies, tasks in every state, asks in batches and problem reports: Eastside Pantry, Riverbend Design Alliance (a membership nonprofit), Riverside Community Radio, Northgate Youth Collective, Cascade Surge Response (disaster response) and Bright Line Event Crew (events staffing). Each lives in `src/worker/samples/`, and `sample.ts` turns a dataset into rows. Migration 0005 records which kind an organization is, and `POST /api/sample` takes a kind and gives each person one of each.
+   - "Try the demo" leads to a chooser of the six. A person with no organizations lands there too. The organization list offers "Open a sample organization".
+   - `src/web/pages/Guide.tsx` replaces the five-stop card: a panel beside the screens (a right column on desktop, a sheet above the tabs on phones) with 23 stops in nine groups, each with what the feature does, how it's meant to work, what to try and the question for the visitor. Guided mode walks them in order. Explore mode introduces each section the first time it opens. A menu jumps to any stop. The last stop hands the sample over and points to hello@vloora.com. The panel can be hidden and reopened.
+   - Opened all six samples on a local run with no page errors, walked the guide on desktop and phone, and opened the volunteer page from its stop. Deployed to the demo.
+
 ## 4. Deviation: the gaps
 - The agent built on a merged, stale branch without checking `main` first. The repository's rule for a merged branch is to restart it from `main`. Next run: `git fetch` and compare before any work.
 - No test runs, as the owner asked. The type checks and the build ran so the deploy won't fail.
