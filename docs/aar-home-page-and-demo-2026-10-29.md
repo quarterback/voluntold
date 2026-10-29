@@ -51,6 +51,8 @@
 
 11. The owner opened the demo address and found the old sign-in screen, because nothing from this branch had been deployed. This session's environment now carried the Cloudflare secrets, so the agent ran `scripts/deploy-demo.sh` from the branch. It applied migration 0004 to the demo database, kept the existing `APP_SECRET`, built, and deployed version `714501f4-874d-4314-8a36-365963adddfb` to `voluntold-demo.square-dawn-9932.workers.dev`. The agent then ran the same screenshot walk against the live address: the home page, "Try the demo", the five stops, and the volunteer page from stop 4.
 
+12. The owner opened the link and still landed in the app, because the home page sent anyone with a session straight to their organizations, and he had one. He said the product page must be what everyone sees first, like any product's front page, with the demo behind it. The home page no longer redirects. A signed-in person sees the same page with "Open Volley" in place of "Sign in", and "Try the demo" takes them straight to the sample organization. Deployed to the demo and checked live while signed in.
+
 ## 4. Deviation: the gaps
 - The agent built on a merged, stale branch without checking `main` first. The repository's rule for a merged branch is to restart it from `main`. Next run: `git fetch` and compare before any work.
 - No test runs, as the owner asked. The type checks and the build ran so the deploy won't fail.

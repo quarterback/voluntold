@@ -1,20 +1,23 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { Wordmark } from '../Wordmark';
 import { FONT_DISPLAY } from '../theme';
 
-/** The public page. Signed-in people go straight to their organizations. */
+/** The product page. Everyone lands here; signed-in people get a button into the app. */
 export function Home() {
   const navigate = useNavigate();
   const { vt } = useTheme();
 
+  const [signedIn, setSignedIn] = useState(false);
   useEffect(() => {
-    fetch('/api/me', { credentials: 'same-origin' }).then((r) => { if (r.ok) navigate('/start', { replace: true }); }).catch(() => {});
-  }, [navigate]);
+    fetch('/api/me', { credentials: 'same-origin' }).then((r) => setSignedIn(r.ok)).catch(() => {});
+  }, []);
 
-  const demo = () => navigate('/login?next=' + encodeURIComponent('/start?demo=1'));
+  const demo = () => navigate(signedIn ? '/start?demo=1' : '/login?next=' + encodeURIComponent('/start?demo=1'));
+  const enter = () => navigate(signedIn ? '/start' : '/login');
+  const enterLabel = signedIn ? 'Open Volley' : 'Sign in';
   const lime = { bgcolor: vt.lime, color: vt.onLime, '&:hover': { bgcolor: '#B3E12A' } };
   const frame = { borderRadius: `${vt.radius}px`, overflow: 'hidden', bgcolor: vt.surface, boxShadow: vt.shadowPop };
   const heading = { fontFamily: FONT_DISPLAY, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.1 };
@@ -26,7 +29,7 @@ export function Home() {
           <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
             <Box sx={{ color: vt.lime }}><Wordmark height={28} /></Box>
             <Stack direction="row" spacing={1}>
-              <Button onClick={() => navigate('/login')} sx={{ color: vt.onInk }}>Sign in</Button>
+              <Button onClick={enter} sx={{ color: vt.onInk }}>{enterLabel}</Button>
               <Button variant="contained" onClick={demo} sx={lime}>Try the demo</Button>
             </Stack>
           </Stack>
@@ -41,7 +44,7 @@ export function Home() {
             </Typography>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
               <Button variant="contained" size="large" onClick={demo} sx={lime}>Try the demo</Button>
-              <Button variant="outlined" size="large" onClick={() => navigate('/login')} sx={{ color: vt.onInk, borderColor: vt.onInk, '&:hover': { borderColor: vt.onInk, bgcolor: 'rgba(255,255,255,0.08)' } }}>Sign in</Button>
+              <Button variant="outlined" size="large" onClick={enter} sx={{ color: vt.onInk, borderColor: vt.onInk, '&:hover': { borderColor: vt.onInk, bgcolor: 'rgba(255,255,255,0.08)' } }}>{enterLabel}</Button>
             </Stack>
           </Box>
         </Container>
@@ -85,7 +88,7 @@ export function Home() {
       <Container maxWidth="lg" component="footer" sx={{ py: 3 }}>
         <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ color: vt.text }}><Wordmark height={20} /></Box>
-          <Button size="small" onClick={() => navigate('/login')}>Sign in</Button>
+          <Button size="small" onClick={enter}>{enterLabel}</Button>
         </Stack>
       </Container>
     </Box>
