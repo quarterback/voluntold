@@ -59,19 +59,19 @@ const firstPerson = async ({ get }: Helpers) => {
 const STOPS: Stop[] = [
   {
     group: 'start', path: 'today', title: 'How this demo works',
-    body: "You're in a sample organization. Everything in it is made up, and everything you do stays in your copy. This guide explains each feature as you reach it. Guided takes you through every stop in order. Explore lets you go anywhere, and the guide introduces each section the first time you open it.",
-    tryIt: 'Switch between Guided and Explore at the top of this panel any time.',
-    ask: "As you go, note what's missing for your organization and what's more than you'd want.",
+    body: "This is a sample organization. The people are made up, and what you do here stays in your copy. The guide explains each feature as you reach it. Guided takes you through the stops in order. Explore lets you go anywhere, and the guide introduces a section the first time you open it.",
+    tryIt: 'Switch between Guided and Explore at the top of this panel.',
+    ask: "As you go, note what your organization would need that isn't here, and what you'd leave out.",
   },
   {
     group: 'today', path: 'today', title: 'The to-do list',
-    body: 'Today lists the decisions waiting for a coordinator: first offers ready for people never asked, needs with work to offer or gaps, tasks whose next batch is due, problem reports from volunteers and people paused after unanswered asks. Each line opens the screen where the decision is made.',
-    tryIt: 'Tap a line. The guide follows you.',
+    body: 'Today lists the decisions waiting for a coordinator: first offers ready for people never asked, needs with work to offer or gaps, tasks whose next batch is due, problem reports from volunteers and people paused after unanswered asks.',
+    tryIt: 'Tap a line to open the screen where you decide. The guide follows you.',
     ask: "Is this the list you'd start your day with? What's on yours that isn't here?",
   },
   {
     group: 'today', path: 'today', title: 'This week and capacity',
-    body: "This week shows the work coming up and how many spots are filled. Capacity shows how many approved people you have, how many were never asked, how long it takes a new person to get a first ask and who has said yes twice. Volley doesn't rank people by how fast they answer or chase anyone.",
+    body: "This week shows the work coming up and how many spots are filled. Capacity shows how many approved people you have, how many were never asked, how long a new person waits for a first ask and who has said yes twice.",
     ask: 'Which of these numbers would you look at? Which would you ignore?',
   },
   {
@@ -82,13 +82,13 @@ const STOPS: Stop[] = [
   },
   {
     group: 'needs', path: firstNeed, title: 'Assignments, supplies and Offer',
-    body: 'Each assignment shows the person who fits and has waited longest, or a gap when no one fits. Supplies and information are listed with what is still needed. Offer publishes the assignments that have people and asks each one its first batch. Nothing goes out until a coordinator taps it.',
+    body: 'Each assignment shows the person who fits and has waited longest, or a gap when no one fits. Supplies and information are listed with what is still needed. Offer publishes the assignments that have people and sends each one its first batch of asks.',
     tryIt: 'Mark a supply covered, or tap Offer on an active need.',
     ask: 'Before you ask anyone, what else has to be in place?',
   },
   {
     group: 'tasks', path: 'tasks', title: 'The task list',
-    body: 'Every task is a draft, open, filled, canceled or done. The list shows when each one happens, how many spots are filled and how many answers are pending. Work is done when its time passes, with no timesheet and no confirmation step.',
+    body: 'Every task is a draft, open, filled, canceled or done. The list shows when each one happens, how many spots are filled and how many answers are pending. When a task\'s time passes, Volley marks it done.',
     tryIt: 'Open an open task.',
     ask: 'How do you keep track of what\'s filled today, and where does it live?',
   },
@@ -100,7 +100,7 @@ const STOPS: Stop[] = [
   },
   {
     group: 'tasks', path: 'tasks/new', title: 'Requirements',
-    body: "Requirements are written against your organization's own fields: a skill, an experience level, a cleared background check, a certification or a team. Only people who meet every requirement are asked. There's no general pool.",
+    body: "Requirements are written against your organization's own fields: a skill, an experience level, a cleared background check, a certification or a team. Only people who meet every requirement are asked.",
     tryIt: 'Add a requirement and pick a field.',
     ask: 'What decides who you can ask for a task? Is it written down anywhere?',
   },
@@ -112,25 +112,25 @@ const STOPS: Stop[] = [
   },
   {
     group: 'tasks', path: firstOpenTask, title: 'Batches and the next group',
-    body: 'A task page shows each batch that went out and how it went: accepted, declined, expired or pending. When a batch has run its course and spots are still open, Today says to ask the next group. The person who has waited longest goes first.',
+    body: 'A task page shows each batch that went out and how it went: accepted, declined, expired or pending. When a batch\'s time is up and spots are still open, Today says to ask the next group. The person who has waited longest goes first.',
     tryIt: 'Tap Ask to see the next group and who it is.',
     ask: 'When a task isn\'t filling, what do you do today?',
   },
   {
     group: 'tasks', path: firstOpenTask, title: 'Private links',
-    body: "Each person asked gets a private link. Volley doesn't send it. The coordinator copies the links into the email, text or chat the organization already uses. A link can be reset if it's lost, and it expires before the task starts.",
+    body: "Each person asked gets a private link, which the coordinator pastes into the email, text or chat the organization already uses. A lost link can be reset, and every link expires before the task starts.",
     tryIt: 'Ask the next group, then Copy all.',
     ask: 'How do your asks go out now, and what would you want sent for you?',
   },
   {
     group: 'tasks', path: firstOpenTask, title: 'Who fits and who doesn\'t',
-    body: "When you ask, the dialog lists who fits in order of longest wait, and who can't be asked and why: a missing requirement, the weekly limit, a schedule conflict, a pause or no consent. The reasons are the rules the organization set.",
+    body: "When you ask, the dialog lists who fits in order of longest wait, and who can't be asked and why: a missing requirement, the weekly limit, a schedule conflict, a pause or no consent.",
     tryIt: 'Open Ask and read the Not eligible list.',
     ask: 'Which of these reasons match how you work? Which would you drop?',
   },
   {
     group: 'tasks', path: firstOpenTask, title: 'Spots, no-shows and problems',
-    body: "An accepted ask holds a spot. When the task's time passes, the spot is attended unless the coordinator marks a no-show afterward. A volunteer can cancel a spot, which reopens it, or report a problem, which shows on Today.",
+    body: "An accepted ask holds a spot. When the task's time passes, the spot counts as attended unless the coordinator marks a no-show. A volunteer can cancel a spot, which reopens it, or report a problem, which shows on Today.",
     tryIt: 'Find a spot and mark it, then undo it.',
     ask: 'What happens today when someone says yes and doesn\'t come?',
   },
@@ -142,7 +142,7 @@ const STOPS: Stop[] = [
   },
   {
     group: 'people', path: 'people', title: 'Tags, tiers and availability',
-    body: 'Tags group people at a glance. Volley proposes them from what people can do, marks new ones until a coordinator looks and lets two be merged. Tiers say how often someone volunteers: one time, seasonal, regular or core. Availability is hours a week, usual times and whether remote work is fine. Work outside someone\'s time doesn\'t fit them.',
+    body: 'Volley proposes tags from what people can do, marks new ones until a coordinator looks at them and lets two be merged. Tiers say how often someone volunteers: one time, seasonal, regular or core. Availability is hours a week, usual times and whether remote work is fine; work outside those times doesn\'t fit the person.',
     tryIt: 'Tap a tag or a tier to filter.',
     ask: 'What would you group your people by? Do you know their hours?',
   },
@@ -154,26 +154,26 @@ const STOPS: Stop[] = [
   },
   {
     group: 'people', path: firstPerson, title: 'A person\'s record',
-    body: 'A person\'s page holds their details, teams, availability and history: every ask, every answer and every spot. A coordinator can pause asks until a date, resume them or stop them. A person can do the same from their own page.',
+    body: 'A person\'s page holds their details, teams, availability and history: each ask, answer and spot. A coordinator can pause asks until a date, resume them or stop them. A person can do the same from their own page.',
     tryIt: 'Change a field and save, or pause asks.',
     ask: 'What do you keep about a person that isn\'t here?',
   },
   {
     group: 'offers', path: 'offers', title: 'First offers',
-    body: 'For each approved person who was never asked, Volley proposes the open work that fits them: remote first, then work that uses a skill they have, then the shortest. A coordinator approves each offer or skips it. Nothing goes out on its own.',
+    body: 'For each approved person who was never asked, Volley proposes the open work that fits them: remote first, then work that uses a skill they have, then the shortest. A coordinator approves each offer or skips it.',
     tryIt: 'Approve one offer and skip another.',
     ask: 'How long does a new volunteer wait before you ask them for anything?',
   },
   {
     group: 'volunteers', path: firstOpenTask, title: 'What volunteers see',
-    body: "Volunteers never sign in. Their link opens a page with the task, the time, the place, who to find, what to bring and two buttons. Below it, the work they've accepted, with Cancel spot and Report a problem, open work they fit and can accept directly, and their own availability. Nothing about other volunteers is shown.",
+    body: "A volunteer opens their link and sees the task, the time, the place, who to find, what to bring and two buttons. Below that: the work they've accepted, with Cancel spot and Report a problem; open work they fit and can accept directly; and their own availability. Other volunteers' names stay off the page.",
     tryIt: 'Open the volunteer page for someone with a pending ask.',
     ask: "Is there anything here you wouldn't want a volunteer to see, or anything missing that they'd need?",
     action: 'volunteer',
   },
   {
     group: 'import', path: 'import', title: 'Import',
-    body: "A coordinator can bring in a list from a CSV, Excel, XML or JSON file, or a text, Word or PDF file through a model. Volley suggests which column goes to which field, shows likely duplicates side by side and sets aside rows with no email or phone, because nobody can send them a link. This sample has one import on record. You don't need to import anything to try the rest.",
+    body: "A coordinator can bring in a list from a CSV, Excel, XML or JSON file, or a text, Word or PDF file through a model. Volley suggests which column goes to which field, shows likely duplicates side by side and sets aside rows with no email or phone, because nobody can send them a link. This sample has one import on record, and the rest of the demo works without one.",
     ask: 'Where does your list live now, and what shape is it in?',
   },
   {
@@ -184,12 +184,12 @@ const STOPS: Stop[] = [
   },
   {
     group: 'settings', path: 'settings', title: 'Members, limits, posting and export',
-    body: "Members run the tool: admins, coordinators and team leads. The weekly ask limit caps how often one person can be asked. An organization can connect its Bluesky account and post public tasks there, never people. Export downloads everything as CSV and JSON.",
+    body: "Members run the tool: admins, coordinators and team leads. The weekly ask limit caps how often one person can be asked. An organization can connect its Bluesky account and post public tasks there; volunteer details stay in Volley. Export downloads everything as CSV and JSON.",
     ask: 'Who at your organization would use this, and what would they need to take with them if they left?',
   },
   {
     group: 'end', path: 'today', title: 'Yours to play with',
-    body: "That's every feature. The sample is yours now: publish tasks, ask people, answer as a volunteer, import a file, change settings. Switch to another sample organization from the name at the top left. When you're done, tell us what fit and what didn't. We'd like to do a walkthrough with you.",
+    body: "You've seen every feature. The sample is yours now: publish tasks, ask people, answer as a volunteer, import a file, change settings. Switch to another sample organization from the name at the top left. When you're done, tell us what fit your organization and what didn't. We'd like to do a walkthrough with you.",
     action: 'feedback',
   },
 ];
