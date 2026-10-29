@@ -36,7 +36,7 @@ const STOPS: { path: string; title: string; body: string; ask: string; action?: 
   {
     path: 'tasks',
     title: 'What a volunteer sees',
-    body: 'A page on their phone with the task and two buttons. No account.',
+    body: 'A page on their phone with the task and two buttons, and no account to make.',
     ask: 'How do your volunteers hear from you now, and what do they do to answer?',
     action: 'volunteer',
   },

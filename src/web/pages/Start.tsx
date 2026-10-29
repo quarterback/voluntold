@@ -65,7 +65,7 @@ export function Start() {
         <Card sx={{ mb: 3 }}>
           <CardContent>
             <Typography variant="h1" component="h1" sx={{ fontSize: '1.75rem', mb: 1 }}>Start with the demo</Typography>
-            <Typography color="text.secondary" sx={{ mb: 3 }}>A sample food pantry with 26 volunteers and open work, and a walk through five screens.</Typography>
+            <Typography color="text.secondary" sx={{ mb: 3 }}>A sample food pantry with 26 volunteers and open work, plus a walk through five screens.</Typography>
             <Button variant="contained" size="large" onClick={demo} disabled={busy}>Try the demo</Button>
           </CardContent>
         </Card>

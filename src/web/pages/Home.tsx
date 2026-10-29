@@ -38,7 +38,7 @@ export function Home() {
             </Typography>
             <Typography sx={{ fontSize: { xs: '1.0625rem', md: '1.25rem' }, color: vt.onInk2, maxWidth: 600, mb: 4 }}>
               Coordinators keep track of who's in the volunteer queue, write tasks and hand out work.
-              Volunteers see what's needed and answer from a link on their phone. No account.
+              Volunteers see what's needed and answer from a link on their phone, with no account to make.
             </Typography>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
               <Button variant="contained" size="large" onClick={demo} sx={lime}>Try the demo</Button>
@@ -61,17 +61,17 @@ export function Home() {
           />
           <Feature
             title="Who fits, who goes first"
-            body="Write the task and say what it needs. Only people who fit get asked, and the one who has waited longest goes first. Ask a few at a time, everyone who fits, or pick by hand."
+            body="Write the task and say what it needs. Only people who fit get asked, and the one who has waited longest goes first. Ask a few at a time, ask everyone who fits or pick by hand."
             img="/screens/task.png" alt="A task page showing the people holding spots and the next group to ask" flip
           />
           <Feature
             title="Your people, as records"
-            body="Everyone you have, with tags, tiers and availability. Filter by any of it, and save the filter as a list. The tool proposes the tags; you change any of them."
+            body="Everyone you have, with tags, tiers and availability. Filter by any of it and save the filter as a list. The tool proposes the tags; you change any of them."
             img="/screens/people.png" alt="The people list with tags, tiers and availability"
           />
           <Feature
             title="Needs become tasks"
-            body="Something you want to run, such as a Saturday delivery, holds the assignments and the supplies it can't start without. Each assignment shows who fits or where the gap is. Offer publishes the ones that have people."
+            body="Something you want to run, such as a Saturday delivery, holds the assignments and the supplies it can't start without. Each assignment shows who fits or where the gap is. Tap Offer to publish the ones that have people."
             img="/screens/needs.png" alt="The Needs screen with a Saturday delivery and its assignments" flip
           />
         </Stack>
