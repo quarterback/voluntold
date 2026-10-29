@@ -349,6 +349,17 @@ taskRoutes.post('/asks/:askId/link', async (c) => {
   return c.json(await renewLink(c.env, actor.orgId, c.req.param('askId'), c.get('now')));
 });
 
+// The demo tour: a fresh link for the latest waiting ask in the sample
+// organization, so the person can open the volunteer's page.
+taskRoutes.post('/demo/volunteer-link', async (c) => {
+  const actor = c.get('actor');
+  const org = await loadOrg(c.env.DB, actor.orgId);
+  if (!org || org.sample !== 1) fail(404, 'Not found');
+  const ask = await c.env.DB.prepare("SELECT id FROM asks WHERE org_id = ? AND status = 'waiting' ORDER BY created_at DESC LIMIT 1").bind(actor.orgId).first<{ id: string }>();
+  if (!ask) fail(409, 'Ask people first.');
+  return c.json(await renewLink(c.env, actor.orgId, ask.id, c.get('now')));
+});
+
 taskRoutes.post('/spots/:spotId/missed', async (c) => {
   const actor = c.get('actor');
   const spot = await c.env.DB.prepare('SELECT task_id, status FROM spots WHERE id = ? AND org_id = ?').bind(c.req.param('spotId'), actor.orgId).first<{ task_id: string; status: string }>();

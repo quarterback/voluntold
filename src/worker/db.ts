@@ -113,6 +113,7 @@ export function publicOrg(r: Row) {
     signupUrl: r.signup_url,
     publishDefault: r.publish_default === 1,
     timeZone: r.time_zone,
+    sample: r.sample === 1,
     atproto: r.atproto_did ? { did: r.atproto_did, handle: r.atproto_handle, service: r.atproto_service } : null,
   };
 }

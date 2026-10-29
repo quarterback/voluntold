@@ -34,7 +34,7 @@ export function Login() {
     try {
       await api('/api/auth/verify', { body: { email, code } });
       const next = new URLSearchParams(location.search).get('next');
-      location.href = next && next.startsWith('/') && !next.startsWith('//') ? next : '/';
+      location.href = next && next.startsWith('/') && !next.startsWith('//') ? next : '/start';
     } catch (err) {
       setError(errorText(err));
       setBusy(false);

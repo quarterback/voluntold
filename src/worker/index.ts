@@ -11,7 +11,7 @@ import { linkRoute, volunteerApi } from './routes/volunteer';
 import { publicRoutes } from './routes/public';
 import { sweep } from './engine';
 import { createSampleOrg } from './sample';
-import { fail, isDev } from './util';
+import { fail } from './util';
 
 const app = new Hono<AppBindings>();
 
@@ -47,8 +47,11 @@ app.post('/api/auth/logout', async (c) => {
 const signedIn = new Hono<AppBindings>();
 signedIn.use('*', requireUser);
 signedIn.route('/', accountRoutes);
-signedIn.post('/dev/sample', async (c) => {
-  if (!isDev(c.env)) fail(404, 'Not found');
+// The demo: a sample organization for the signed-in person. One per person.
+signedIn.post('/sample', async (c) => {
+  const existing = await c.env.DB.prepare('SELECT o.id FROM members m JOIN orgs o ON o.id = m.org_id WHERE m.user_id = ? AND o.sample = 1 ORDER BY o.created_at LIMIT 1')
+    .bind(c.get('userId')).first<{ id: string }>();
+  if (existing) return c.json({ id: existing.id });
   return c.json({ id: await createSampleOrg(c.env, c.get('userId'), c.get('now')) }, 201);
 });
 const org = new Hono<AppBindings>();

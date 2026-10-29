@@ -58,7 +58,8 @@ for (const c of copy) {
 const SCREEN_MAX_WORDS = 8;
 // Wording replaced by standard terms on October 25, 2026. Keep it from coming back.
 const NOT_STANDARD = [/\bsaid (yes|no)\b/i, /\bgive up\b/i, /stop asking me/i, /\bkeep (my|task)\b/i, /who to find/i, /can't make it/i, /already filled/i, /can't be undone/i, /\btake a break\b/i, /\bset aside\b/i];
-for (const c of copy.filter((c) => c.file.includes('src/web'))) {
+// The home page and the demo tour are prose by design.
+for (const c of copy.filter((c) => c.file.includes('src/web') && !/Home\.tsx|DemoTour\.tsx/.test(c.file))) {
   const words = c.text.split(/\s+/).length;
   if (words > SCREEN_MAX_WORDS) {
     console.log(`screen text too long (${words} words, limit ${SCREEN_MAX_WORDS}): ${c.file}:${c.line} ${c.text}`);

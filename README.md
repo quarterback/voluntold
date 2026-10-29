@@ -51,7 +51,7 @@ npm run db:migrate:local
 npx wrangler dev                      # http://localhost:8787
 ```
 
-Sign in with any email. In dev mode the code shows on the screen. "Try it with sample data" sets up a sample organization. You can also import `samples/volunteers.csv`.
+Sign in with any email. In dev mode the code shows on the screen. "Try the demo" sets up a sample organization and walks you through five stops. You can also import `samples/volunteers.csv`.
 
 ## Check it
 
