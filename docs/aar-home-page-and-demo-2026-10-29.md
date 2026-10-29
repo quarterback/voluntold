@@ -28,8 +28,9 @@
 4. Found two overlaps in the screenshots and fixed them: the tour card sat under the Urgent ask button on phones, and over it on desktop. The card now sits above other controls on phones and at the bottom left of the content on desktop.
 5. Exempted the home page and the tour from the no-sentences screen rule in `scripts/check-docs.mjs`. Both are prose by design.
 6. Ran the app locally and took screenshots: the home page at desktop and phone width, the first screen for a new person, each stop on a phone, the volunteer page opened from the tour, and two stops on desktop.
+7. The owner then said the tool is called Volley, not Volly. Renamed it everywhere outside the historical records: the page title and OpenGraph tags, the card and its image, the favicon's label, and the wordmark. The wordmark is outlines, so the agent installed fonttools, pulled the glyphs for "Volley" from PP Object Sans Heavy, and derived the tracking from the old mark (minus 45 units, the same minus 0.045em the card uses). The V outline came out identical to the old one, which confirmed the method. The favicon's V is unchanged.
 
-**What it produced or changed:** `src/web/pages/Home.tsx`, `DemoTour.tsx`, `Start.tsx`, `App.tsx`, `OrgShell.tsx`, `Login.tsx`, `public/screens/*`, `migrations/0004_sample_orgs.sql`, `src/worker/index.ts`, `db.ts`, `sample.ts`, `routes/org.ts`, `routes/tasks.ts`, `scripts/check-docs.mjs`, `README.md`, and this record.
+**What it produced or changed:** `src/web/pages/Home.tsx`, `DemoTour.tsx`, `Start.tsx`, `App.tsx`, `OrgShell.tsx`, `Login.tsx`, `Wordmark.tsx`, `public/screens/*`, `public/wordmark.svg`, `public/favicon.svg`, `public/og.png`, `index.html`, `scripts/og-card.html`, `migrations/0004_sample_orgs.sql`, `src/worker/index.ts`, `db.ts`, `sample.ts`, `routes/org.ts`, `routes/tasks.ts`, `scripts/check-docs.mjs`, `README.md`, and this record.
 **Where actual behavior differed from the instruction:** The first attempt was built on stale code and shown to the owner. It cost a round.
 **Stayed within granted authority?** Yes.
 
