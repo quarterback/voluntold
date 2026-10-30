@@ -5,6 +5,7 @@ import { Wordmark } from '../Wordmark';
 import { api } from '../api';
 import { Loading, errorText, useLoad } from './common';
 import { SAMPLE_KINDS, sampleKind } from '../../shared/samples';
+import { BROWSER_DEMO, StartOverButton } from '../demoMode';
 
 interface Me {
   email: string;
@@ -19,7 +20,7 @@ export function Start() {
   const [problem, setProblem] = useState<string | null>(null);
   const params = new URLSearchParams(location.search);
   const choose = params.has('choose');
-  const wantDemo = params.has('demo');
+  const wantDemo = BROWSER_DEMO || params.has('demo');
 
   if (!data) return <Loading error={error} />;
   const fresh = data.orgs.length === 0;
@@ -59,6 +60,7 @@ export function Start() {
         <Box sx={{ mb: 3, color: 'text.primary' }}><Wordmark height={32} /></Box>
         <Typography variant="h1" component="h1" sx={{ mb: 1 }}>Pick a sample organization</Typography>
         <Typography color="text.secondary" sx={{ mb: 3 }}>Each one is a full organization with people, needs, tasks and a guide to every feature. Open as many as you like.</Typography>
+        {BROWSER_DEMO && <Typography variant="body2" color="text.secondary" sx={{ mt: -1.5, mb: 3 }}>Runs in your browser · Changes stay here</Typography>}
         {problem && <Alert severity="error" sx={{ mb: 2 }}>{problem}</Alert>}
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5 }}>
           {SAMPLE_KINDS.map((k) => (
@@ -76,7 +78,9 @@ export function Start() {
             </Card>
           ))}
         </Box>
-        {!fresh && <Box sx={{ mt: 3 }}><Button onClick={() => navigate('/start?choose=1')}>Your organizations</Button></Box>}
+        {BROWSER_DEMO
+          ? have.size > 0 && <Box sx={{ mt: 3 }}><StartOverButton /></Box>
+          : !fresh && <Box sx={{ mt: 3 }}><Button onClick={() => navigate('/start?choose=1')}>Your organizations</Button></Box>}
       </Box>
     );
   }

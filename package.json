@@ -7,12 +7,14 @@
     "dev:web": "vite",
     "build": "npm run build:web",
     "build:web": "vite build",
+    "build:demo": "vite build --mode browser-demo",
+    "dev:demo": "vite --mode browser-demo",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.web.json",
     "test": "vitest run",
     "test:e2e": "node e2e/smoke.mjs",
-    "check": "npm run typecheck && npm run build && npm test",
+    "check": "npm run typecheck && npm run build && npm run build:demo && npm test",
     "check:docs": "node scripts/check-docs.mjs"
   },
   "dependencies": {
@@ -29,6 +31,7 @@
     "react-dom": "^19.3.1",
     "react-router-dom": "^7.18.4",
     "read-excel-file": "^9.3.12",
+    "sql.js": "^1.15.2",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -37,6 +40,7 @@
     "@types/papaparse": "^5.5.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@types/sql.js": "^1.4.11",
     "@vitejs/plugin-react": "^6.1.2",
     "@vitest/runner": "^4.1.12",
     "@vitest/snapshot": "^4.1.12",
