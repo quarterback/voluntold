@@ -5,6 +5,7 @@ import { CssBaseline, ThemeProvider, useMediaQuery } from '@mui/material';
 import { makeTheme } from './theme';
 import { App } from './App';
 import { DialogProvider } from './pages/common';
+import { demoReady } from './demoMode';
 
 function Root() {
   const dark = useMediaQuery('(prefers-color-scheme: dark)');
@@ -21,8 +22,11 @@ function Root() {
   );
 }
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <Root />
-  </StrictMode>,
-);
+demoReady.then((render) => {
+  if (!render) return;
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <Root />
+    </StrictMode>,
+  );
+});

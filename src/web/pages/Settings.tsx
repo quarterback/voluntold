@@ -13,6 +13,7 @@ import { TagChip } from './tags';
 import { api } from '../api';
 import { useOrg } from './OrgShell';
 import { Page, Section, errorText, useDialogs, useLoad } from './common';
+import { BROWSER_DEMO, StartOverButton } from '../demoMode';
 import type { FieldType } from '../../shared/types';
 
 const TYPE_TEXT: Record<FieldType, string> = {
@@ -314,7 +315,9 @@ export function Settings() {
         )}
         {me.role === 'admin' && <DeleteOrgSection />}
         <Box>
-          <Button onClick={async () => { await api('/api/auth/logout', { body: {} }); location.href = '/login'; }}>Sign out</Button>
+          {BROWSER_DEMO
+            ? <StartOverButton />
+            : <Button onClick={async () => { await api('/api/auth/logout', { body: {} }); location.href = '/login'; }}>Sign out</Button>}
         </Box>
       </Stack>
     </Page>

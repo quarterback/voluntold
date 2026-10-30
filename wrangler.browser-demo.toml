@@ -1,0 +1,15 @@
+# The demo at volleydemo.vloora.com: static files only. The app's routes run
+# in the visitor's browser over SQLite (src/browser/main.ts), so there is no
+# worker code, database or secret here. Deploy with scripts/deploy-demo.sh.
+#
+# It keeps the name of the old server demo so the custom domain and the
+# workers.dev address stay with it. The server demo is the [env.demo] block in
+# wrangler.toml.
+name = "voluntold-demo"
+compatibility_date = "2026-08-15"
+workers_dev = true
+routes = [{ pattern = "volleydemo.vloora.com", custom_domain = true }]
+
+[assets]
+directory = "./dist-demo"
+not_found_handling = "single-page-application"

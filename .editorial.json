@@ -20,6 +20,7 @@
     "node_modules",
     ".git",
     "dist",
+    "dist-demo",
     "build",
     "coverage",
     ".next",

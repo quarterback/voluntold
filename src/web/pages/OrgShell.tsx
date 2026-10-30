@@ -15,6 +15,9 @@ import { api, orgApi } from '../api';
 import { Loading, useLoad } from './common';
 import type { Field, Tag } from '../../shared/types';
 import { GUIDE_WIDTH, Guide, GuideProvider, useGuideOpen } from './Guide';
+import { BROWSER_DEMO, StartOverButton } from '../demoMode';
+
+const SWITCH = BROWSER_DEMO ? '/start?demo=1' : '/start?choose=1';
 
 export interface OrgInfo {
   org: { id: string; name: string; weeklyAskLimit: number; signupUrl: string | null; publishDefault: boolean; timeZone: string; sample: boolean; sampleKind: string | null; atproto: { did: string; handle: string } | null };
@@ -69,7 +72,7 @@ export function OrgShell() {
         <Box component="nav" aria-label="Main" sx={{
           position: 'fixed', inset: '0 auto 0 0', width: SIDEBAR, bgcolor: theme.vt.ink, color: theme.vt.onInk, p: 1.5, display: 'flex', flexDirection: 'column',
         }}>
-          <Button onClick={() => navigate('/start?choose=1')} endIcon={<UnfoldIcon fontSize="small" />}
+          <Button onClick={() => navigate(SWITCH)} endIcon={<UnfoldIcon fontSize="small" />}
             sx={{ justifyContent: 'space-between', color: theme.vt.onInk, px: 1.25, mb: 2, minHeight: 48, borderRadius: 2.5, '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' } }}>
             <Typography component="span" noWrap sx={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: '1.0625rem', letterSpacing: '-0.01em' }}>{data.org.name}</Typography>
           </Button>
@@ -85,12 +88,14 @@ export function OrgShell() {
             ))}
           </List>
           <Box sx={{ flex: 1 }} />
-          <Typography variant="caption" sx={{ px: 1.25, color: theme.vt.onInk2 }} noWrap>{data.me.email}</Typography>
+          {BROWSER_DEMO
+            ? <StartOverButton size="small" sx={{ alignSelf: 'flex-start', color: theme.vt.onInk2 }} />
+            : <Typography variant="caption" sx={{ px: 1.25, color: theme.vt.onInk2 }} noWrap>{data.me.email}</Typography>}
         </Box>
       ) : (
         <AppBar position="sticky">
           <Toolbar sx={{ gap: 1, justifyContent: 'space-between' }}>
-            <Button onClick={() => navigate('/start?choose=1')} endIcon={<UnfoldIcon fontSize="small" />} sx={{ color: theme.vt.onInk, px: 0.5, minWidth: 0, maxWidth: '100%' }}>
+            <Button onClick={() => navigate(SWITCH)} endIcon={<UnfoldIcon fontSize="small" />} sx={{ color: theme.vt.onInk, px: 0.5, minWidth: 0, maxWidth: '100%' }}>
               <Typography component="span" noWrap sx={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: '1.0625rem' }}>{data.org.name}</Typography>
             </Button>
             <IconButton aria-label="Settings" onClick={() => go('settings')} sx={{ color: tab === 'settings' ? theme.vt.lime : theme.vt.onInk2 }}><SettingsIcon fontSize="small" /></IconButton>

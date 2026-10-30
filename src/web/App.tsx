@@ -14,13 +14,21 @@ import { Import } from './pages/Import';
 import { VolunteerPage } from './pages/VolunteerPage';
 import { Needs } from './pages/Needs';
 import { Offers } from './pages/Offers';
+import { BROWSER_DEMO } from './demoMode';
+
+/** The browser demo has no sign-in. A full load signs the visitor in again. */
+function DemoLogin() {
+  const next = new URLSearchParams(location.search).get('next');
+  location.replace(next && next.startsWith('/') && !next.startsWith('//') ? next : '/');
+  return null;
+}
 
 export function App() {
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
+      <Route path="/login" element={BROWSER_DEMO ? <DemoLogin /> : <Login />} />
       <Route path="/me" element={<VolunteerPage />} />
-      <Route path="/" element={<Home />} />
+      <Route path="/" element={BROWSER_DEMO ? <Navigate to="/start?demo=1" replace /> : <Home />} />
       <Route path="/start" element={<Start />} />
       <Route path="/o/:orgId" element={<OrgShell />}>
         <Route index element={<Navigate to="today" replace />} />

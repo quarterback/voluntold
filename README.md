@@ -51,7 +51,9 @@ npm run db:migrate:local
 npx wrangler dev                      # http://localhost:8787
 ```
 
-Sign in with any email. In dev mode the code shows on the screen. "Try the demo" sets up a sample organization and walks you through five stops. You can also import `samples/volunteers.csv`.
+Sign in with any email. In dev mode the code shows on the screen. "Try the demo" opens the sample organizations and the guide. You can also import `samples/volunteers.csv`.
+
+To run the browser demo, the one at volleydemo.vloora.com, use `npm run dev:demo`. It needs no database or worker.
 
 ## Check it
 
@@ -60,6 +62,16 @@ npm run check                         # type checks, tests, build
 npm run check:docs                    # prosekeep style check, closedtab check on every record
 node e2e/smoke.mjs                    # with wrangler dev running: the pilot check in a browser
 ```
+
+## Deploy the demo
+
+The demo at [volleydemo.vloora.com](https://volleydemo.vloora.com) runs in the visitor's browser. The app's own routes run in the page over SQLite, and each visitor's copy is saved in their browser. There's no sign-in, and nothing a visitor does reaches the server. See `docs/specs/browser-demo.md`.
+
+```sh
+scripts/deploy-demo.sh                # builds dist-demo/ and deploys it as static files
+```
+
+`scripts/deploy-server-demo.sh` deploys the server version of the demo instead, with sign-in and one shared database. Both use the worker name `voluntold-demo`, so each replaces the other.
 
 ## Deploy
 
