@@ -28,7 +28,7 @@ export function App() {
     <Routes>
       <Route path="/login" element={BROWSER_DEMO ? <DemoLogin /> : <Login />} />
       <Route path="/me" element={<VolunteerPage />} />
-      <Route path="/" element={BROWSER_DEMO ? <Navigate to="/start?demo=1" replace /> : <Home />} />
+      <Route path="/" element={<Home />} />
       <Route path="/start" element={<Start />} />
       <Route path="/o/:orgId" element={<OrgShell />}>
         <Route index element={<Navigate to="today" replace />} />

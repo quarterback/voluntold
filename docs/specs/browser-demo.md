@@ -10,7 +10,7 @@ The owner pointed to [Tack's demo](https://tack.social/try/) as the model. It op
 
 ## What it does
 
-- The address is volleydemo.vloora.com. It opens on the sample organization picker. There's no sign-in screen.
+- The address is volleydemo.vloora.com. It opens on Volley's product page, with no sign-in. Try the demo leads to the sample picker, which says how the demo works before the visitor picks a sample.
 - Each visitor gets their own copy of the six sample organizations. What they change stays in their browser and comes back when they return.
 - **Start over** is in the sidebar, in Settings and on the picker once a sample is open. It clears the visitor's copy and goes back to the picker.
 - The volunteer's page opens in a new tab, as it does on the server. Accepting there shows up on the coordinator's screens.
