@@ -14,10 +14,10 @@ import NeedIcon from '@mui/icons-material/FlagOutlined';
 import { api, orgApi } from '../api';
 import { Loading, useLoad } from './common';
 import type { Field, Tag } from '../../shared/types';
-import { DemoTour } from './DemoTour';
+import { GUIDE_WIDTH, Guide, GuideProvider, useGuideOpen } from './Guide';
 
 export interface OrgInfo {
-  org: { id: string; name: string; weeklyAskLimit: number; signupUrl: string | null; publishDefault: boolean; timeZone: string; sample: boolean; atproto: { did: string; handle: string } | null };
+  org: { id: string; name: string; weeklyAskLimit: number; signupUrl: string | null; publishDefault: boolean; timeZone: string; sample: boolean; sampleKind: string | null; atproto: { did: string; handle: string } | null };
   me: { role: 'admin' | 'coordinator' | 'lead'; memberId: string; leadTeamIds: string[]; email: string };
   atprotoReady: boolean;
   demo: boolean;
@@ -64,6 +64,7 @@ export function OrgShell() {
 
   return (
     <OrgContext.Provider value={{ ...data, path, reload }}>
+      <GuideProvider>
       {wide ? (
         <Box component="nav" aria-label="Main" sx={{
           position: 'fixed', inset: '0 auto 0 0', width: SIDEBAR, bgcolor: theme.vt.ink, color: theme.vt.onInk, p: 1.5, display: 'flex', flexDirection: 'column',
@@ -96,10 +97,8 @@ export function OrgShell() {
           </Toolbar>
         </AppBar>
       )}
-      <Box component="main" sx={{ ml: wide ? `${SIDEBAR}px` : 0 }}>
-        <Outlet />
-      </Box>
-      <DemoTour />
+      <Main wide={wide} />
+      <Guide />
       {!wide && (
         <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10 }} elevation={0}>
           <BottomNavigation showLabels value={tab === 'settings' ? false : tab} onChange={(_, v) => go(v)} component="nav" aria-label="Main">
@@ -107,6 +106,17 @@ export function OrgShell() {
           </BottomNavigation>
         </Paper>
       )}
+      </GuideProvider>
     </OrgContext.Provider>
+  );
+}
+
+/** The page column. It leaves room for the demo guide on wide screens. */
+function Main({ wide }: { wide: boolean }) {
+  const guide = useGuideOpen();
+  return (
+    <Box component="main" sx={{ ml: wide ? `${SIDEBAR}px` : 0, mr: wide && guide ? `${GUIDE_WIDTH}px` : 0 }}>
+      <Outlet />
+    </Box>
   );
 }

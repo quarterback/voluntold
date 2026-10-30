@@ -10,7 +10,7 @@ import { tagRoutes } from './routes/tags';
 import { linkRoute, volunteerApi } from './routes/volunteer';
 import { publicRoutes } from './routes/public';
 import { sweep } from './engine';
-import { createSampleOrg } from './sample';
+import { createSampleOrg, DATASETS } from './sample';
 import { fail } from './util';
 
 const app = new Hono<AppBindings>();
@@ -47,12 +47,14 @@ app.post('/api/auth/logout', async (c) => {
 const signedIn = new Hono<AppBindings>();
 signedIn.use('*', requireUser);
 signedIn.route('/', accountRoutes);
-// The demo: a sample organization for the signed-in person. One per person.
+// The demo: one sample organization of each kind per person (docs/specs/demo.md).
 signedIn.post('/sample', async (c) => {
-  const existing = await c.env.DB.prepare('SELECT o.id FROM members m JOIN orgs o ON o.id = m.org_id WHERE m.user_id = ? AND o.sample = 1 ORDER BY o.created_at LIMIT 1')
-    .bind(c.get('userId')).first<{ id: string }>();
+  const body = await c.req.json().catch(() => ({}));
+  const kind = typeof body.kind === 'string' && DATASETS[body.kind] ? body.kind : 'pantry';
+  const existing = await c.env.DB.prepare('SELECT o.id FROM members m JOIN orgs o ON o.id = m.org_id WHERE m.user_id = ? AND o.sample_kind = ? ORDER BY o.created_at LIMIT 1')
+    .bind(c.get('userId'), kind).first<{ id: string }>();
   if (existing) return c.json({ id: existing.id });
-  return c.json({ id: await createSampleOrg(c.env, c.get('userId'), c.get('now')) }, 201);
+  return c.json({ id: await createSampleOrg(c.env, c.get('userId'), c.get('now'), kind) }, 201);
 });
 const org = new Hono<AppBindings>();
 org.use('*', requireMember);
