@@ -6,6 +6,7 @@ import { api } from '../api';
 import { Loading, errorText, useLoad } from './common';
 import { SAMPLE_KINDS, sampleKind } from '../../shared/samples';
 import { BROWSER_DEMO, StartOverButton } from '../demoMode';
+import { DemoIntro } from './DemoIntro';
 
 interface Me {
   email: string;
@@ -57,10 +58,9 @@ export function Start() {
   if (wantDemo) {
     return (
       <Box sx={{ maxWidth: 720, mx: 'auto', px: 2, py: { xs: 5, md: 8 } }}>
-        <Box sx={{ mb: 3, color: 'text.primary' }}><Wordmark height={32} /></Box>
-        <Typography variant="h1" component="h1" sx={{ mb: 1 }}>Pick a sample organization</Typography>
-        <Typography color="text.secondary" sx={{ mb: 3 }}>Each one is a full organization with people, needs, tasks and a guide to every feature. Open as many as you like.</Typography>
-        {BROWSER_DEMO && <Typography variant="body2" color="text.secondary" sx={{ mt: -1.5, mb: 3 }}>Runs in your browser · Changes stay here</Typography>}
+        <Box component="a" href="/" aria-label="Volley home" onClick={(e: React.MouseEvent) => { e.preventDefault(); navigate('/'); }} sx={{ display: 'inline-block', mb: 3, color: 'text.primary' }}><Wordmark height={32} /></Box>
+        <DemoIntro />
+        <Typography variant="h2" component="h2" sx={{ mb: 2 }}>Pick a sample organization</Typography>
         {problem && <Alert severity="error" sx={{ mb: 2 }}>{problem}</Alert>}
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5 }}>
           {SAMPLE_KINDS.map((k) => (

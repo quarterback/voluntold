@@ -21,7 +21,8 @@
 5. Added `npm run build:demo` and `npm run dev:demo`. The demo build swaps `model.ts` and the Anthropic SDK for stand-ins, which cut the main script from 1.4 MB to 1.07 MB.
 6. Tested in Chromium locally and then live: all 23 guide stops in the radio sample, the volunteer page in a second tab, accepting there and seeing it on the coordinator's task, a CSV export, the sample CSV import, Start over, a reload, and phone width. No page errors.
 7. Deployed with `wrangler.browser-demo.toml` under the worker name `voluntold-demo`, which replaced the server demo at both volleydemo.vloora.com and the workers.dev address. The old deploy script is now `scripts/deploy-server-demo.sh`.
-8. Ran `npm run check`: type checks, both builds and 34 tests pass. Ran `npm run check:docs`; see section 4.
+8. The founder said the first version skipped the product page and dropped visitors onto the picker with no context. The demo now opens on the product page without its sign-in buttons. Try the demo leads to the picker, which opens with `DemoIntro.tsx`: what Volley is, three steps for the demo, and where to send answers. The picker's wordmark links back to the product page. The intro is exempt from the eight-word screen rule in `scripts/check-docs.mjs`, as the home page and guide are.
+9. Ran `npm run check`: type checks, both builds and 34 tests pass. Ran `npm run check:docs`; see section 4.
 
 **What it produced or changed:** `src/browser/` (new), `src/web/demoMode.tsx` (new), `src/web/main.tsx`, `App.tsx`, `pages/Start.tsx`, `pages/OrgShell.tsx`, `pages/Settings.tsx`, `vite.config.ts`, `package.json`, `tsconfig.json`, `.gitignore`, `.editorial.json`, `wrangler.browser-demo.toml`, `scripts/deploy-demo.sh`, `scripts/deploy-server-demo.sh`, `README.md`, `docs/specs/browser-demo.md`, and this record. Two Cloudflare deploys of `voluntold-demo`.
 **Where actual behavior differed from the instruction:** None.
@@ -32,12 +33,12 @@
 - Running the worker's code in the page rather than writing a second, fake API. The demo can't drift from the app this way.
 - Replacing the server demo under the same worker name, so the domain the founder attached keeps working. The server demo can come back with `scripts/deploy-server-demo.sh`.
 - Turning workers.dev back on for the new demo, so links already shared still open.
-- The visitor lands on the sample picker, which `docs/specs/demo.md` puts first, rather than straight inside one sample.
+- The wording of the picker's intro, and exempting it from the eight-word screen rule.
 - The wording "Runs in your browser · Changes stay here" and "Undo all your changes?" for Start over.
 
-**Of those, which should a human have made or seen:** The picker as the first screen, and the two lines of wording.
-**Where a human actually intervened:** The founder attached the domain and merged #29 during the run.
-**Points where it should have escalated and didn't:** None.
+**Of those, which should a human have made or seen:** The picker intro and the Start over wording.
+**Where a human actually intervened:** The founder attached the domain and merged #29 during the run. He then asked for the product page first and for an intro on the picker.
+**Points where it should have escalated and didn't:** Sending visitors straight to the picker dropped the product page the founder built. That should have been raised before deploying.
 **Accountable for these actions:** The founder, for the deploy he asked for; the agent, for the code.
 
 ## 4. Deviation: the gaps
@@ -58,7 +59,7 @@
 - The page loads about 1 MB of script and a 0.7 MB SQLite file.
 
 ## 6. Change: what happens next
-1. Founder opens volleydemo.vloora.com and checks the picker wording and Start over.
+1. Founder opens volleydemo.vloora.com and checks the picker intro and Start over.
 2. Merge this branch so `main` matches what's deployed.
 3. Decide whether the guide's long strings get shortened or exempted, so `check:docs` passes on `main`.
 4. Next run: deploy the demo with `scripts/deploy-demo.sh`, not the server script.

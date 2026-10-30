@@ -4,6 +4,7 @@ import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { Wordmark } from '../Wordmark';
 import { FONT_DISPLAY } from '../theme';
+import { BROWSER_DEMO } from '../demoMode';
 
 /** The product page. Everyone lands here; signed-in people get a button into the app. */
 export function Home() {
@@ -15,7 +16,8 @@ export function Home() {
     fetch('/api/me', { credentials: 'same-origin' }).then((r) => setSignedIn(r.ok)).catch(() => {});
   }, []);
 
-  const demo = () => navigate(signedIn ? '/start?demo=1' : '/login?next=' + encodeURIComponent('/start?demo=1'));
+  // The browser demo has no sign-in, so its only way in is the demo.
+  const demo = () => navigate(BROWSER_DEMO || signedIn ? '/start?demo=1' : '/login?next=' + encodeURIComponent('/start?demo=1'));
   const enter = () => navigate(signedIn ? '/start' : '/login');
   const enterLabel = signedIn ? 'Open Volley' : 'Sign in';
   const lime = { bgcolor: vt.lime, color: vt.onLime, '&:hover': { bgcolor: '#B3E12A' } };
@@ -29,7 +31,7 @@ export function Home() {
           <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
             <Box sx={{ color: vt.lime }}><Wordmark height={28} /></Box>
             <Stack direction="row" spacing={1}>
-              <Button onClick={enter} sx={{ color: vt.onInk }}>{enterLabel}</Button>
+              {!BROWSER_DEMO && <Button onClick={enter} sx={{ color: vt.onInk }}>{enterLabel}</Button>}
               <Button variant="contained" onClick={demo} sx={lime}>Try the demo</Button>
             </Stack>
           </Stack>
@@ -44,7 +46,7 @@ export function Home() {
             </Typography>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
               <Button variant="contained" size="large" onClick={demo} sx={lime}>Try the demo</Button>
-              <Button variant="outlined" size="large" onClick={enter} sx={{ color: vt.onInk, borderColor: vt.onInk, '&:hover': { borderColor: vt.onInk, bgcolor: 'rgba(255,255,255,0.08)' } }}>{enterLabel}</Button>
+              {!BROWSER_DEMO && <Button variant="outlined" size="large" onClick={enter} sx={{ color: vt.onInk, borderColor: vt.onInk, '&:hover': { borderColor: vt.onInk, bgcolor: 'rgba(255,255,255,0.08)' } }}>{enterLabel}</Button>}
             </Stack>
           </Box>
         </Container>
@@ -80,7 +82,7 @@ export function Home() {
 
         <Box sx={{ ...frame, bgcolor: vt.ink, color: vt.onInk, textAlign: 'center', p: { xs: 4, md: 8 }, mb: { xs: 6, md: 10 } }}>
           <Typography component="h2" sx={{ ...heading, fontSize: { xs: '1.75rem', md: '2.25rem' }, mb: 1.5 }}>See it with sample data</Typography>
-          <Typography sx={{ color: vt.onInk2, mb: 3, maxWidth: 480, mx: 'auto' }}>A sample food pantry with 26 volunteers, open work and a short walk through five screens. Sign in with your email.</Typography>
+          <Typography sx={{ color: vt.onInk2, mb: 3, maxWidth: 480, mx: 'auto' }}>{BROWSER_DEMO ? 'Pick a sample organization and follow the guide through every feature.' : 'Pick a sample organization and follow the guide. Sign in with your email.'}</Typography>
           <Button variant="contained" size="large" onClick={demo} sx={lime}>Try the demo</Button>
         </Box>
       </Container>
@@ -88,7 +90,7 @@ export function Home() {
       <Container maxWidth="lg" component="footer" sx={{ py: 3 }}>
         <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ color: vt.text }}><Wordmark height={20} /></Box>
-          <Button size="small" onClick={enter}>{enterLabel}</Button>
+          {!BROWSER_DEMO && <Button size="small" onClick={enter}>{enterLabel}</Button>}
         </Stack>
       </Container>
     </Box>
