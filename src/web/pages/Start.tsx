@@ -26,7 +26,6 @@ export function Start() {
   if (!data) return <Loading error={error} />;
   const fresh = data.orgs.length === 0;
   if (!wantDemo && !choose && data.orgs.length === 1) return <Navigate to={`/o/${data.orgs[0].id}/today`} replace />;
-  if (fresh && !wantDemo && !choose) return <Navigate to="/start?demo=1" replace />;
 
   async function create(e: React.FormEvent) {
     e.preventDefault();
@@ -80,7 +79,26 @@ export function Start() {
         </Box>
         {BROWSER_DEMO
           ? have.size > 0 && <Box sx={{ mt: 3 }}><StartOverButton /></Box>
-          : !fresh && <Box sx={{ mt: 3 }}><Button onClick={() => navigate('/start?choose=1')}>Your organizations</Button></Box>}
+          : <Box sx={{ mt: 3 }}><Button onClick={() => navigate('/start?choose=1')}>{fresh ? 'Set up your organization' : 'Your organizations'}</Button></Box>}
+      </Box>
+    );
+  }
+
+  // A new account: set up the organization first. Samples stay one tap away.
+  if (fresh) {
+    return (
+      <Box sx={{ maxWidth: 480, mx: 'auto', px: 2, py: { xs: 6, md: 10 } }}>
+        <Box sx={{ mb: 4, color: 'text.primary' }}><Wordmark height={32} /></Box>
+        {problem && <Alert severity="error" sx={{ mb: 2 }}>{problem}</Alert>}
+        <form onSubmit={create}>
+          <Stack spacing={2}>
+            <Typography variant="h1" component="h1" sx={{ fontSize: '1.75rem' }}>Set up your organization</Typography>
+            <TextField label="Organization name" required autoFocus value={name} onChange={(e) => setName(e.target.value)} />
+            <Box><Button type="submit" variant="contained" size="large" disabled={busy !== null || !name.trim()}>Create organization</Button></Box>
+          </Stack>
+        </form>
+        <Divider sx={{ my: 3 }} />
+        <Button onClick={() => navigate('/start?demo=1')}>Try a sample organization</Button>
       </Box>
     );
   }

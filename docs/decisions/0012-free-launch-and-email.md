@@ -26,17 +26,19 @@ The owner's goal is not funding. It is a product with many users that the owner 
   - accept or decline through the private link, as now
   - a note to coordinators when a task is still not full
 - **Owner:** newsletters, bulk campaigns, text messages and in-app chat stay out.
+- **Owner:** email goes through Amazon SES, not Resend.
+- **Owner:** the live site gets a sign-up path for real organizations, separate from the demo. Launch is Black Friday, November 27, 2026.
 - **Agent:** what the product must have before launch, from a quick look at the code on November 25, not an audit:
 
   | Needed | State |
   |---|---|
   | Accounts and saved data in production | Built in the server version. The public demo is the browser version, so production is not deployed. |
   | Spreadsheet import | Built |
-  | Email asks and private links | Links are built. Email is sent only for sign-in codes. |
-  | Sign up and create an organization without help | Partly built. Not tested as a flow a stranger finishes alone. |
+  | Email asks and private links | Built November 25 |
+  | Sign up and create an organization without help | Built November 25: Get started, then Set up your organization |
   | Usage counts | Not built |
 
-- **Agent:** send email through Resend, which the sign-in code already uses. Budget for the paid plan early, because the free plan stops at 100 emails a day. Prices were not checked on November 25.
+- **Agent:** new SES accounts can only send to verified addresses until AWS grants production access, so ask for it before launch. SES takes one email per request, so a large ask needs the paid Workers plan, which allows more requests per run.
 
 ## Not changed
 

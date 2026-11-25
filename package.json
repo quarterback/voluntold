@@ -23,6 +23,7 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^9.5.0",
     "@mui/material": "^9.5.0",
+    "aws4fetch": "1.0.20",
     "hono": "^4.13.13",
     "mammoth": "^1.13.0",
     "papaparse": "^5.7.0",

@@ -7,14 +7,20 @@ import type { Env } from '../src/worker/env';
 // The test server runs without an email provider, so emails it records are
 // "off". Tests that need sending call the mail code with a provider key and a
 // stand-in for the provider.
-const withMail = (): Env => ({ ...(env as unknown as Env), RESEND_API_KEY: 'test-key', EMAIL_FROM: 'Volley <asks@example.org>' });
+const withMail = (): Env => ({ ...(env as unknown as Env), AWS_ACCESS_KEY_ID: 'AKIDEXAMPLE', AWS_SECRET_ACCESS_KEY: 'test-secret', AWS_REGION: 'us-west-2', EMAIL_FROM: 'Volley <asks@example.org>' });
 
 function fakeProvider(ok = true) {
   const sent: any[] = [];
   const spy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
-    expect(String(input)).toBe('https://api.resend.com/emails/batch');
-    sent.push(...JSON.parse(String(init?.body)));
-    return new Response(ok ? '{"data":[]}' : '{"error":"no"}', { status: ok ? 200 : 422 });
+    const req = input instanceof Request ? input : new Request(input, init);
+    expect(req.url).toBe('https://email.us-west-2.amazonaws.com/v2/email/outbound-emails');
+    expect(req.headers.get('authorization')).toMatch(/^AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE\/\d{8}\/us-west-2\/ses\/aws4_request/);
+    const b = JSON.parse(await req.text());
+    sent.push({
+      from: b.FromEmailAddress, to: b.Destination.ToAddresses, reply_to: b.ReplyToAddresses?.[0],
+      subject: b.Content.Simple.Subject.Data, text: b.Content.Simple.Body.Text.Data,
+    });
+    return new Response(ok ? '{"MessageId":"x"}' : '{"message":"no"}', { status: ok ? 200 : 400 });
   });
   return { sent, spy };
 }

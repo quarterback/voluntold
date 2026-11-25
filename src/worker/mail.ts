@@ -4,13 +4,15 @@
 // soon isn't full. Nothing else: no newsletters, no chasing.
 //
 // Every email gets a row in `emails`. Bodies are never stored, because they
-// hold private links.
+// hold private links. Email goes through Amazon SES (API v2), signed with
+// aws4fetch.
 
 import type { Env } from './env';
 import type { Task } from '../shared/types';
 import { DAY, HOUR, LINK_LIFETIME } from '../shared/rules';
 import { loadOrg, loadTask } from './db';
 import { describeWhen } from './engine';
+import { AwsClient } from 'aws4fetch';
 import { hashToken, newId, newToken } from './util';
 
 /** Most emails one organization can send in 24 hours. Asks past this fall back to copied links. */
@@ -37,7 +39,46 @@ export interface Outgoing {
 }
 
 export function mailEnabled(env: Env): boolean {
-  return !!(env.RESEND_API_KEY && env.EMAIL_FROM);
+  return !!(env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY && env.EMAIL_FROM);
+}
+
+export function sesEndpoint(env: Env): string {
+  return `https://email.${env.AWS_REGION || 'us-west-2'}.amazonaws.com/v2/email/outbound-emails`;
+}
+
+export interface Message {
+  from: string;
+  to: string;
+  subject: string;
+  text: string;
+  replyTo?: string | null;
+}
+
+/** Sends one email through SES. Returns whether SES accepted it. */
+export async function sendEmail(env: Env, m: Message): Promise<boolean> {
+  try {
+    const aws = new AwsClient({
+      accessKeyId: env.AWS_ACCESS_KEY_ID!,
+      secretAccessKey: env.AWS_SECRET_ACCESS_KEY!,
+      region: env.AWS_REGION || 'us-west-2',
+      service: 'ses',
+    });
+    const res = await aws.fetch(sesEndpoint(env), {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        FromEmailAddress: m.from,
+        Destination: { ToAddresses: [m.to] },
+        ...(m.replyTo ? { ReplyToAddresses: [m.replyTo] } : {}),
+        Content: { Simple: { Subject: { Data: m.subject, Charset: 'UTF-8' }, Body: { Text: { Data: m.text, Charset: 'UTF-8' } } } },
+      }),
+    });
+    if (!res.ok) console.error('email refused', res.status);
+    return res.ok;
+  } catch (err) {
+    console.error('email failed', err instanceof Error ? err.message : err);
+    return false;
+  }
 }
 
 /** "Riverside Pantry <asks@example.org>", using the address from EMAIL_FROM. */
@@ -66,11 +107,13 @@ export async function deliver(env: Env, orgId: string, mails: Outgoing[], now: n
     const sending = mails.slice(0, room);
     for (let i = room; i < mails.length; i++) statuses[i] = 'limit';
     const from = fromHeader(env, String(org.name));
-    // The provider takes up to 100 emails in one request.
-    for (let start = 0; start < sending.length; start += 100) {
-      const chunk = sending.slice(start, start + 100);
-      const ok = await post(env, chunk.map((m) => ({ from, to: [m.to], subject: m.subject, text: m.text, ...(m.replyTo ? { reply_to: m.replyTo } : {}) })));
-      for (let i = 0; i < chunk.length; i++) statuses[start + i] = ok ? 'sent' : 'failed';
+    // SES takes one email per request. Send 10 at a time.
+    for (let start = 0; start < sending.length; start += 10) {
+      const chunk = sending.slice(start, start + 10);
+      const results = await Promise.all(chunk.map((m) => sendEmail(env, { from, to: m.to, subject: m.subject, text: m.text, replyTo: m.replyTo })));
+      results.forEach((ok, i) => {
+        statuses[start + i] = ok ? 'sent' : 'failed';
+      });
     }
   }
   await db.batch(
@@ -84,21 +127,6 @@ export async function deliver(env: Env, orgId: string, mails: Outgoing[], now: n
     ),
   );
   return statuses;
-}
-
-async function post(env: Env, batch: unknown[]): Promise<boolean> {
-  try {
-    const res = await fetch('https://api.resend.com/emails/batch', {
-      method: 'POST',
-      headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
-      body: JSON.stringify(batch),
-    });
-    if (!res.ok) console.error('email batch refused', res.status);
-    return res.ok;
-  } catch (err) {
-    console.error('email batch failed', err instanceof Error ? err.message : err);
-    return false;
-  }
 }
 
 /** The email address of a member, for replies and for notes about tasks. */

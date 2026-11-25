@@ -18,8 +18,10 @@ export function Home() {
 
   // The browser demo has no sign-in, so its only way in is the demo.
   const demo = () => navigate(BROWSER_DEMO || signedIn ? '/start?demo=1' : '/login?next=' + encodeURIComponent('/start?demo=1'));
-  const enter = () => navigate(signedIn ? '/start' : '/login');
-  const enterLabel = signedIn ? 'Open Volley' : 'Sign in';
+  // On the live site, new organizations sign up here. The browser demo has no accounts.
+  const enter = () => navigate(signedIn ? '/start' : '/login?signup=1');
+  const enterLabel = signedIn ? 'Open Volley' : 'Get started';
+  const signIn = () => navigate('/login');
   const lime = { bgcolor: vt.lime, color: vt.onLime, '&:hover': { bgcolor: '#B3E12A' } };
   const frame = { borderRadius: `${vt.radius}px`, overflow: 'hidden', bgcolor: vt.surface, boxShadow: vt.shadowPop };
   const heading = { fontFamily: FONT_DISPLAY, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.1 };
@@ -31,8 +33,14 @@ export function Home() {
           <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
             <Box sx={{ color: vt.lime }}><Wordmark height={28} /></Box>
             <Stack direction="row" spacing={1}>
-              {!BROWSER_DEMO && <Button onClick={enter} sx={{ color: vt.onInk }}>{enterLabel}</Button>}
-              <Button variant="contained" onClick={demo} sx={lime}>Try the demo</Button>
+              {BROWSER_DEMO ? (
+                <Button variant="contained" onClick={demo} sx={lime}>Try the demo</Button>
+              ) : (
+                <>
+                  {!signedIn && <Button onClick={signIn} sx={{ color: vt.onInk }}>Sign in</Button>}
+                  <Button variant="contained" onClick={enter} sx={lime}>{enterLabel}</Button>
+                </>
+              )}
             </Stack>
           </Stack>
         </Container>
@@ -45,8 +53,8 @@ export function Home() {
               Volley is an AI-native volunteer activation tool that helps organizations develop tasks, engage volunteers and outsource tedious tasks.
             </Typography>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-              <Button variant="contained" size="large" onClick={demo} sx={lime}>Try the demo</Button>
-              {!BROWSER_DEMO && <Button variant="outlined" size="large" onClick={enter} sx={{ color: vt.onInk, borderColor: vt.onInk, '&:hover': { borderColor: vt.onInk, bgcolor: 'rgba(255,255,255,0.08)' } }}>{enterLabel}</Button>}
+              {!BROWSER_DEMO && <Button variant="contained" size="large" onClick={enter} sx={lime}>{enterLabel}</Button>}
+              <Button variant={BROWSER_DEMO ? 'contained' : 'outlined'} size="large" onClick={demo} sx={BROWSER_DEMO ? lime : { color: vt.onInk, borderColor: vt.onInk, '&:hover': { borderColor: vt.onInk, bgcolor: 'rgba(255,255,255,0.08)' } }}>Try the demo</Button>
             </Stack>
           </Box>
         </Container>
@@ -90,7 +98,7 @@ export function Home() {
       <Container maxWidth="lg" component="footer" sx={{ py: 3 }}>
         <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ color: vt.text }}><Wordmark height={20} /></Box>
-          {!BROWSER_DEMO && <Button size="small" onClick={enter}>{enterLabel}</Button>}
+          {!BROWSER_DEMO && <Button size="small" onClick={signedIn ? enter : signIn}>{signedIn ? enterLabel : 'Sign in'}</Button>}
         </Stack>
       </Container>
     </Box>
