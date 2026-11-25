@@ -45,6 +45,6 @@ The owner's goal is not funding. It is a product with many users that the owner 
 
 ## Consequences
 
-- The spec's section "Sending asks" says the tool sends nothing. It needs rewriting when email is built.
-- Email asks need an unsubscribe link and a sending domain. The sending domain waits on the new name.
-- A free product open to anyone needs limits on email volume per organization, to stop abuse and keep costs low.
+- Email was built on November 25. The spec's section "Sending asks" describes it.
+- Every email to a volunteer says how to unsubscribe. The sending domain waits on the new name.
+- One organization can send 300 emails in 24 hours, to stop abuse and keep costs low.

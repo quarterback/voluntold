@@ -20,6 +20,7 @@ import { loadFields, loadOrg, loadTask, loadVolunteers, logEvent, toTask } from 
 import { fail, hashToken, newId, newToken } from './util';
 import { syncTask } from './atproto';
 import { day, timeRange } from '../shared/time';
+import { askEmail, deliver, memberEmail, sendConfirmation, sendDueEmails, type Outgoing } from './mail';
 
 export interface Candidate {
   volunteer: Volunteer;
@@ -81,6 +82,8 @@ export interface NewAsk {
   phone: string | null;
   link: string;
   message: string;
+  /** The ask went out by email. When false, the coordinator copies the link. */
+  emailed: boolean;
 }
 
 export function askMessage(name: string, task: Task, orgName: string, link: string, timeZone?: string): string {
@@ -155,13 +158,30 @@ export async function createAsks(
       phone: c.volunteer.phone,
       link,
       message: askMessage(c.volunteer.name, task, org!.name, link, org!.time_zone),
+      emailed: false,
     });
   }
   if (asks.length > 0 && task.askMode === 'few') {
     statements.push(db.prepare('UPDATE tasks SET next_round_at = ? WHERE id = ?').bind(now + task.askWaitHours * HOUR, task.id));
   }
   if (statements.length > 0) await db.batch(statements);
+  await emailAsks(env, orgId, task, String(org!.name), String(org!.time_zone), asks, actorId, now);
   return { asks, skipped };
+}
+
+/** Sends each new ask to people who have an email address. */
+async function emailAsks(env: Env, orgId: string, task: Task, orgName: string, timeZone: string, asks: NewAsk[], actorId: string, now: number) {
+  const withEmail = asks.filter((a) => a.email);
+  if (withEmail.length === 0) return;
+  const replyTo = await memberEmail(env.DB, actorId);
+  const mails: Outgoing[] = withEmail.map((a) => ({
+    kind: 'ask', to: a.email!, replyTo, volunteerId: a.volunteerId, taskId: task.id, askId: a.askId,
+    ...askEmail(a.name, task, orgName, a.link, timeZone),
+  }));
+  const statuses = await deliver(env, orgId, mails, now);
+  withEmail.forEach((a, i) => {
+    a.emailed = statuses[i] === 'sent';
+  });
 }
 
 /** Makes a new link for an ask. The old link stops working. */
@@ -185,9 +205,11 @@ export async function renewLink(env: Env, orgId: string, askId: string, now: num
     ),
     // Sessions opened from the old link end too.
     env.DB.prepare('DELETE FROM volunteer_sessions WHERE ask_id = ? AND org_id = ?').bind(askId, orgId),
+    // Links sent in confirmations and reminders stop working too.
+    env.DB.prepare('DELETE FROM ask_links WHERE ask_id = ? AND org_id = ?').bind(askId, orgId),
   ]);
   const link = `${env.APP_URL}/v/${token}`;
-  return { askId, volunteerId: row.volunteer_id, name: row.name, email: row.email, phone: row.phone, link, message: askMessage(row.name, task!, org!.name, link, org!.time_zone) };
+  return { askId, volunteerId: row.volunteer_id, name: row.name, email: row.email, phone: row.phone, link, message: askMessage(row.name, task!, org!.name, link, org!.time_zone), emailed: false };
 }
 
 function answeredSomething(db: D1Database, orgId: string, volunteerId: string, now: number): D1PreparedStatement {
@@ -287,6 +309,7 @@ export async function answerAsk(
   ]);
   const after = await loadTask(db, orgId, task.id);
   if (after && after.status !== task.status) await syncTask(env, orgId, after.id);
+  await sendConfirmation(env, orgId, askId, now);
   return 'yes';
 }
 
@@ -365,6 +388,15 @@ export async function sweep(env: Env, now: number, orgId?: string): Promise<void
   if (statements.length > 0) await db.batch(statements);
   for (const row of finishing.results) {
     await syncTask(env, (row as { org_id: string }).org_id, (row as { id: string }).id);
+  }
+  // Reminders and notes to coordinators go out from the cron run only, not
+  // while a coordinator's screen loads.
+  if (!orgId) {
+    try {
+      await sendDueEmails(env, now);
+    } catch (err) {
+      console.error('due emails failed', err instanceof Error ? err.message : err);
+    }
   }
 }
 

@@ -319,6 +319,8 @@ taskRoutes.delete('/tasks/:taskId', async (c) => {
   // points at the ask it came from.
   const del = (sql: string) => c.env.DB.prepare(sql).bind(task.id, actor.orgId);
   await c.env.DB.batch([
+    c.env.DB.prepare('DELETE FROM ask_links WHERE org_id = ? AND ask_id IN (SELECT id FROM asks WHERE task_id = ?)').bind(actor.orgId, task.id),
+    del('DELETE FROM emails WHERE task_id = ? AND org_id = ?'),
     del('DELETE FROM spots WHERE task_id = ? AND org_id = ?'),
     del('DELETE FROM asks WHERE task_id = ? AND org_id = ?'),
     del('DELETE FROM reports WHERE task_id = ? AND org_id = ?'),

@@ -264,6 +264,8 @@ peopleRoutes.delete('/volunteers/:volunteerId', async (c) => {
   const db = c.env.DB;
   await db.batch([
     db.prepare('DELETE FROM volunteer_sessions WHERE volunteer_id = ? AND org_id = ?').bind(id, actor.orgId),
+    db.prepare('DELETE FROM ask_links WHERE volunteer_id = ? AND org_id = ?').bind(id, actor.orgId),
+    db.prepare('DELETE FROM emails WHERE volunteer_id = ? AND org_id = ?').bind(id, actor.orgId),
     db.prepare('DELETE FROM spots WHERE volunteer_id = ? AND org_id = ?').bind(id, actor.orgId),
     db.prepare('DELETE FROM asks WHERE volunteer_id = ? AND org_id = ?').bind(id, actor.orgId),
     db.prepare('DELETE FROM team_members WHERE volunteer_id = ? AND org_id = ?').bind(id, actor.orgId),

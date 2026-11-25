@@ -166,7 +166,7 @@ orgRoutes.delete('/', async (c) => {
   const owned = [
     'spots', 'asks', 'events', 'fields', 'imports', 'lists', 'need_items', 'offer_skips',
     'reports', 'taggings', 'volunteer_sessions', 'team_leads', 'team_members', 'tasks',
-    'needs', 'tags', 'teams', 'volunteers',
+    'needs', 'tags', 'teams', 'volunteers', 'emails', 'ask_links',
   ];
   await db.batch([
     ...owned.map((t) => db.prepare(`DELETE FROM ${t} WHERE org_id = ?`).bind(actor.orgId)),

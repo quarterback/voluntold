@@ -98,11 +98,19 @@ Each task uses one ready-made way to ask. The coordinator picks it when writing 
 
 ## Sending asks
 
-In the pilot, the tool sends nothing itself.
+The tool emails each ask itself ([decision 0012](decisions/0012-free-launch-and-email.md)). When the coordinator taps Ask, everyone with an email address gets the ask with their private link. The coordinator gets the link and a short message for everyone else: "Hi Sam, can you help with the registration desk on Thursday, 12:00 to 14:00? Answer here: [link]". There is a Copy button for each person, and "Copy all" when more than one person needs a copied link. People who were emailed are marked Emailed.
 
-For each ask, the coordinator gets the person's private link and a short message to go with it: "Hi Sam, can you help with the registration desk on Thursday, 12:00 to 14:00? Answer here: [link]". There is a Copy button for each person, and "Copy all" for the whole group. The coordinator pastes it into email, a text, Slack or WhatsApp. An ask counts as sent when the coordinator taps Ask, and the weekly limit counts it from then. Links are shown once. If one gets lost, the coordinator makes a new link from the task, and the old one stops working.
+An ask counts as sent when the coordinator taps Ask, and the weekly limit counts it from then. Links are shown once. If one gets lost, the coordinator makes a new link from the task, and the old one stops working, along with links from confirmations and reminders.
 
 An ask expires after 48 hours, or 6 hours before the task starts, whichever comes first.
+
+The tool sends three other emails, each once:
+
+- **Confirmation,** when a person accepts. It has the place, the address, who to ask for, and a link to cancel the spot.
+- **Reminder,** 24 hours before work at a set time. People who accepted within that last day already have a confirmation, so they get no reminder.
+- **Not full,** to the coordinator who wrote the task, 48 hours before work at a set time that still has open spots. If that coordinator has left, the admins get it.
+
+Asks, confirmations and reminders come from the organization's name, and replies go to the coordinator. Every email to a volunteer says how to unsubscribe. One organization can send 300 emails in 24 hours. Past that, the coordinator copies links. Sample organizations never send email. Each email is recorded without its text, because the text holds a private link.
 
 ## What the volunteer sees
 
