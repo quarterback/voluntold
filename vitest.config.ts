@@ -14,6 +14,7 @@ export default defineConfig(async () => {
             APP_URL: 'https://app.test',
             APP_SECRET: 'test-secret-0123456789abcdef0123456789',
             ATPROTO_TASK_NSID: 'com.example.volunteer.task',
+            ADMIN_EMAILS: 'boss@example.com',
           },
         },
       }),

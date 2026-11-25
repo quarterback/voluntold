@@ -9,6 +9,7 @@ import { needRoutes } from './routes/needs';
 import { tagRoutes } from './routes/tags';
 import { linkRoute, volunteerApi } from './routes/volunteer';
 import { publicRoutes } from './routes/public';
+import { adminRoutes } from './routes/admin';
 import { sweep } from './engine';
 import { createSampleOrg, DATASETS } from './sample';
 import { fail } from './util';
@@ -64,6 +65,7 @@ org.route('/', taskRoutes);
 org.route('/', needRoutes);
 org.route('/', tagRoutes);
 signedIn.route('/orgs/:orgId', org);
+signedIn.route('/admin', adminRoutes);
 
 // The volunteer API comes first: the signed-in routes below match all of /api.
 app.route('/api/v', volunteerApi);

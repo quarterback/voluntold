@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react';
 import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
-  AppBar, BottomNavigation, BottomNavigationAction, Box, Button, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Paper, Toolbar, Typography, useMediaQuery,
+  Alert, AppBar, BottomNavigation, BottomNavigationAction, Box, Button, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Paper, Toolbar, Typography, useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { FONT_DISPLAY } from '../theme';
@@ -20,7 +20,7 @@ import { BROWSER_DEMO, StartOverButton } from '../demoMode';
 const SWITCH = BROWSER_DEMO ? '/start?demo=1' : '/start?choose=1';
 
 export interface OrgInfo {
-  org: { id: string; name: string; weeklyAskLimit: number; signupUrl: string | null; publishDefault: boolean; timeZone: string; sample: boolean; sampleKind: string | null; atproto: { did: string; handle: string } | null };
+  org: { id: string; name: string; approved: boolean; weeklyAskLimit: number; signupUrl: string | null; publishDefault: boolean; timeZone: string; sample: boolean; sampleKind: string | null; atproto: { did: string; handle: string } | null };
   me: { role: 'admin' | 'coordinator' | 'lead'; memberId: string; leadTeamIds: string[]; email: string };
   atprotoReady: boolean;
   demo: boolean;
@@ -119,8 +119,10 @@ export function OrgShell() {
 /** The page column. It leaves room for the demo guide on wide screens. */
 function Main({ wide }: { wide: boolean }) {
   const guide = useGuideOpen();
+  const { org } = useOrg();
   return (
     <Box component="main" sx={{ ml: wide ? `${SIDEBAR}px` : 0, mr: wide && guide ? `${GUIDE_WIDTH}px` : 0 }}>
+      {!org.approved && !org.sample && !BROWSER_DEMO && <Alert severity="info" sx={{ borderRadius: 0 }}>Pending approval: email is off</Alert>}
       <Outlet />
     </Box>
   );

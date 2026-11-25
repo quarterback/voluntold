@@ -115,6 +115,7 @@ export function publicOrg(r: Row) {
     timeZone: r.time_zone,
     sample: r.sample === 1,
     sampleKind: r.sample_kind ?? null,
+    approved: r.approved_at !== null && r.approved_at !== undefined,
     atproto: r.atproto_did ? { did: r.atproto_did, handle: r.atproto_handle, service: r.atproto_service } : null,
   };
 }

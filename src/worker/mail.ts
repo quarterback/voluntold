@@ -15,7 +15,7 @@ import { describeWhen } from './engine';
 import { AwsClient } from 'aws4fetch';
 import { hashToken, newId, newToken } from './util';
 
-/** Most emails one organization can send in 24 hours. Asks past this fall back to copied links. */
+/** Most emails one organization can send in 24 hours, unless an admin of the tool changes it. Asks past this fall back to copied links. */
 export const ORG_DAILY_LIMIT = 300;
 /** Reminders go out this long before a task starts. */
 export const REMINDER_BEFORE = DAY;
@@ -129,19 +129,20 @@ export function fromHeader(env: Env, name: string): string {
 
 /**
  * Sends a set of emails for one organization and records each one. Sample
- * organizations never send: their people are made up.
+ * organizations never send, because their people are made up. Organizations
+ * waiting for approval don't send either.
  */
 export async function deliver(env: Env, orgId: string, mails: Outgoing[], now: number): Promise<MailStatus[]> {
   if (mails.length === 0) return [];
   const db = env.DB;
   const org = await loadOrg(db, orgId);
   const statuses: MailStatus[] = mails.map(() => 'off');
-  if (org && org.sample !== 1 && mailEnabled(env)) {
+  if (org && org.sample !== 1 && org.approved_at && mailEnabled(env)) {
     const used = await db
       .prepare("SELECT COUNT(*) AS n FROM emails WHERE org_id = ? AND status = 'sent' AND created_at > ?")
       .bind(orgId, now - DAY)
       .first<{ n: number }>();
-    const room = Math.max(0, ORG_DAILY_LIMIT - (used?.n ?? 0));
+    const room = Math.max(0, Number(org.email_daily_limit ?? ORG_DAILY_LIMIT) - (used?.n ?? 0));
     const sending = mails.slice(0, room);
     for (let i = room; i < mails.length; i++) statuses[i] = 'limit';
     const from = fromHeader(env, String(org.name));

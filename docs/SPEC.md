@@ -110,7 +110,7 @@ The tool sends three other emails, each once:
 - **Reminder,** 24 hours before work at a set time. People who accepted within that last day already have a confirmation, so they get no reminder.
 - **Not full,** to the coordinator who wrote the task, 48 hours before work at a set time that still has open spots. If that coordinator has left, the admins get it.
 
-Asks, confirmations and reminders come from the organization's name, and replies go to the coordinator. Every email to a volunteer says how to unsubscribe. One organization can send 300 emails in 24 hours. Past that, the coordinator copies links. Sample organizations never send email. Each email is recorded without its text, because the text holds a private link. Email goes through Resend or Amazon SES, whichever has keys set.
+Asks, confirmations and reminders come from the organization's name, and replies go to the coordinator. Every email to a volunteer says how to unsubscribe. One organization can send 300 emails in 24 hours unless an admin of the tool raises it. Past that, the coordinator copies links. Sample organizations never send email, and neither do new organizations until an admin approves them ([decision 0013](decisions/0013-approve-new-organizations.md)). Each email is recorded without its text, because the text holds a private link. Email goes through Resend or Amazon SES, whichever has keys set.
 
 ## What the volunteer sees
 

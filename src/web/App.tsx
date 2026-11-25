@@ -14,6 +14,7 @@ import { Import } from './pages/Import';
 import { VolunteerPage } from './pages/VolunteerPage';
 import { Needs } from './pages/Needs';
 import { Offers } from './pages/Offers';
+import { Admin } from './pages/Admin';
 import { BROWSER_DEMO } from './demoMode';
 
 /** The browser demo has no sign-in. A full load signs the visitor in again. */
@@ -30,6 +31,7 @@ export function App() {
       <Route path="/me" element={<VolunteerPage />} />
       <Route path="/" element={<Home />} />
       <Route path="/start" element={<Start />} />
+      <Route path="/admin" element={<Admin />} />
       <Route path="/o/:orgId" element={<OrgShell />}>
         <Route index element={<Navigate to="today" replace />} />
         <Route path="today" element={<Today />} />

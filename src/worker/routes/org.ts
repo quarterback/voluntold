@@ -3,6 +3,7 @@ import type { AppBindings } from '../env';
 import { must, mustManageTeam } from '../auth';
 import { loadFields, loadOrg, logEvent, publicOrg } from '../db';
 import { cleanText, fail, isDev, newId, normalizeEmail, optionalText } from '../util';
+import { isAdmin, tellAdmins } from './admin';
 import { connectAccount, disconnectAccount, syncTask } from '../atproto';
 import type { FieldType, Requirement } from '../../shared/types';
 
@@ -39,7 +40,7 @@ accountRoutes.get('/me', async (c) => {
   )
     .bind(c.get('userId'))
     .all();
-  return c.json({ email: c.get('email'), orgs: results });
+  return c.json({ email: c.get('email'), orgs: results, admin: isAdmin(c.env, c.get('email')) });
 });
 
 accountRoutes.post('/orgs', async (c) => {
@@ -59,6 +60,7 @@ accountRoutes.post('/orgs', async (c) => {
     ),
     logEvent(db, { orgId, actorKind: 'member', actorId: c.get('userId'), verb: 'created', objectType: 'org', objectId: orgId, at: now }),
   ]);
+  await tellAdmins(c.env, name, c.get('email'));
   return c.json({ id: orgId }, 201);
 });
 

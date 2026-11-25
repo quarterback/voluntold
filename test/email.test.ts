@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { env } from 'cloudflare:test';
-import { Client, DAY, HOUR, addVolunteer, newOrg, newTask, openLink } from './helpers';
+import { Client, DAY, HOUR, addVolunteer, newOrg, newTask, openLink, signIn } from './helpers';
 import { ORG_DAILY_LIMIT, deliver, extraLink, fromHeader, sendDueEmails } from '../src/worker/mail';
 import type { Env } from '../src/worker/env';
 
@@ -28,6 +28,10 @@ function fakeProvider(ok = true) {
     return new Response(ok ? '{"MessageId":"x"}' : '{"message":"no"}', { status: ok ? 200 : 400 });
   });
   return { sent, spy };
+}
+
+async function approve(orgId: string) {
+  await env.DB.prepare('UPDATE orgs SET approved_at = 1 WHERE id = ?').bind(orgId).run();
 }
 
 async function emailsFor(orgId: string) {
@@ -67,6 +71,7 @@ describe('email', () => {
 
   it('sends through the provider with the organization name and a reply address', async () => {
     const org = await newOrg('Riverside Pantry');
+    await approve(org.orgId);
     const { sent } = fakeProvider();
     const statuses = await deliver(withMail(), org.orgId, [
       { kind: 'ask', to: 'sam@example.com', subject: 'Can you help?', text: 'Hi', replyTo: 'coord@example.com' },
@@ -78,6 +83,7 @@ describe('email', () => {
 
   it('uses Resend when its key is set, many emails in one request', async () => {
     const org = await newOrg('Riverside Pantry');
+    await approve(org.orgId);
     const { sent, spy } = fakeProvider();
     const resend = { ...withMail(), RESEND_API_KEY: 're_test' };
     const statuses = await deliver(resend, org.orgId, [
@@ -91,12 +97,14 @@ describe('email', () => {
 
   it('records a refused send as failed', async () => {
     const org = await newOrg();
+    await approve(org.orgId);
     fakeProvider(false);
     expect(await deliver(withMail(), org.orgId, [{ kind: 'ask', to: 'a@example.com', subject: 's', text: 't' }], Date.now())).toEqual(['failed']);
   });
 
   it('stops at the daily limit for an organization', async () => {
     const org = await newOrg();
+    await approve(org.orgId);
     const now = Date.now();
     await env.DB.batch(
       Array.from({ length: ORG_DAILY_LIMIT - 1 }, (_, i) =>
@@ -125,6 +133,7 @@ describe('email', () => {
 
   it('sends one reminder the day before, and one note when a task starting soon is not full', async () => {
     const org = await newOrg('Desk Org');
+    await approve(org.orgId);
     const sam = await addVolunteer(org, 'Sam');
     const start = Date.now() + 5 * DAY;
     const task = await newTask(org, { startsAt: start, endsAt: start + 2 * HOUR, peopleNeeded: 2, title: 'Registration desk' });
@@ -155,5 +164,35 @@ describe('email', () => {
     await openLink(link);
     await org.client.post(org.api(`/asks/${ask.askId}/link`));
     expect((await new Client().raw(new URL(link).pathname)).status).toBe(410);
+  });
+
+  it('sends nothing for an organization waiting for approval', async () => {
+    const org = await newOrg();
+    const { spy } = fakeProvider();
+    expect(await deliver(withMail(), org.orgId, [{ kind: 'ask', to: 'a@example.com', subject: 's', text: 't' }], Date.now())).toEqual(['off']);
+    expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe('approving organizations', () => {
+  it('lets only admins of the tool see and approve organizations', async () => {
+    const org = await newOrg('Coaches Association');
+    expect((await org.client.get(org.api(''))).body.org.approved).toBe(false);
+    expect((await org.client.get('/api/admin/orgs')).status).toBe(404);
+    expect((await org.client.post(`/api/admin/orgs/${org.orgId}/approve`)).status).toBe(404);
+
+    const boss = await signIn('boss@example.com');
+    expect((await boss.get('/api/me')).body.admin).toBe(true);
+    const list = (await boss.get('/api/admin/orgs')).body.orgs;
+    expect(list.find((o: any) => o.id === org.orgId)).toMatchObject({ approved: false, emailDailyLimit: ORG_DAILY_LIMIT });
+    expect((await boss.post(`/api/admin/orgs/${org.orgId}/approve`)).status).toBe(200);
+    expect((await boss.post(`/api/admin/orgs/${org.orgId}/limit`, { emailDailyLimit: 5000 })).status).toBe(200);
+    expect((await boss.post(`/api/admin/orgs/${org.orgId}/limit`, { emailDailyLimit: -1 })).status).toBe(400);
+    expect((await org.client.get(org.api(''))).body.org.approved).toBe(true);
+    const row = await env.DB.prepare('SELECT email_daily_limit FROM orgs WHERE id = ?').bind(org.orgId).first<{ email_daily_limit: number }>();
+    expect(row?.email_daily_limit).toBe(5000);
+
+    expect((await boss.post(`/api/admin/orgs/${org.orgId}/revoke`)).status).toBe(200);
+    expect((await org.client.get(org.api(''))).body.org.approved).toBe(false);
   });
 });

@@ -10,6 +10,8 @@ export interface Env {
   AWS_SECRET_ACCESS_KEY?: string;
   AWS_REGION?: string;
   EMAIL_FROM?: string;
+  /** Comma-separated emails of the people who approve new organizations. */
+  ADMIN_EMAILS?: string;
   MODEL_PROVIDER?: string;
   MODEL_API_KEY?: string;
   MODEL_NAME?: string;

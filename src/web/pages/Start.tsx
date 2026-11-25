@@ -11,6 +11,7 @@ import { DemoIntro } from './DemoIntro';
 interface Me {
   email: string;
   orgs: { id: string; name: string; role: string; sample: number; sample_kind: string | null }[];
+  admin?: boolean;
 }
 
 export function Start() {
@@ -120,6 +121,7 @@ export function Start() {
           </Card>
         ))}
         <Box><Button onClick={() => navigate('/start?demo=1')}>Open a sample organization</Button></Box>
+        {data.admin && <Box><Button onClick={() => navigate('/admin')}>Approve organizations</Button></Box>}
       </Stack>
       <Divider sx={{ mb: 3 }} />
       <form onSubmit={create}>
