@@ -34,6 +34,11 @@ export interface Volunteer {
   days: string[];
   remoteOk: boolean;
   createdAt: number;
+  memberCategory: string | null;
+  memberSince: number | null;
+  memberExpiresAt: number | null;
+  /** When dues were last paid. Payment happens outside the tool. */
+  duesPaidAt: number | null;
 }
 
 export type Tier = 'one_time' | 'seasonal' | 'regular' | 'core';

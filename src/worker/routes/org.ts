@@ -6,6 +6,7 @@ import { cleanText, fail, isDev, newId, normalizeEmail, optionalText } from '../
 import { isAdmin, tellAdmins } from './admin';
 import { connectAccount, disconnectAccount, syncTask } from '../atproto';
 import type { FieldType, Requirement } from '../../shared/types';
+import { PEOPLE_WORDS } from '../../shared/membership';
 
 export const STARTER_FIELDS: { label: string; type: FieldType; options: string[] }[] = [
   { label: 'Skills', type: 'many', options: [] },
@@ -97,8 +98,29 @@ orgRoutes.patch('/', async (c) => {
   }
   const publishDefault = body.publishDefault === undefined ? org.publish_default : body.publishDefault ? 1 : 0;
   const tz = body.timeZone === undefined ? org.time_zone : validTimeZone(body.timeZone);
-  await c.env.DB.prepare('UPDATE orgs SET name = ?, weekly_ask_limit = ?, signup_url = ?, publish_default = ?, time_zone = ? WHERE id = ?')
-    .bind(name, limit, signup, publishDefault, tz, actor.orgId)
+  const word = body.peopleWord === undefined ? org.people_word : body.peopleWord;
+  if (!PEOPLE_WORDS.includes(word)) fail(400, 'Choose volunteers, members or participants.');
+  let categories = org.member_categories_json;
+  if (body.memberCategories !== undefined) {
+    if (!Array.isArray(body.memberCategories)) fail(400, 'Membership categories must be a list.');
+    categories = JSON.stringify([...new Set(body.memberCategories.map((x: unknown) => cleanText(x, 80)).filter(Boolean))].slice(0, 50));
+  }
+  let renewalDays = org.renewal_days;
+  if (body.renewalDays !== undefined) {
+    renewalDays = Number(body.renewalDays);
+    if (!Number.isInteger(renewalDays) || renewalDays < 0 || renewalDays > 120) fail(400, 'Reminder days must be 0 to 120.');
+  }
+  let renewalUrl = org.renewal_url;
+  if (body.renewalUrl !== undefined) {
+    renewalUrl = optionalText(body.renewalUrl, 500);
+    if (renewalUrl && !/^https:\/\/[^\s]+$/.test(renewalUrl)) fail(400, 'The renewal link must start with https://');
+  }
+  const joinOpen = body.joinOpen === undefined ? org.join_open : body.joinOpen ? 1 : 0;
+  await c.env.DB.prepare(
+    `UPDATE orgs SET name = ?, weekly_ask_limit = ?, signup_url = ?, publish_default = ?, time_zone = ?,
+       people_word = ?, member_categories_json = ?, renewal_days = ?, renewal_url = ?, join_open = ? WHERE id = ?`,
+  )
+    .bind(name, limit, signup, publishDefault, tz, word, categories, renewalDays, renewalUrl, joinOpen, actor.orgId)
     .run();
   return c.json({ org: publicOrg((await loadOrg(c.env.DB, actor.orgId))!) });
 });
@@ -168,7 +190,7 @@ orgRoutes.delete('/', async (c) => {
   const owned = [
     'spots', 'asks', 'events', 'fields', 'imports', 'lists', 'need_items', 'offer_skips',
     'reports', 'taggings', 'volunteer_sessions', 'team_leads', 'team_members', 'tasks',
-    'needs', 'tags', 'teams', 'volunteers', 'emails', 'ask_links',
+    'needs', 'tags', 'teams', 'volunteers', 'emails', 'ask_links', 'applications', 'messages',
   ];
   await db.batch([
     ...owned.map((t) => db.prepare(`DELETE FROM ${t} WHERE org_id = ?`).bind(actor.orgId)),

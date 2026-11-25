@@ -12,6 +12,7 @@ import { TIER_TEXT, ago, when } from '../format';
 import { AvailabilityFields } from './Availability';
 import type { Field, FieldValue } from '../../shared/types';
 import { TagPicker } from './tags';
+import { MembershipFields, dateInput } from './membership';
 
 function FieldInput({ field, value, onChange }: { field: Field; value: FieldValue | undefined; onChange: (v: FieldValue) => void }) {
   if (field.type === 'one') {
@@ -69,6 +70,8 @@ export function Person() {
       setForm({
         name: data.volunteer.name, email: data.volunteer.email ?? '', phone: data.volunteer.phone ?? '', values: data.volunteer.values,
         tier: data.volunteer.tier ?? '', hoursWeek: data.volunteer.hoursWeek, days: data.volunteer.days, remoteOk: data.volunteer.remoteOk,
+        memberCategory: data.volunteer.memberCategory ?? '', memberSince: dateInput(data.volunteer.memberSince),
+        memberExpiresAt: dateInput(data.volunteer.memberExpiresAt), duesPaidAt: dateInput(data.volunteer.duesPaidAt),
       });
       setTeamIds(data.volunteer.teamIds);
       setTagIds(data.volunteer.tags ?? []);
@@ -138,6 +141,9 @@ export function Person() {
           </Section>
 
           <Stack spacing={2}>
+            <Section title="Membership">
+              <MembershipFields value={form} disabled={!canEdit} categories={org.memberCategories} expiresAt={v.memberExpiresAt} renewalDays={org.renewalDays} onChange={(m) => setForm({ ...form, ...m })} />
+            </Section>
             <Section title="Tags">
               <TagPicker kind="volunteers" id={v.id} tagIds={tagIds} onChanged={setTagIds} disabled={!canEdit} />
             </Section>

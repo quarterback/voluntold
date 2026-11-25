@@ -14,6 +14,8 @@ import { TIER_TEXT, usualTimes } from '../format';
 import { meetsRequirement, byLongestWait } from '../../shared/rules';
 import { TagFilter, TagRow } from './tags';
 import type { Requirement, Volunteer } from '../../shared/types';
+import { membershipState, type MembershipState } from '../../shared/membership';
+import { Applications, MEMBERSHIP_TEXT, MessageDialog, peopleWords } from './membership';
 
 type Row = Volunteer & { standing: string; asked: number; yes: number; offerReady: boolean; tags: string[] };
 
@@ -25,9 +27,13 @@ interface Filter {
   teamId?: string;
   fieldId?: string;
   value?: string;
+  membership?: MembershipState | '';
+  category?: string;
 }
 
-function matches(v: Row, f: Filter, fields: ReturnType<typeof useOrg>['fields']): boolean {
+function matches(v: Row, f: Filter, fields: ReturnType<typeof useOrg>['fields'], renewalDays = 30): boolean {
+  if (f.membership && membershipState(v.memberExpiresAt, Date.now(), renewalDays) !== f.membership) return false;
+  if (f.category && v.memberCategory !== f.category) return false;
   if (f.q && !`${v.name} ${v.email ?? ''} ${v.phone ?? ''}`.toLowerCase().includes(f.q.toLowerCase())) return false;
   if (f.status === 'never' && v.lastAskedAt !== null) return false;
   if (f.status === 'paused' && v.status !== 'paused') return false;
@@ -73,7 +79,8 @@ function history(v: Row): string {
 }
 
 export function People() {
-  const { path, fields, teams, me } = useOrg();
+  const { path, fields, teams, me, org } = useOrg();
+  const words = peopleWords(org.peopleWord);
   const navigate = useNavigate();
   const dialogs = useDialogs();
   const [params] = useSearchParams();
@@ -83,10 +90,11 @@ export function People() {
   }, [path]);
   const [filter, setFilter] = useState<Filter>({ status: (params.get('filter') as Filter['status']) ?? '' });
   const [adding, setAdding] = useState(false);
+  const [messaging, setMessaging] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
   const shown = useMemo(
-    () => (data ? data.volunteers.filter((v) => matches(v, filter, fields)).sort(byLongestWait) : []),
+    () => (data ? data.volunteers.filter((v) => matches(v, filter, fields, org.renewalDays)).sort(byLongestWait) : []),
     [data, filter, fields],
   );
   if (!data) return <Loading error={error} />;
@@ -106,8 +114,10 @@ export function People() {
 
   return (
     <Page title="People" action={addButton}>
+      {messaging && <MessageDialog path={path} volunteerIds={shown.map((v) => v.id)} onClose={() => setMessaging(false)} />}
+      {canEdit && <Box sx={{ mb: 2 }}><Applications path={path} onChange={reload} /></Box>}
       {data.volunteers.length === 0 ? (
-        <EmptyState title="No volunteers yet"
+        <EmptyState title={`No ${words.people} yet`}
           action={<Button variant="contained" onClick={() => navigate('../import', { relative: 'path' })}>Import file</Button>} />
       ) : (
         <>
@@ -123,6 +133,14 @@ export function People() {
                   color={filter.status === k ? 'primary' : 'default'} onClick={() => setFilter({ ...filter, status: k })} />
               ))}
             </Stack>
+            {data.volunteers.some((v) => v.memberExpiresAt !== null) && (
+              <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
+                {(Object.keys(MEMBERSHIP_TEXT) as (keyof typeof MEMBERSHIP_TEXT)[]).map((k) => (
+                  <Chip key={k} variant="outlined" label={`${MEMBERSHIP_TEXT[k][0]} ${data.volunteers.filter((v) => membershipState(v.memberExpiresAt, Date.now(), org.renewalDays) === k).length}`}
+                    color={filter.membership === k ? 'primary' : 'default'} onClick={() => setFilter({ ...filter, membership: filter.membership === k ? '' : k })} />
+                ))}
+              </Stack>
+            )}
             <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
               {Object.entries(TIER_TEXT).map(([k, label]) => (
                 <Chip key={k} variant="outlined" label={`${label} ${data.volunteers.filter((v) => v.tier === k).length}`}
@@ -134,8 +152,17 @@ export function People() {
               <Button size="small" onClick={saveList}>Save list</Button>
             </Stack>
             <TagFilter value={filter.tagId ?? ''} counts={tagCounts} onChange={(tagId) => setFilter({ ...filter, tagId })} />
-            {(showFilters || filter.teamId || filter.fieldId) && (
+            {(showFilters || filter.teamId || filter.fieldId || filter.category) && (
               <Stack direction="row" spacing={1}>
+                {org.memberCategories.length > 0 && (
+                  <FormControl fullWidth>
+                    <InputLabel id="category-filter">Category</InputLabel>
+                    <Select labelId="category-filter" label="Category" value={filter.category ?? ''} displayEmpty onChange={(e) => setFilter({ ...filter, category: e.target.value })}>
+                      <MenuItem value="">Any category</MenuItem>
+                      {org.memberCategories.map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+                    </Select>
+                  </FormControl>
+                )}
                 {teams.length > 0 && (
                   <FormControl fullWidth>
                     <InputLabel id="team-filter">Team</InputLabel>
@@ -170,7 +197,10 @@ export function People() {
 
           <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
             <Typography variant="body2" color="text.secondary">Longest wait first</Typography>
-            <Typography variant="body2" color="text.secondary">{shown.length} shown</Typography>
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+              <Typography variant="body2" color="text.secondary">{shown.length} shown</Typography>
+              {canEdit && shown.length > 0 && <Button size="small" variant="outlined" onClick={() => setMessaging(true)}>Email {shown.length}</Button>}
+            </Stack>
           </Stack>
           <Card>
             {shown.length === 0 && <Typography color="text.secondary" sx={{ p: 2.5 }}>No results</Typography>}

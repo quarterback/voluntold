@@ -19,7 +19,7 @@ const REV_KEY = 'volley-demo:rev';
 const SECRET_KEY = 'volley-demo:secret';
 const EMAIL = 'you@example.com';
 // Paths the worker answers. Everything else is a file from the build.
-const SERVER_PATHS = /^\/(api|v|t)\//;
+const SERVER_PATHS = /^\/(api|v|t|u|join)\//;
 
 const migrations = import.meta.glob('../../migrations/*.sql', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 
@@ -148,7 +148,7 @@ async function signIn() {
 
 /** Links the worker serves as pages: a volunteer's private link and a public task page. */
 async function servePage(): Promise<boolean> {
-  if (!/^\/(v|t)\//.test(location.pathname)) return false;
+  if (!/^\/(v|t|u|join)\//.test(location.pathname)) return false;
   const res = await serve(new Request(location.href, { redirect: 'manual' }));
   const to = res.headers.get('location');
   if (to) {

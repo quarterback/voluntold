@@ -7,10 +7,11 @@ import {
 import UploadIcon from '@mui/icons-material/UploadFileOutlined';
 import { api } from '../api';
 import { useOrg } from './OrgShell';
+import { peopleWords } from './membership';
 import { Page, errorText, useLoad } from './common';
 import { readFile, type Table as Parsed } from '../importers';
 
-type Target = string; // name | email | phone | ignore | field:<id> | new:<label>
+type Target = string | `member:${'category' | 'since' | 'expires' | 'dues'}`; // name | email | phone | ignore | field:<id> | new:<label>
 
 interface PreviewRow {
   index: number;
@@ -25,6 +26,10 @@ function guess(column: string, fields: ReturnType<typeof useOrg>['fields'], rows
   if (c.includes('email') || c === 'mail') return 'email';
   if (['phone', 'mobile', 'cell', 'tel', 'telephone', 'phonenumber', 'cellphone', 'mobilephone'].includes(c)) return 'phone';
   if (['id', 'uid', 'rowid', 'recordid', 'timestamp', 'createdat', 'updatedat'].includes(c)) return 'ignore';
+  if (['membershiptype', 'membershipcategory', 'membertype', 'membercategory', 'category', 'membershiplevel', 'level'].includes(c)) return 'member:category';
+  if (['membersince', 'joined', 'joindate', 'datejoined', 'startdate'].includes(c)) return 'member:since';
+  if (['expires', 'expiration', 'expirationdate', 'expiry', 'expirydate', 'renewaldate', 'membershipexpires', 'enddate', 'paidthrough'].includes(c)) return 'member:expires';
+  if (['duespaid', 'paid', 'paymentdate', 'datepaid', 'lastpayment', 'duesdate'].includes(c)) return 'member:dues';
   // "skill" matches a field called "Skills", and the other way round.
   const singular = (s: string) => s.replace(/s$/, '');
   const field = fields.find((f) => singular(f.label.toLowerCase().replace(/[^a-z]/g, '')) === singular(c));
@@ -33,7 +38,7 @@ function guess(column: string, fields: ReturnType<typeof useOrg>['fields'], rows
 }
 
 export function Import() {
-  const { path, fields, reload: reloadOrg } = useOrg();
+  const { path, fields, org, reload: reloadOrg } = useOrg();
   const navigate = useNavigate();
   const recent = useLoad(() => api(path('/imports')), [path]);
   const [file, setFile] = useState<File | null>(null);
@@ -111,7 +116,7 @@ export function Import() {
   const showRows = table?.rows.slice(0, 10) ?? [];
 
   return (
-    <Page title="Import volunteers" width={760}>
+    <Page title={`Import ${peopleWords(org.peopleWord).people}`} width={760}>
       <Stack spacing={2}>
         {error && <Alert severity="error">{error}</Alert>}
 
@@ -145,6 +150,10 @@ export function Import() {
                         <MenuItem value="name">Name</MenuItem>
                         <MenuItem value="email">Email</MenuItem>
                         <MenuItem value="phone">Phone</MenuItem>
+                        <MenuItem value="member:category">Membership category</MenuItem>
+                        <MenuItem value="member:since">Member since</MenuItem>
+                        <MenuItem value="member:expires">Membership expires</MenuItem>
+                        <MenuItem value="member:dues">Dues paid</MenuItem>
                         {fields.map((f) => <MenuItem key={f.id} value={`field:${f.id}`}>{f.label}</MenuItem>)}
                         <MenuItem value={`new:${col}`}>New field: {col}</MenuItem>
                         <MenuItem value="ignore">Don't import</MenuItem>

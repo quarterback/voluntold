@@ -14,6 +14,7 @@ import { loadOrg, loadTask } from './db';
 import { describeWhen } from './engine';
 import { AwsClient } from 'aws4fetch';
 import { hashToken, newId, newToken } from './util';
+import { unsubscribeLink } from './routes/membership';
 
 /** Most emails one organization can send in 24 hours, unless an admin of the tool changes it. Asks past this fall back to copied links. */
 export const ORG_DAILY_LIMIT = 300;
@@ -22,7 +23,7 @@ export const REMINDER_BEFORE = DAY;
 /** Coordinators hear about a task that isn't full this long before it starts. */
 export const UNFILLED_BEFORE = 48 * HOUR;
 
-export type MailKind = 'ask' | 'confirm' | 'reminder' | 'unfilled';
+export type MailKind = 'ask' | 'confirm' | 'reminder' | 'unfilled' | 'renewal' | 'message';
 export type MailStatus = 'sent' | 'failed' | 'off' | 'limit';
 
 export interface Outgoing {
@@ -36,6 +37,7 @@ export interface Outgoing {
   taskId?: string;
   askId?: string;
   spotId?: string;
+  messageId?: string;
 }
 
 export function mailEnabled(env: Env): boolean {
@@ -155,10 +157,10 @@ export async function deliver(env: Env, orgId: string, mails: Outgoing[], now: n
     mails.map((m, i) =>
       db
         .prepare(
-          `INSERT INTO emails (id, org_id, kind, to_email, volunteer_id, member_id, task_id, ask_id, spot_id, status, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO emails (id, org_id, kind, to_email, volunteer_id, member_id, task_id, ask_id, spot_id, status, created_at, message_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
-        .bind(newId(), orgId, m.kind, m.to, m.volunteerId ?? null, m.memberId ?? null, m.taskId ?? null, m.askId ?? null, m.spotId ?? null, statuses[i], now),
+        .bind(newId(), orgId, m.kind, m.to, m.volunteerId ?? null, m.memberId ?? null, m.taskId ?? null, m.askId ?? null, m.spotId ?? null, statuses[i], now, m.messageId ?? null),
     ),
   );
   return statuses;
@@ -352,6 +354,8 @@ export async function sendDueEmails(env: Env, now: number): Promise<void> {
     await deliver(env, orgId, mails, now);
   }
 
+  await sendRenewals(env, now);
+
   const unfilled = await db
     .prepare(
       `SELECT t.*, (SELECT COUNT(*) FROM spots s WHERE s.task_id = t.id AND s.status = 'holding') AS holding FROM tasks t
@@ -371,6 +375,58 @@ export async function sendDueEmails(env: Env, now: number): Promise<void> {
     const content = unfilledEmail(task, t.holding, String(org.name), link, String(org.time_zone));
     await deliver(env, t.org_id, to.map((m) => ({ kind: 'unfilled', to: m.email, memberId: m.id, taskId: t.id, ...content })), now);
   }
+}
+
+/**
+ * Renewal reminders: once for each expiry date, the organization's chosen
+ * number of days before it. Only people who agreed to be contacted and
+ * haven't unsubscribed.
+ */
+async function sendRenewals(env: Env, now: number): Promise<void> {
+  const db = env.DB;
+  const { results } = await db
+    .prepare(
+      `SELECT v.id, v.org_id, v.name, v.email, v.member_category, v.member_expires_at FROM volunteers v JOIN orgs o ON o.id = v.org_id
+       WHERE o.renewal_days > 0 AND v.member_expires_at > ? AND v.member_expires_at <= ? + o.renewal_days * 86400000
+         AND (v.renewal_reminded_for IS NULL OR v.renewal_reminded_for != v.member_expires_at)
+         AND v.status != 'stopped' AND v.contact_ok_at IS NOT NULL AND v.email IS NOT NULL
+       LIMIT 1000`,
+    )
+    .bind(now, now)
+    .all<{ id: string; org_id: string; name: string; email: string; member_category: string | null; member_expires_at: number }>();
+  const byOrg = new Map<string, typeof results>();
+  for (const r of results) byOrg.set(r.org_id, [...(byOrg.get(r.org_id) ?? []), r]);
+  for (const [orgId, rows] of byOrg) {
+    const org = await loadOrg(db, orgId);
+    if (!org) continue;
+    const admins = await coordinatorsFor(db, orgId, null);
+    const replyTo = admins[0]?.email ?? null;
+    const mails: Outgoing[] = [];
+    for (const r of rows) {
+      mails.push({
+        kind: 'renewal', to: r.email, replyTo, volunteerId: r.id,
+        ...renewalEmail(r.name, String(org.name), r.member_category, r.member_expires_at, (org.renewal_url as string | null) ?? null, String(org.time_zone), await unsubscribeLink(env, r.id)),
+      });
+    }
+    await db.batch(rows.map((r) => db.prepare('UPDATE volunteers SET renewal_reminded_for = member_expires_at WHERE id = ?').bind(r.id)));
+    await deliver(env, orgId, mails, now);
+  }
+}
+
+export function renewalEmail(name: string, orgName: string, category: string | null, expiresAt: number, renewalUrl: string | null, timeZone: string, unsubscribe: string): Pick<Outgoing, 'subject' | 'text'> {
+  const date = new Date(expiresAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone });
+  return {
+    subject: `Your ${orgName} membership expires ${date}`,
+    text: lines(
+      `Hi ${firstName(name)},`,
+      '',
+      `Your ${orgName} membership${category ? ` (${category})` : ''} expires on ${date}.`,
+      renewalUrl ? `Renew here: ${renewalUrl}` : 'Reply to this email to renew.',
+      '',
+      '--',
+      `Unsubscribe: ${unsubscribe}`,
+    ),
+  };
 }
 
 /** The member who wrote the task, or the admins if that member is gone. */

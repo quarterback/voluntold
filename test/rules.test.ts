@@ -29,6 +29,10 @@ function volunteer(over: Partial<Volunteer> = {}): Volunteer {
     days: [],
     remoteOk: false,
     createdAt: 0,
+    memberCategory: null,
+    memberSince: null,
+    memberExpiresAt: null,
+    duesPaidAt: null,
     ...over,
   };
 }

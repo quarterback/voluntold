@@ -185,7 +185,7 @@ export function TaskEdit() {
               <TextField label="Address" value={form.placePrivate} onChange={(e) => set('placePrivate', e.target.value)} />
             </Stack>
             <Stack direction="row" spacing={2}>
-              <TextField label="Volunteers needed" type="number" value={form.peopleNeeded} onChange={(e) => set('peopleNeeded', Number(e.target.value))}
+              <TextField label="People needed" type="number" value={form.peopleNeeded} onChange={(e) => set('peopleNeeded', Number(e.target.value))}
                 slotProps={{ htmlInput: { min: 1, max: 500 } }} sx={{ width: 170, flexShrink: 0 }} />
               <TextField label="Contact" value={form.contact} onChange={(e) => set('contact', e.target.value)} />
             </Stack>

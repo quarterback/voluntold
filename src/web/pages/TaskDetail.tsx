@@ -17,6 +17,7 @@ import SplitIcon from '@mui/icons-material/CallSplit';
 import HubIcon from '@mui/icons-material/HubOutlined';
 import { STATUS_TONE } from './Tasks';
 import { TagPicker } from './tags';
+import { peopleWords } from './membership';
 
 interface NewAsk {
   askId: string;
@@ -295,7 +296,7 @@ export function TaskDetail() {
                 {data.options.partners.map((p: any) => (
                   <ListItemButton key={p.id} disabled={busy} onClick={() => act(async () => { await api(path(`/tasks/${taskId}/share`), { body: { partnerOrgId: p.id } }); setShared(`Sent to ${p.name.replace(/^Sample: /, '')}`); })} sx={{ borderRadius: 0, px: 2.5, gap: 1.5 }}>
                     <IconTile icon={<HubIcon />} />
-                    <ListItemText primary={`Share with ${p.name.replace(/^Sample: /, '')}`} secondary={`Partner · ${p.active} active volunteers`} />
+                    <ListItemText primary={`Share with ${p.name.replace(/^Sample: /, '')}`} secondary={`Partner · ${p.active} active`} />
                   </ListItemButton>
                 ))}
                 <Box sx={{ height: 8 }} />
@@ -303,7 +304,7 @@ export function TaskDetail() {
             )}
             <Card>
               <CardContent>
-                <Typography variant="h2" component="h2">Volunteers</Typography>
+                <Typography variant="h2" component="h2">{peopleWords(org.peopleWord).People}</Typography>
                 {data.spots.length === 0 ? <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>No one yet</Typography> : (
                   <List disablePadding>
                     {data.spots.map((s: any) => (
