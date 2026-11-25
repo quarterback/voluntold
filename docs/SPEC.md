@@ -112,6 +112,15 @@ The tool sends three other emails, each once:
 
 Asks, confirmations and reminders come from the organization's name, and replies go to the coordinator. Every email to a volunteer says how to unsubscribe. One organization can send 300 emails in 24 hours unless an admin of the tool raises it. Past that, the coordinator copies links. Sample organizations never send email, and neither do new organizations until an admin approves them ([decision 0013](decisions/0013-approve-new-organizations.md)). Each email is recorded without its text, because the text holds a private link. Email goes through Resend or Amazon SES, whichever has keys set.
 
+## Membership
+
+From [decision 0014](decisions/0014-membership-management.md). Each person can have a membership category, a member since date, an expiry date and a dues paid date. The People screen filters by Current, Expiring and Expired. Each organization chooses whether its people are called volunteers, members or participants.
+
+- **Renewal reminders** go out once per expiry date, 30 days before by default, with the organization's renewal link.
+- **Applications:** an organization can open a public page where adults apply. A coordinator accepts or declines each one. Accepting adds the person.
+- **Group email:** a coordinator filters the People screen and emails everyone shown. It skips people who haven't agreed to be contacted or who unsubscribed. Every group email and renewal reminder has an unsubscribe link.
+- **Dues** are recorded, not collected.
+
 ## What the volunteer sees
 
 No account. No app. A private link opens a page on their phone with:

@@ -21,3 +21,6 @@ export function parseDate(raw: unknown): number | null | 'bad' {
   const t = Date.parse(String(raw).trim());
   return Number.isNaN(t) ? 'bad' : t;
 }
+
+export const SIZE_BANDS = ['Under 50', '50 to 250', '250 to 1,000', 'Over 1,000'] as const;
+export const CURRENT_TOOLS = ['Nothing yet', 'A spreadsheet', 'Paid software'] as const;

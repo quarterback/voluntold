@@ -17,10 +17,22 @@ function adminList(env: Env): string[] {
 }
 
 /** Emails the admins when a new organization signs up. A failed email doesn't stop the sign-up. */
-export async function tellAdmins(env: Env, orgName: string, byEmail: string): Promise<void> {
+export async function tellAdmins(
+  env: Env, orgName: string, byEmail: string,
+  about: { website: string | null; size: string | null; currentTool: string | null; intendedUse: string | null } = { website: null, size: null, currentTool: null, intendedUse: null },
+): Promise<void> {
   const admins = adminList(env);
   if (admins.length === 0 || !mailEnabled(env)) return;
-  const text = [`${orgName} signed up.`, `Created by ${byEmail}.`, '', `Review it: ${env.APP_URL}/admin`].join('\n');
+  const text = [
+    `${orgName} signed up.`,
+    `Created by ${byEmail}.`,
+    about.website && `Website: ${about.website}`,
+    about.size && `Size: ${about.size}`,
+    about.currentTool && `Uses today: ${about.currentTool}`,
+    about.intendedUse && `Plans to use it for: ${about.intendedUse}`,
+    '',
+    `Review it: ${env.APP_URL}/admin`,
+  ].filter((l) => l !== null && l !== undefined).join('\n');
   for (const to of admins) {
     await sendEmail(env, { from: env.EMAIL_FROM!, to, subject: `New organization: ${orgName}`, text });
   }
@@ -36,7 +48,7 @@ adminRoutes.use('*', async (c, next) => {
 /** Organizations that aren't samples, newest first, with who made them and how big they are. */
 adminRoutes.get('/orgs', async (c) => {
   const { results } = await c.env.DB.prepare(
-    `SELECT o.id, o.name, o.created_at, o.approved_at, o.email_daily_limit,
+    `SELECT o.id, o.name, o.created_at, o.approved_at, o.email_daily_limit, o.website, o.size_band, o.current_tool, o.intended_use,
        (SELECT u.email FROM members m JOIN users u ON u.id = m.user_id WHERE m.org_id = o.id ORDER BY m.created_at LIMIT 1) AS creator,
        (SELECT COUNT(*) FROM volunteers v WHERE v.org_id = o.id) AS people,
        (SELECT COUNT(*) FROM tasks t WHERE t.org_id = o.id) AS tasks
@@ -47,6 +59,7 @@ adminRoutes.get('/orgs', async (c) => {
     orgs: results.map((r) => ({
       id: r.id, name: r.name, createdAt: r.created_at, approved: r.approved_at !== null, emailDailyLimit: r.email_daily_limit,
       creator: r.creator, people: r.people, tasks: r.tasks,
+      website: r.website, size: r.size_band, currentTool: r.current_tool, intendedUse: r.intended_use,
     })),
   });
 });

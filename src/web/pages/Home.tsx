@@ -48,10 +48,10 @@ export function Home() {
         <Container maxWidth="lg" sx={{ pt: { xs: 6, md: 10 }, pb: { xs: 24, md: 36 } }}>
           <Box sx={{ maxWidth: 760 }}>
             <Typography component="h1" sx={{ ...heading, fontSize: { xs: '2.75rem', md: '4.5rem' }, letterSpacing: '-0.035em', lineHeight: 0.95, mb: 3 }}>
-              Volunteers <Box component="em" sx={{ fontStyle: 'italic', color: vt.tangerine }}>activated</Box>
+              Run your membership. <Box component="em" sx={{ fontStyle: 'italic', color: vt.tangerine }}>Rally your people.</Box>
             </Typography>
             <Typography sx={{ fontSize: { xs: '1.0625rem', md: '1.25rem' }, color: vt.onInk2, maxWidth: 600, mb: 4 }}>
-              Volley asks the right volunteers for each task by email. They answer from their phone, with no account.
+              Free membership and volunteer management for small organizations. Keep your roster, track renewals and fill every job.
             </Typography>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
               {!BROWSER_DEMO && <Button variant="contained" size="large" onClick={enter} sx={lime}>{enterLabel}</Button>}
@@ -68,11 +68,11 @@ export function Home() {
         </Box>
 
         <Box sx={{ maxWidth: 760, mb: { xs: 8, md: 14 } }}>
-          <Typography component="h2" sx={{ ...heading, fontSize: { xs: '2rem', md: '3rem' }, letterSpacing: '-0.03em', mb: 2.5 }}>People said yes. Nobody asked them.</Typography>
+          <Typography component="h2" sx={{ ...heading, fontSize: { xs: '2rem', md: '3rem' }, letterSpacing: '-0.03em', mb: 2.5 }}>Your roster is in a spreadsheet. Your renewals are in your head.</Typography>
           {[
-            'Most organizations have a list of people who offered to help.',
-            'The list sits in a spreadsheet, and the same few people end up doing everything.',
-            'Volley works through the whole list, starting with whoever has waited longest.',
+            'Small organizations keep members in spreadsheets, inboxes and sign-up forms.',
+            'Paid membership software can cost more than a small group can justify.',
+            'Volley puts the roster, the renewals and the work in one free place.',
           ].map((t) => <Typography key={t} sx={{ color: vt.text2, fontSize: { xs: '1.0625rem', md: '1.25rem' }, mb: 1 }}>{t}</Typography>)}
         </Box>
 
@@ -91,24 +91,24 @@ export function Home() {
 
         <Stack spacing={{ xs: 8, md: 14 }} sx={{ mb: { xs: 8, md: 14 } }}>
           <Feature
+            title="Your roster, with renewals"
+            lines={['Each person has a category, a join date, an expiry date and when they last paid dues.', "Filter to who's expiring and email them in one step."]}
+            img="/screens/people.png" alt="The people list with tags, tiers and availability" flip
+          />
+          <Feature
             title="Two buttons on their phone"
             lines={['Each ask opens a page with the date, the place, what to bring and who to find.', 'Volunteers tap Accept or Decline. They never make an account.']}
             img="/screens/volunteer.png" alt="A volunteer's page on a phone, with a request and the Accept and Decline buttons" phone
           />
           <Feature
-            title="Fair to every volunteer"
+            title="Fair to everyone on your list"
             lines={["Only people who meet the task's requirements get asked. Whoever has waited longest goes first.", 'Nobody gets more than two asks a week, unless you change the limit.']}
             img="/screens/task.png" alt="A task page showing the people holding spots and the next group to ask" flip
           />
           <Feature
-            title="Everyone you have, in one place"
-            lines={['Track the details that matter to you, such as skills, languages, experience and availability.', 'Filter by any of them and save the filter as a list.']}
-            img="/screens/people.png" alt="The people list with tags, tiers and availability"
-          />
-          <Feature
             title="Plan the whole event"
             lines={['A Saturday delivery or a pledge drive holds every assignment and supply it takes.', 'Each assignment shows who fits, or where you have a gap.']}
-            img="/screens/needs.png" alt="The Needs screen with a Saturday delivery and its assignments" flip
+            img="/screens/needs.png" alt="The Needs screen with a Saturday delivery and its assignments"
           />
         </Stack>
 
@@ -145,18 +145,21 @@ export function Home() {
 }
 
 const STEPS = [
-  { title: 'Bring your list', text: 'Upload the spreadsheet, Word file or PDF you already have. Volley suggests where each column goes.' },
-  { title: 'Write the task', text: 'Say what, when, where and how many people. Add what they need, like a skill or a team.' },
-  { title: 'Ask, and watch it fill', text: 'Volley emails the people who fit. They accept or decline from their phone.' },
+  { title: 'Bring your list', text: "Upload a spreadsheet or your old system's export. Volley recognizes membership levels and renewal dates." },
+  { title: 'Set up your membership', text: 'Add your categories, renewal reminders and a public page where people apply.' },
+  { title: 'Put people to work', text: 'Write a task, and Volley emails the members who fit. They answer from their phone.' },
 ];
 
 const QUESTIONS = [
   { q: 'What does it cost?', a: ["It's free. Sign up and use every feature."] },
-  { q: 'Do volunteers need an account?', a: ['No. Each person gets a private link by email and answers from any phone.'] },
-  { q: 'What happens after someone says yes?', a: ['They get a confirmation with the address, then a reminder the day before.', "If a task starting within two days isn't full, you get an email."] },
-  { q: 'How do we log hours?', a: ["You don't. When a task's time passes, everyone who held a spot counts as attended."] },
+  { q: 'Who is it for?', a: ['Associations, clubs, nonprofits and community groups whose members are adults.'] },
+  { q: 'Can we move from another system?', a: ['Yes. Export a CSV from your current software and import it. Volley recognizes common column names.'] },
+  { q: 'Can members pay dues in Volley?', a: ['Not yet. Record when someone paid, and link to the payment page you already use.'] },
+  { q: 'What happens when a membership is about to expire?', a: ['Volley emails a renewal reminder with your renewal link, 30 days before by default.'] },
+  { q: 'Can people apply to join?', a: ['Yes. Turn on your application page, share the link and accept each applicant.'] },
+  { q: 'Do members need an account?', a: ['No. Each person gets email from you and answers from any phone.'] },
   { q: 'Can more than one person run it?', a: ["Yes. Add coordinators and team leads. Team leads manage their own team's people."] },
-  { q: 'Can we take our data with us?', a: ['Yes. Export your volunteers and tasks whenever you want.'] },
+  { q: 'Can we take our data with us?', a: ['Yes. Export your roster and tasks whenever you want.'] },
 ];
 
 function Feature({ title, lines, img, alt, phone, flip }: { title: string; lines: string[]; img: string; alt: string; phone?: boolean; flip?: boolean }) {

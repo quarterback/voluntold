@@ -175,6 +175,19 @@ describe('email', () => {
 });
 
 describe('approving organizations', () => {
+  it('asks a new organization about itself, and requires an adult roster', async () => {
+    const c = await signIn();
+    expect((await c.post('/api/orgs', { name: 'No Check' })).status).toBe(400);
+    const res = await c.post('/api/orgs', {
+      name: 'Valley Coaches', adultsConfirmed: true, website: 'valleycoaches.org', size: '50 to 250',
+      currentTool: 'Paid software', toolName: 'WildApricot', intendedUse: 'Renewals and clinic staffing',
+    });
+    expect(res.status).toBe(201);
+    const boss = await signIn('boss@example.com');
+    const row = (await boss.get('/api/admin/orgs')).body.orgs.find((o: any) => o.id === res.body.id);
+    expect(row).toMatchObject({ website: 'https://valleycoaches.org', size: '50 to 250', currentTool: 'Paid software: WildApricot', intendedUse: 'Renewals and clinic staffing' });
+  });
+
   it('lets only admins of the tool see and approve organizations', async () => {
     const org = await newOrg('Coaches Association');
     expect((await org.client.get(org.api(''))).body.org.approved).toBe(false);

@@ -26,10 +26,10 @@ function guess(column: string, fields: ReturnType<typeof useOrg>['fields'], rows
   if (c.includes('email') || c === 'mail') return 'email';
   if (['phone', 'mobile', 'cell', 'tel', 'telephone', 'phonenumber', 'cellphone', 'mobilephone'].includes(c)) return 'phone';
   if (['id', 'uid', 'rowid', 'recordid', 'timestamp', 'createdat', 'updatedat'].includes(c)) return 'ignore';
-  if (['membershiptype', 'membershipcategory', 'membertype', 'membercategory', 'category', 'membershiplevel', 'level'].includes(c)) return 'member:category';
-  if (['membersince', 'joined', 'joindate', 'datejoined', 'startdate'].includes(c)) return 'member:since';
-  if (['expires', 'expiration', 'expirationdate', 'expiry', 'expirydate', 'renewaldate', 'membershipexpires', 'enddate', 'paidthrough'].includes(c)) return 'member:expires';
-  if (['duespaid', 'paid', 'paymentdate', 'datepaid', 'lastpayment', 'duesdate'].includes(c)) return 'member:dues';
+  if (['membershiptype', 'membershipcategory', 'membertype', 'membercategory', 'category', 'membershiplevel', 'level', 'membershipplan', 'plan', 'tier'].includes(c)) return 'member:category';
+  if (['membersince', 'joined', 'joindate', 'datejoined', 'startdate', 'originaljoindate', 'membershipstartdate'].includes(c)) return 'member:since';
+  if (['expires', 'expiration', 'expirationdate', 'expiry', 'expirydate', 'renewaldate', 'renewaldue', 'renewalduedate', 'membershipexpires', 'membershipexpiration', 'membershipenddate', 'enddate', 'paidthrough', 'paiduntil', 'validuntil'].includes(c)) return 'member:expires';
+  if (['duespaid', 'paid', 'paymentdate', 'datepaid', 'lastpayment', 'lastpaymentdate', 'duesdate', 'duespaiddate'].includes(c)) return 'member:dues';
   // "skill" matches a field called "Skills", and the other way round.
   const singular = (s: string) => s.replace(/s$/, '');
   const field = fields.find((f) => singular(f.label.toLowerCase().replace(/[^a-z]/g, '')) === singular(c));
@@ -127,7 +127,8 @@ export function Import() {
                 {file ? 'Choose another file' : 'Choose file'}
                 <input hidden type="file" accept=".csv,.tsv,.xlsx,.xml,.json,.txt,.md,.docx,.pdf" onChange={(e) => e.target.files?.[0] && choose(e.target.files[0])} />
               </Button>
-              <Typography variant="caption" component="p" sx={{ mt: 1 }}>CSV, XLSX, XML, JSON, TXT, DOCX or PDF</Typography>
+              <Typography variant="caption" component="p" sx={{ mt: 1 }}>A spreadsheet, or your old system's export</Typography>
+              <Typography variant="caption" component="p">CSV, XLSX, XML, JSON, TXT, DOCX or PDF</Typography>
               {file && <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{file.name}{busy && !table ? ', reading…' : ''}</Typography>}
             </CardContent>
           </Card>

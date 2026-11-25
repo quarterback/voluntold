@@ -6,7 +6,7 @@ import { cleanText, fail, isDev, newId, normalizeEmail, optionalText } from '../
 import { isAdmin, tellAdmins } from './admin';
 import { connectAccount, disconnectAccount, syncTask } from '../atproto';
 import type { FieldType, Requirement } from '../../shared/types';
-import { PEOPLE_WORDS } from '../../shared/membership';
+import { CURRENT_TOOLS, PEOPLE_WORDS, SIZE_BANDS } from '../../shared/membership';
 
 export const STARTER_FIELDS: { label: string; type: FieldType; options: string[] }[] = [
   { label: 'Skills', type: 'many', options: [] },
@@ -48,11 +48,20 @@ accountRoutes.post('/orgs', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const name = cleanText(body.name, 120);
   if (!name) fail(400, 'Enter an organization name.');
+  if (body.adultsConfirmed !== true) fail(400, 'Confirm everyone on your roster is 18 or older.');
+  let website = optionalText(body.website, 300);
+  if (website && !/^https?:\/\//.test(website)) website = `https://${website}`;
+  const size = SIZE_BANDS.includes(body.size) ? body.size : null;
+  const tool = CURRENT_TOOLS.includes(body.currentTool) ? body.currentTool : null;
+  const toolName = tool === 'Paid software' ? optionalText(body.toolName, 120) : null;
+  const currentTool = tool && toolName ? `${tool}: ${toolName}` : tool;
+  const intendedUse = optionalText(body.intendedUse, 1000);
   const now = c.get('now');
   const orgId = newId();
   const db = c.env.DB;
   await db.batch([
-    db.prepare('INSERT INTO orgs (id, name, time_zone, created_at) VALUES (?, ?, ?, ?)').bind(orgId, name, validTimeZone(body.timeZone), now),
+    db.prepare('INSERT INTO orgs (id, name, time_zone, created_at, website, size_band, current_tool, intended_use, adults_confirmed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(orgId, name, validTimeZone(body.timeZone), now, website, size, currentTool, intendedUse, now),
     db.prepare("INSERT INTO members (id, org_id, user_id, role, created_at) VALUES (?, ?, ?, 'admin', ?)").bind(newId(), orgId, c.get('userId'), now),
     ...STARTER_FIELDS.map((f, i) =>
       db
@@ -61,7 +70,7 @@ accountRoutes.post('/orgs', async (c) => {
     ),
     logEvent(db, { orgId, actorKind: 'member', actorId: c.get('userId'), verb: 'created', objectType: 'org', objectId: orgId, at: now }),
   ]);
-  await tellAdmins(c.env, name, c.get('email'));
+  await tellAdmins(c.env, name, c.get('email'), { website, size, currentTool, intendedUse });
   return c.json({ id: orgId }, 201);
 });
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Box, Button, Card, CardContent, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Card, CardContent, Link, Stack, TextField, Typography } from '@mui/material';
 import { api } from '../api';
 import { Loading, Page, StatusBadge, errorText, useLoad } from './common';
 import { day } from '../../shared/time';
@@ -13,6 +13,10 @@ interface AdminOrg {
   creator: string | null;
   people: number;
   tasks: number;
+  website: string | null;
+  size: string | null;
+  currentTool: string | null;
+  intendedUse: string | null;
 }
 
 const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
@@ -57,6 +61,13 @@ function OrgRow({ org, act }: { org: AdminOrg; act: (path: string, body?: unknow
           </Box>
           <StatusBadge label={org.approved ? 'Approved' : 'Pending'} tone={org.approved ? 'success' : 'warning'} />
         </Stack>
+        {(org.website || org.size || org.currentTool) && (
+          <Typography variant="body2" sx={{ mt: 1 }}>
+            {org.website && <Link href={org.website} target="_blank" rel="noopener">{org.website.replace(/^https?:\/\//, '')}</Link>}
+            {[org.website ? '' : null, org.size, org.currentTool].filter((x) => x !== null && x !== undefined).join(' · ')}
+          </Typography>
+        )}
+        {org.intendedUse && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, whiteSpace: 'pre-wrap' }}>{org.intendedUse}</Typography>}
         <Stack direction="row" sx={{ alignItems: 'center', gap: 1, mt: 2, flexWrap: 'wrap' }}>
           {org.approved
             ? <Button key="revoke" color="error" onClick={() => act(`${base}/revoke`)}>Revoke approval</Button>
