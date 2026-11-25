@@ -4,8 +4,8 @@
 // soon isn't full. Nothing else: no newsletters, no chasing.
 //
 // Every email gets a row in `emails`. Bodies are never stored, because they
-// hold private links. Email goes through Amazon SES (API v2), signed with
-// aws4fetch.
+// hold private links. Email goes through Resend when RESEND_API_KEY is set,
+// and otherwise through Amazon SES (API v2), signed with aws4fetch.
 
 import type { Env } from './env';
 import type { Task } from '../shared/types';
@@ -39,7 +39,7 @@ export interface Outgoing {
 }
 
 export function mailEnabled(env: Env): boolean {
-  return !!(env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY && env.EMAIL_FROM);
+  return !!(env.EMAIL_FROM && (env.RESEND_API_KEY || (env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY)));
 }
 
 export function sesEndpoint(env: Env): string {
@@ -54,8 +54,46 @@ export interface Message {
   replyTo?: string | null;
 }
 
-/** Sends one email through SES. Returns whether SES accepted it. */
+/** Sends one email. Returns whether the provider accepted it. */
 export async function sendEmail(env: Env, m: Message): Promise<boolean> {
+  return (await sendEmails(env, [m]))[0];
+}
+
+/** Sends emails through the provider that has keys set. One result for each. */
+export async function sendEmails(env: Env, messages: Message[]): Promise<boolean[]> {
+  const results: boolean[] = [];
+  if (env.RESEND_API_KEY) {
+    // Resend takes up to 100 emails in one request.
+    for (let start = 0; start < messages.length; start += 100) {
+      const chunk = messages.slice(start, start + 100);
+      const ok = await resendBatch(env, chunk);
+      results.push(...chunk.map(() => ok));
+    }
+    return results;
+  }
+  // SES takes one email per request. Send 10 at a time.
+  for (let start = 0; start < messages.length; start += 10) {
+    results.push(...(await Promise.all(messages.slice(start, start + 10).map((m) => sesSend(env, m)))));
+  }
+  return results;
+}
+
+async function resendBatch(env: Env, messages: Message[]): Promise<boolean> {
+  try {
+    const res = await fetch('https://api.resend.com/emails/batch', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
+      body: JSON.stringify(messages.map((m) => ({ from: m.from, to: [m.to], subject: m.subject, text: m.text, ...(m.replyTo ? { reply_to: m.replyTo } : {}) }))),
+    });
+    if (!res.ok) console.error('email refused', res.status);
+    return res.ok;
+  } catch (err) {
+    console.error('email failed', err instanceof Error ? err.message : err);
+    return false;
+  }
+}
+
+async function sesSend(env: Env, m: Message): Promise<boolean> {
   try {
     const aws = new AwsClient({
       accessKeyId: env.AWS_ACCESS_KEY_ID!,
@@ -107,14 +145,10 @@ export async function deliver(env: Env, orgId: string, mails: Outgoing[], now: n
     const sending = mails.slice(0, room);
     for (let i = room; i < mails.length; i++) statuses[i] = 'limit';
     const from = fromHeader(env, String(org.name));
-    // SES takes one email per request. Send 10 at a time.
-    for (let start = 0; start < sending.length; start += 10) {
-      const chunk = sending.slice(start, start + 10);
-      const results = await Promise.all(chunk.map((m) => sendEmail(env, { from, to: m.to, subject: m.subject, text: m.text, replyTo: m.replyTo })));
-      results.forEach((ok, i) => {
-        statuses[start + i] = ok ? 'sent' : 'failed';
-      });
-    }
+    const results = await sendEmails(env, sending.map((m) => ({ from, to: m.to, subject: m.subject, text: m.text, replyTo: m.replyTo })));
+    results.forEach((ok, i) => {
+      statuses[i] = ok ? 'sent' : 'failed';
+    });
   }
   await db.batch(
     mails.map((m, i) =>

@@ -13,6 +13,11 @@ function fakeProvider(ok = true) {
   const sent: any[] = [];
   const spy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
     const req = input instanceof Request ? input : new Request(input, init);
+    if (req.url === 'https://api.resend.com/emails/batch') {
+      expect(req.headers.get('authorization')).toBe('Bearer re_test');
+      sent.push(...JSON.parse(await req.text()).map((m: any) => ({ ...m, via: 'resend' })));
+      return new Response(ok ? '{"data":[]}' : '{"error":"no"}', { status: ok ? 200 : 422 });
+    }
     expect(req.url).toBe('https://email.us-west-2.amazonaws.com/v2/email/outbound-emails');
     expect(req.headers.get('authorization')).toMatch(/^AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE\/\d{8}\/us-west-2\/ses\/aws4_request/);
     const b = JSON.parse(await req.text());
@@ -69,6 +74,19 @@ describe('email', () => {
     expect(statuses).toEqual(['sent']);
     expect(sent[0]).toMatchObject({ from: '"Riverside Pantry" <asks@example.org>', to: ['sam@example.com'], reply_to: 'coord@example.com' });
     expect((await emailsFor(org.orgId))[0].status).toBe('sent');
+  });
+
+  it('uses Resend when its key is set, many emails in one request', async () => {
+    const org = await newOrg('Riverside Pantry');
+    const { sent, spy } = fakeProvider();
+    const resend = { ...withMail(), RESEND_API_KEY: 're_test' };
+    const statuses = await deliver(resend, org.orgId, [
+      { kind: 'ask', to: 'a@example.com', subject: 's', text: 't', replyTo: 'coord@example.com' },
+      { kind: 'ask', to: 'b@example.com', subject: 's', text: 't' },
+    ], Date.now());
+    expect(statuses).toEqual(['sent', 'sent']);
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(sent[0]).toMatchObject({ via: 'resend', from: '"Riverside Pantry" <asks@example.org>', to: ['a@example.com'], reply_to: 'coord@example.com' });
   });
 
   it('records a refused send as failed', async () => {

@@ -78,7 +78,7 @@ scripts/deploy-demo.sh                # builds dist-demo/ and deploys it as stat
 
 1. `npx wrangler d1 create voluntold`, then put the database id in `wrangler.toml`.
 2. `npm run db:migrate:remote`
-3. Set the secrets: `npx wrangler secret put APP_SECRET` (a long random string), `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and `EMAIL_FROM` for Amazon SES, which sends sign-in codes and the emails the tool sends (asks, confirmations, reminders and notes about tasks that aren't full). Set `AWS_REGION` if it isn't `us-west-2`. The SES account needs production access and a verified domain for `EMAIL_FROM`, and optionally `MODEL_PROVIDER=anthropic` with `MODEL_API_KEY` for text, Word and PDF imports and for tagging.
+3. Set the secrets: `npx wrangler secret put APP_SECRET` (a long random string), `EMAIL_FROM` and either `RESEND_API_KEY` (Resend) or `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` (Amazon SES) for sign-in codes and the emails the tool sends (asks, confirmations, reminders and notes about tasks that aren't full). Resend is used if both are set. For SES, set `AWS_REGION` if it isn't `us-west-2`, and get production access. Either way, verify the domain in `EMAIL_FROM`, and optionally `MODEL_PROVIDER=anthropic` with `MODEL_API_KEY` for text, Word and PDF imports and for tagging.
 4. In `wrangler.toml`, set `APP_URL` to the public address and `ATPROTO_TASK_NSID` to the record name under your domain. Keep `DEV_MODE = "0"`.
 5. `npm run build && npx wrangler deploy`
 

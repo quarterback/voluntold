@@ -110,7 +110,7 @@ The tool sends three other emails, each once:
 - **Reminder,** 24 hours before work at a set time. People who accepted within that last day already have a confirmation, so they get no reminder.
 - **Not full,** to the coordinator who wrote the task, 48 hours before work at a set time that still has open spots. If that coordinator has left, the admins get it.
 
-Asks, confirmations and reminders come from the organization's name, and replies go to the coordinator. Every email to a volunteer says how to unsubscribe. One organization can send 300 emails in 24 hours. Past that, the coordinator copies links. Sample organizations never send email. Each email is recorded without its text, because the text holds a private link. Email goes through Amazon SES.
+Asks, confirmations and reminders come from the organization's name, and replies go to the coordinator. Every email to a volunteer says how to unsubscribe. One organization can send 300 emails in 24 hours. Past that, the coordinator copies links. Sample organizations never send email. Each email is recorded without its text, because the text holds a private link. Email goes through Resend or Amazon SES, whichever has keys set.
 
 ## What the volunteer sees
 
@@ -164,7 +164,7 @@ An admin can download everything as CSV: volunteers with their fields, tasks, as
 
 ## For the coding agent
 
-**Stack:** Cloudflare Workers and D1. A React web app using MUI, themed from the Material 3 seed color `#00B8A9`, with dark mode from the same seed. Sign-in uses 6 digit email codes sent through Amazon SES. There are no passwords. Posting to AT Protocol uses an app password the organization makes in its Bluesky settings. AT Protocol OAuth and "Log in with Bluesky" come later. They replace the app password once the OAuth client passes a one-day test on Workers ([decision 0008](decisions/0008-pilot-build-choices.md)).
+**Stack:** Cloudflare Workers and D1. A React web app using MUI, themed from the Material 3 seed color `#00B8A9`, with dark mode from the same seed. Sign-in uses 6 digit email codes sent through Resend or Amazon SES. There are no passwords. Posting to AT Protocol uses an app password the organization makes in its Bluesky settings. AT Protocol OAuth and "Log in with Bluesky" come later. They replace the app password once the OAuth client passes a one-day test on Workers ([decision 0008](decisions/0008-pilot-build-choices.md)).
 
 **Model for imports:** used only to pull rows out of text, Word and PDF files. Its output must be checked against a schema. Use a provider whose terms say it doesn't train on prompts or keep them. Record which provider and the date it was checked in a decision record before any real file goes through it.
 

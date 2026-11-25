@@ -26,7 +26,7 @@ The owner's goal is not funding. It is a product with many users that the owner 
   - accept or decline through the private link, as now
   - a note to coordinators when a task is still not full
 - **Owner:** newsletters, bulk campaigns, text messages and in-app chat stay out.
-- **Owner:** email goes through Amazon SES, not Resend.
+- **Owner:** email goes through Amazon SES or Resend. The owner first chose SES, then asked for whatever avoids a lag before launch. The code supports both; whichever has keys set is used, and Resend wins if both are.
 - **Owner:** the live site gets a sign-up path for real organizations, separate from the demo. Launch is Black Friday, November 27, 2026.
 - **Agent:** what the product must have before launch, from a quick look at the code on November 25, not an audit:
 

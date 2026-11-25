@@ -10,6 +10,7 @@
 **Instruction given (actual wording):** "I think aws i s bettee than resend. And yes there needs to be a real user signup now flow i had it before just a a demo but wemd want a different patj for consimers when i launch the site to be able to signup and use the tool but i built this a sa demo and now we're just gonna prep it for launch and launch it on black friday"
 **Success defined in advance as:** Not defined in advance. The agent took it as: all email goes through SES, and a stranger on the live site can sign up and create an organization without help.
 **Authority granted to the agent:** Change the code on `claude/volley-launch-strategy-aktbyn`.
+Later: "Or resend or another tool faster? I dont want a lag". The agent explained that the lag is SES's production-access review, not sending speed, and added Resend back as a second provider.
 **Out of scope:** The AWS account, domain verification, deploying, the product name and the home page's wording.
 
 ## 2. Action: what actually happened
@@ -22,6 +23,7 @@
 6. Get started opens the sign-in page titled "Get started". After the code, a new account lands on "Set up your organization", with a link to try a sample. Before, it landed on the sample picker with no way to create an organization. The picker now always links back to setup.
 7. Ran `npm run check`: 43 tests pass. Walked the sign-up path in Chromium at phone width: home, Get started, code, setup, then the new organization's settings. No page errors.
 8. Updated the README, the spec and 0012.
+9. After the owner asked about lag, added Resend back. `sendEmails` uses Resend's batch endpoint when `RESEND_API_KEY` is set, and SES otherwise. Added a test for it; 44 tests pass.
 
 **What it produced or changed:** `package.json`, `package-lock.json`, `src/worker/mail.ts`, `src/worker/auth.ts`, `src/worker/env.ts`, `.dev.vars.example`, `test/email.test.ts`, `src/web/pages/Home.tsx`, `Login.tsx`, `Start.tsx`, `README.md`, `docs/SPEC.md`, `docs/decisions/0012-free-launch-and-email.md`, this record.
 **Where actual behavior differed from the instruction:** None.
@@ -30,7 +32,7 @@
 ## 3. Judgment: human in the loop
 **Decisions the agent made on its own:**
 - Using `aws4fetch` instead of writing request signing by hand.
-- Removing Resend completely.
+- Removing Resend, then adding it back as a second provider that wins when both are set.
 - The default region `us-west-2`.
 - The labels Get started, Set up your organization, Try a sample organization and Continue.
 - Leaving Try the demo pointing at sample organizations on the live server, not at volleydemo.vloora.com.
