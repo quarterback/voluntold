@@ -12,6 +12,8 @@ Changes [0011](0011-product-model-and-direction.md): asks go out by email, as we
 
 On November 25 the owner chose this tool as the product to launch publicly, on Product Hunt and in the Portland startup community. The owner reviewed a plan that split the product into a free core and paid automation, with adoption targets by month. The owner kept the free product and the launch, and dropped the targets and the paid tier.
 
+The owner's goal is not funding. It is a product with many users that the owner built and launched, so the owner is known as a startup founder and not only for government and 18F work. The owner knows the people this tool serves and can bring in organizations through partnerships, which is why a free product works.
+
 ## Decision
 
 - **Owner:** the product is free. It costs little to run, so there is no paid tier, no trial, no card and no pricing page. The launch makes no promise about whether it stays free.
