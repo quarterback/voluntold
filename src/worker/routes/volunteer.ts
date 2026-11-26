@@ -7,6 +7,7 @@ import { readAvailability } from './people';
 import { cleanText, fail, hashToken, newId, newToken } from '../util';
 import { answerAsk, candidates, cantMakeIt, sweep, takeOpenWork } from '../engine';
 import { DAY } from '../../shared/rules';
+import { BRAND } from '../../shared/brand';
 
 const VOLUNTEER_COOKIE = 'vs';
 const SESSION_LIFETIME = 14 * DAY;
@@ -54,7 +55,7 @@ export interface PageMeta {
 export function page(title: string, body: string, meta?: PageMeta): string {
   const tags = meta
     ? `<meta name="description" content="${escapeHtml(meta.description)}">
-<meta property="og:site_name" content="Volley"><meta property="og:type" content="website">
+<meta property="og:site_name" content="${escapeHtml(BRAND.name)}"><meta property="og:type" content="website">
 <meta property="og:title" content="${escapeHtml(title)}"><meta property="og:description" content="${escapeHtml(meta.description)}">
 <meta property="og:url" content="${escapeHtml(meta.url)}"><meta property="og:image" content="${escapeHtml(meta.image)}">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">

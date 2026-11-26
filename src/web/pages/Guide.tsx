@@ -12,6 +12,7 @@ import { useOrg } from './OrgShell';
 import { errorText } from './common';
 import { FONT_DISPLAY } from '../theme';
 import { sampleKind } from '../../shared/samples';
+import { BRAND } from '../../shared/brand';
 
 // The demo guide (docs/specs/demo.md). It sits beside the real screens in a
 // sample organization and explains every feature: what it does, how it's
@@ -82,13 +83,13 @@ const STOPS: Stop[] = [
   },
   {
     group: 'needs', path: firstNeed, title: 'Offer the assignments that have people',
-    body: "Each assignment shows the person who fits and has waited longest, or a gap when nobody fits. Supplies and information are listed with what you still need. When you tap Offer, Volley publishes the assignments that have people and sends each one its first round of asks.",
+    body: `Each assignment shows the person who fits and has waited longest, or a gap when nobody fits. Supplies and information are listed with what you still need. When you tap Offer, ${BRAND.name} publishes the assignments that have people and sends each one its first round of asks.`,
     tryIt: 'Mark a supply covered, or tap Offer on an active need.',
     ask: 'Before you ask anyone, what else has to be in place?',
   },
   {
     group: 'tasks', path: 'tasks', title: 'See every task and where it stands',
-    body: "A task is a draft, open, filled, canceled or done. The list shows when each one happens, how many spots are filled and how many people haven't answered yet. When a task's time passes, Volley marks it done.",
+    body: `A task is a draft, open, filled, canceled or done. The list shows when each one happens, how many spots are filled and how many people haven't answered yet. When a task's time passes, ${BRAND.name} marks it done.`,
     tryIt: 'Open a task that is open.',
     ask: "Where do you keep track of what's filled today?",
   },
@@ -100,13 +101,13 @@ const STOPS: Stop[] = [
   },
   {
     group: 'tasks', path: 'tasks/new', title: 'Say who the task needs',
-    body: "You write requirements against your own fields: a skill, an experience level, a cleared background check, a certification or a team. Volley asks only the people who meet every requirement.",
+    body: `You write requirements against your own fields: a skill, an experience level, a cleared background check, a certification or a team. ${BRAND.name} asks only the people who meet every requirement.`,
     tryIt: 'Add a requirement and pick a field.',
     ask: 'What decides who you can ask for a task?',
   },
   {
     group: 'tasks', path: 'tasks/new', title: 'Choose how to ask',
-    body: "Choose In batches to ask a few people at a time, starting with those who fit and have waited longest. Volley tells you when the next batch is due. Choose All eligible to ask everyone who fits at once; the first to accept get the spots. Choose Manual to pick names yourself. Your organization also sets how many times one person can be asked in a week.",
+    body: `Choose In batches to ask a few people at a time, starting with those who fit and have waited longest. ${BRAND.name} tells you when the next batch is due. Choose All eligible to ask everyone who fits at once; the first to accept get the spots. Choose Manual to pick names yourself. Your organization also sets how many times one person can be asked in a week.`,
     tryIt: 'Change the method under Asks and watch the batch fields appear.',
     ask: 'How do you decide who to ask?',
   },
@@ -124,13 +125,13 @@ const STOPS: Stop[] = [
   },
   {
     group: 'tasks', path: firstOpenTask, title: "See why someone can't be asked",
-    body: "When you ask, Volley lists who fits, longest wait first, and who it can't ask and why: they're missing a requirement, they've hit the weekly limit, they're busy then, they're paused or they haven't agreed to be contacted.",
+    body: `When you ask, ${BRAND.name} lists who fits, longest wait first, and who it can't ask and why: they're missing a requirement, they've hit the weekly limit, they're busy then, they're paused or they haven't agreed to be contacted.`,
     tryIt: 'Open Ask and read the Not eligible list.',
     ask: 'Which of these reasons would you drop?',
   },
   {
     group: 'tasks', path: firstOpenTask, title: 'What happens after someone says yes',
-    body: "When a person accepts, they hold a spot. When the task's time passes, Volley counts the spot as attended unless you mark a no-show. A volunteer can cancel their spot, which opens it again, or report a problem, which shows up on Today.",
+    body: `When a person accepts, they hold a spot. When the task's time passes, ${BRAND.name} counts the spot as attended unless you mark a no-show. A volunteer can cancel their spot, which opens it again, or report a problem, which shows up on Today.`,
     tryIt: 'Find a spot and mark it, then undo it.',
     ask: "What happens today when someone says yes and doesn't come?",
   },
@@ -142,7 +143,7 @@ const STOPS: Stop[] = [
   },
   {
     group: 'people', path: 'people', title: 'Group people by what they can do',
-    body: "Volley proposes tags from what people can do, marks a new tag until you look at it and lets you merge two. A tier says how often someone volunteers: one time, seasonal, regular or core. Availability is their hours a week, their usual times and whether remote work suits them. Work outside those times doesn't fit them.",
+    body: `${BRAND.name} proposes tags from what people can do, marks a new tag until you look at it and lets you merge two. A tier says how often someone volunteers: one time, seasonal, regular or core. Availability is their hours a week, their usual times and whether remote work suits them. Work outside those times doesn't fit them.`,
     tryIt: 'Tap a tag or a tier to filter the list.',
     ask: 'What would you group your people by?',
   },
@@ -160,7 +161,7 @@ const STOPS: Stop[] = [
   },
   {
     group: 'offers', path: 'offers', title: 'Give new volunteers their first ask',
-    body: "For each approved person you've never asked, Volley suggests the open work that fits them best: remote work first, then work that uses a skill they have, then the shortest. You approve each suggestion or skip it.",
+    body: `For each approved person you've never asked, ${BRAND.name} suggests the open work that fits them best: remote work first, then work that uses a skill they have, then the shortest. You approve each suggestion or skip it.`,
     tryIt: 'Approve one offer and skip another.',
     ask: 'How long does a new volunteer wait before you ask them for anything?',
   },
@@ -173,7 +174,7 @@ const STOPS: Stop[] = [
   },
   {
     group: 'import', path: 'import', title: 'Bring in the list you already have',
-    body: "You can bring in a CSV, Excel, XML or JSON file, or a text, Word or PDF file that a model reads. Volley suggests which column goes to which field, shows likely duplicates side by side and sets aside anyone with no email or phone, because you can't send them a link. This sample has one import on record, and the rest of the demo works without one.",
+    body: `You can bring in a CSV, Excel, XML or JSON file, or a text, Word or PDF file that a model reads. ${BRAND.name} suggests which column goes to which field, shows likely duplicates side by side and sets aside anyone with no email or phone, because you can't send them a link. This sample has one import on record, and the rest of the demo works without one.`,
     ask: 'What shape is your list in now?',
   },
   {
@@ -184,7 +185,7 @@ const STOPS: Stop[] = [
   },
   {
     group: 'settings', path: 'settings', title: 'Add the people who run the tool',
-    body: "Members run the tool as admins, coordinators or team leads. The weekly ask limit caps how often one person can be asked. You can connect your organization's Bluesky account and post public tasks there; volunteer details stay in Volley. Export downloads everything as CSV and JSON.",
+    body: `People who run the tool are admins, coordinators or team leads. The weekly ask limit caps how often one person can be asked. You can connect your organization's Bluesky account and post public tasks there; volunteer details stay in ${BRAND.name}. Export downloads everything as CSV and JSON.`,
     ask: 'Who at your organization would use this?',
   },
   {
@@ -321,7 +322,7 @@ export function Guide() {
         {stop.action === 'volunteer' && <Button size="small" variant="outlined" onClick={openVolunteer} sx={{ ...ghost, mt: 2 }}>Open volunteer page</Button>}
         {stop.action === 'feedback' && (
           <Stack spacing={1} sx={{ mt: 2, alignItems: 'flex-start' }}>
-            <Button size="small" variant="contained" href="mailto:hello@vloora.com?subject=Volley%20demo" sx={lime}>Email hello@vloora.com</Button>
+            <Button size="small" variant="contained" href={`mailto:${BRAND.contact}?subject=${encodeURIComponent(`${BRAND.name} demo`)}`} sx={lime}>{`Email ${BRAND.contact}`}</Button>
             <Button size="small" variant="outlined" onClick={() => navigate('/start?demo=1')} sx={ghost}>Switch sample organization</Button>
           </Stack>
         )}

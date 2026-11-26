@@ -4,6 +4,8 @@ import type { Dataset, Person } from './common';
 // The story: a professional association whose members staff its own events.
 // The fall conference is two weeks out and short of room monitors; a new
 // mentoring cohort is being set up; and the newsletter always needs copy.
+// Members renew each year, the treasurer's term ends soon, and nobody holds
+// the mentorship lead role yet.
 const PEOPLE: Person[] = [
   { name: 'Alicia Moreno', skills: ['Facilitation', 'Mentoring'], exp: 'Can lead', tier: 'core', days: ['tue_eve', 'thu_eve'], hours: 6, remote: true, joined: 900, asked: 4 },
   { name: 'Ben Okoye', skills: ['Event setup', 'Photography'], exp: 'Has done it before', tier: 'regular', days: ['sat_am', 'sat_pm'], hours: 5, remote: false, joined: 420, asked: 12 },
@@ -54,6 +56,32 @@ export const membership: Dataset = {
   import: {
     fileName: 'members-export.xlsx', added: 19, merged: 1,
     setAside: [{ row: 14, cells: { 'Full name': 'T. Osei', Email: '', Mobile: '' }, reason: 'No email or phone' }],
+  },
+  membership: {
+    peopleWord: 'members',
+    categories: ['Professional', 'Student', 'Life member'],
+    trackRenewals: true,
+    renewalUrl: 'https://example.com/renew',
+    joinOpen: true,
+    // Renewal dates spread across the year, so every renewal report has people in it.
+    person(p, i) {
+      const category = ['Dmitri Volkov', 'Olu Bankole'].includes(p.name) ? 'Life member' : p.joined < 60 ? 'Student' : 'Professional';
+      if (category === 'Life member') return { category, since: -p.joined };
+      const expires = [9, 21, 38, 52, 74, 88, -12, -40, 140, 200, 260, 310, 16, 66, -70, 120, 180, 230, 29, 95][i % 20];
+      return { category, since: -p.joined, expires, duesPaid: expires > 0 ? expires - 365 : undefined };
+    },
+    roles: [
+      { name: 'Board chair', responsibilities: 'Runs board meetings and signs contracts with venues.', holder: { name: 'Alicia Moreno', started: -400, ends: 330 }, past: [{ name: 'Dmitri Volkov', started: -1130, ended: -400 }] },
+      { name: 'Treasurer', responsibilities: 'Keeps the books, files the annual return and reports dues each quarter.', handoff: 'The bank needs the new treasurer on the signature card. The annual return is due in March.', holder: { name: 'Olu Bankole', started: -700, ends: 34 } },
+      { name: 'Conference chair', responsibilities: 'Plans the fall conference with the venue, speakers and volunteers.', holder: { name: 'Rosa Kim', started: -300, ends: 65 }, tasks: ['Signage setup'] },
+      { name: 'Mentorship lead', responsibilities: 'Recruits mentors, matches them with mentees and checks in each month.', handoff: 'Fourteen mentee applications are in. The spring cohort starts in six weeks.', past: [{ name: 'Imani Walker', started: -760, ended: -30 }], tasks: ['Match mentees to mentors'] },
+      { name: 'Newsletter editor', responsibilities: 'Edits the monthly newsletter and finds writers for each issue.', holder: { name: 'Keiko Mori', started: -360, ends: 220 }, tasks: ['Proofread the November newsletter'] },
+      { name: 'South chapter lead', responsibilities: 'Hosts the monthly South chapter meeting.', holder: { name: 'Jonas Berg', started: -180, ends: 185 } },
+    ],
+    applications: [
+      { name: 'Ama Owusu', category: 'Professional', note: 'Product designer, new to Riverbend. Happy to help with the conference.', daysAgo: 2 },
+      { name: 'Leo Brandt', category: 'Student', note: 'Design student at the community college.', daysAgo: 1 },
+    ],
   },
   async story({ now, at, until, req, task, ask, need, item }) {
     const setup = req('Skills', 'includes', 'Event setup');

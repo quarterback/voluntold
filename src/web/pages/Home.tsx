@@ -5,6 +5,7 @@ import { useTheme } from '@mui/material/styles';
 import { Wordmark } from '../Wordmark';
 import { FONT_DISPLAY } from '../theme';
 import { BROWSER_DEMO } from '../demoMode';
+import { BRAND } from '../../shared/brand';
 
 /** The product page. Everyone lands here; signed-in people get a button into the app. */
 export function Home() {
@@ -20,7 +21,7 @@ export function Home() {
   const demo = () => navigate(BROWSER_DEMO || signedIn ? '/start?demo=1' : '/login?next=' + encodeURIComponent('/start?demo=1'));
   // On the live site, new organizations sign up here. The browser demo has no accounts.
   const enter = () => navigate(signedIn ? '/start' : '/login?signup=1');
-  const enterLabel = signedIn ? 'Open Volley' : 'Request free access';
+  const enterLabel = signedIn ? `Open ${BRAND.name}` : 'Request free access';
   const signIn = () => navigate('/login');
   const lime = { bgcolor: vt.lime, color: vt.onLime, '&:hover': { bgcolor: '#B3E12A' } };
   const outline = { color: vt.onInk, borderColor: vt.onInk, '&:hover': { borderColor: vt.onInk, bgcolor: 'rgba(255,255,255,0.08)' } };
@@ -51,7 +52,7 @@ export function Home() {
               Put your membership <Box component="em" sx={{ fontStyle: 'italic', color: vt.tangerine }}>to work.</Box>
             </Typography>
             <Typography sx={{ fontSize: { xs: '1.0625rem', md: '1.25rem' }, color: vt.onInk2, maxWidth: 600, mb: 1.5 }}>
-              Volley is free membership and volunteer management software for organizations that depend on their people.
+              {`${BRAND.name} is ${BRAND.description[0].toLowerCase()}${BRAND.description.slice(1)}`}
             </Typography>
             <Typography sx={{ fontSize: { xs: '1.0625rem', md: '1.25rem' }, color: vt.onInk2, maxWidth: 600, mb: 4 }}>
               Manage your roster, organize committees, recruit volunteers, fill positions and distribute responsibilities across your membership.
@@ -75,7 +76,7 @@ export function Home() {
           {[
             'Most groups keep their people in a spreadsheet and their asks in a group chat.',
             'The reliable few get asked again, and everyone else waits to be asked.',
-            'Volley asks the right people for each job and spreads the work across your list.',
+            `${BRAND.name} asks the right people for each job and spreads the work across your list.`,
           ].map((t) => <Typography key={t} sx={{ color: vt.text2, fontSize: { xs: '1.0625rem', md: '1.25rem' }, mb: 1 }}>{t}</Typography>)}
         </Box>
 
@@ -142,9 +143,9 @@ export function Home() {
 }
 
 const STEPS = [
-  { title: 'Bring your list', text: "Upload a spreadsheet or your old system's export. Volley recognizes the usual columns." },
+  { title: 'Bring your list', text: `Upload a spreadsheet or your old system's export. ${BRAND.name} recognizes the usual columns.` },
   { title: 'Set up your roles', text: 'Add your board, committees and positions, with who holds each one and until when.' },
-  { title: 'Put people to work', text: 'Write a task, and Volley emails the people who fit. Whoever has waited longest goes first.' },
+  { title: 'Put people to work', text: `Write a task, and ${BRAND.name} emails the people who fit. Whoever has waited longest goes first.` },
 ];
 
 const QUESTIONS = [
@@ -153,7 +154,7 @@ const QUESTIONS = [
   { q: 'Do our members need to pay dues?', a: ['No. Renewals and dues are off until you turn them on.'] },
   { q: 'What happens when a board member steps down?', a: ['Their role keeps its responsibilities, handoff notes and open tasks. The next person sees what they inherit.'] },
   { q: 'Can people apply to join?', a: ['Yes. Turn on your application page, share the link and accept each applicant.'] },
-  { q: 'Can we move from another system?', a: ['Yes. Export a CSV from your current software and import it. Volley recognizes common column names.'] },
+  { q: 'Can we move from another system?', a: [`Yes. Export a CSV from your current software and import it. ${BRAND.name} recognizes common column names.`] },
   { q: 'Do members need an account?', a: ['No. Each person gets email from you and answers from any phone.'] },
   { q: 'Can we take our data with us?', a: ['Yes. Export your roster and tasks whenever you want.'] },
 ];

@@ -8,6 +8,7 @@ import { SAMPLE_KINDS, sampleKind } from '../../shared/samples';
 import { BROWSER_DEMO, StartOverButton } from '../demoMode';
 import { DemoIntro } from './DemoIntro';
 import { CURRENT_TOOLS, SIZE_BANDS } from '../../shared/membership';
+import { BRAND } from '../../shared/brand';
 
 interface About {
   website: string;
@@ -94,7 +95,7 @@ export function Start() {
   if (wantDemo) {
     return (
       <Box sx={{ maxWidth: 720, mx: 'auto', px: 2, py: { xs: 5, md: 8 } }}>
-        <Box component="a" href="/" aria-label="Volley home" onClick={(e: React.MouseEvent) => { e.preventDefault(); navigate('/'); }} sx={{ display: 'inline-block', mb: 3, color: 'text.primary' }}><Wordmark height={32} /></Box>
+        <Box component="a" href="/" aria-label={`${BRAND.name} home`} onClick={(e: React.MouseEvent) => { e.preventDefault(); navigate('/'); }} sx={{ display: 'inline-block', mb: 3, color: 'text.primary' }}><Wordmark height={32} /></Box>
         <DemoIntro />
         <Typography variant="h2" component="h2" sx={{ mb: 2 }}>Pick a sample organization</Typography>
         {problem && <Alert severity="error" sx={{ mb: 2 }}>{problem}</Alert>}

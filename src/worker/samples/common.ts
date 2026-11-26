@@ -63,6 +63,28 @@ export interface Dataset {
   story(ctx: Ctx): Promise<void>;
   /** A partner organization that can take open work. */
   partner?: { name: string; skills: string[]; people: [string, string[]][] };
+  /** Membership details, roles and applications (docs/decisions/0014 and 0015). */
+  membership?: SampleMembership;
+}
+
+export interface SampleMembership {
+  peopleWord: 'volunteers' | 'members' | 'participants';
+  categories: string[];
+  trackRenewals: boolean;
+  renewalUrl?: string;
+  joinOpen?: boolean;
+  /** Days are relative to today: negative is in the past. */
+  person(p: Person, index: number): { category: string; expires?: number; duesPaid?: number; since: number };
+  roles: {
+    name: string;
+    responsibilities: string;
+    handoff?: string;
+    holder?: { name: string; started: number; ends?: number };
+    past?: { name: string; started: number; ended: number }[];
+    /** Titles of tasks that belong to the role. */
+    tasks?: string[];
+  }[];
+  applications?: { name: string; category: string; note: string; daysAgo: number }[];
 }
 
 export const DAY_TEXT: Record<string, string> = {

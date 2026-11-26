@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploy the demo to volleydemo.vloora.com.
+# Deploy the demo to volleydemo.vloora.com (and demo.manyarms.app once it's routed).
 #
 # The demo runs in the visitor's browser: the app's own routes run in the page
 # over SQLite and save to that browser's storage. There's no sign-in, and

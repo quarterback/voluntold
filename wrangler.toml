@@ -48,3 +48,25 @@ migrations_dir = "migrations"
 DEV_MODE = "1"
 APP_URL = "https://voluntold-demo.square-dawn-9932.workers.dev"
 ATPROTO_TASK_NSID = ""
+
+# The real product at manyarms.app: sign-up, accounts and email. Deploy with
+# scripts/deploy-production.sh, following docs/launch/deploy.md. manyarms.app
+# must be on the same Cloudflare account before the first deploy.
+[env.production]
+routes = [{ pattern = "manyarms.app", custom_domain = true }]
+
+[env.production.triggers]
+crons = ["*/15 * * * *"]
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "manyarms"
+database_id = "a617ba31-ad31-44fa-aaa2-572c20696e18"
+migrations_dir = "migrations"
+
+[env.production.vars]
+DEV_MODE = "0"
+APP_URL = "https://manyarms.app"
+ATPROTO_TASK_NSID = ""
+# ADMIN_EMAILS, the people who approve new organizations, is a secret here so
+# no personal address is committed: npx wrangler secret put ADMIN_EMAILS --env production

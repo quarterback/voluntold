@@ -1,6 +1,6 @@
-# Volunteer tool (working title)
+# ManyArms
 
-A Vloora product. The product name is undecided.
+A Vloora product: free membership and volunteer management software for organizations that depend on their people. The repository keeps its old name, voluntold.
 
 Organizations already have volunteers but don't know how to put them to work, so people who said they'd help are never asked. This tool organizes the volunteers an organization has, by the details it cares about. It helps the organization ask the right people for each task, and records the work as done when its time passes. Volunteers answer from a link on their phone, with no account. Tasks an organization posts live in its own AT Protocol account.
 
@@ -57,7 +57,7 @@ npx wrangler dev                      # http://localhost:8787
 
 Sign in with any email. In dev mode the code shows on the screen. "Try the demo" opens the sample organizations and the guide. You can also import `samples/volunteers.csv`.
 
-To run the browser demo, the one at volleydemo.vloora.com, use `npm run dev:demo`. It needs no database or worker.
+To run the browser demo, the one at volleydemo.vloora.com (moving to demo.manyarms.app), use `npm run dev:demo`. It needs no database or worker.
 
 ## Check it
 
