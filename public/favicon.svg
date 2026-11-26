@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ManyArms">
   <title>ManyArms</title>
   <rect width="512" height="512" rx="104" fill="#14112B"/>
-  <path transform="translate(74.38 384.88) scale(0.36)" fill="#C6F432" d="M261 0H57V-716H336L499 -252H509L668 -716H952V0H748V-430H738L586 0H423L271 -429H261Z"/>
+  <path transform="translate(116.08 410.22) scale(0.44)" fill="#C6F432" d="M285 -191C292 -177 303 -171 319 -171C335 -171 345 -178 352 -192L446 -398V-31C446 -11 456 -1 476 -1H556C576 -1 586 -11 586 -31V-671C586 -691 576 -701 556 -701H476C456 -701 441 -692 433 -674L318 -423L203 -673C195 -691 180 -700 160 -700H80C60 -700 50 -690 50 -670V-30C50 -10 60 0 80 0H160C180 0 190 -10 190 -30V-397Z"/>
 </svg>
