@@ -126,11 +126,13 @@ orgRoutes.patch('/', async (c) => {
   }
   const joinOpen = body.joinOpen === undefined ? org.join_open : body.joinOpen ? 1 : 0;
   const trackRenewals = body.trackRenewals === undefined ? org.track_renewals : body.trackRenewals ? 1 : 0;
+  const renewalMode = body.renewalMode === undefined ? org.renewal_mode : body.renewalMode;
+  if (renewalMode !== 'auto' && renewalMode !== 'manual') fail(400, 'Choose automatic or manual reminders.');
   await c.env.DB.prepare(
     `UPDATE orgs SET name = ?, weekly_ask_limit = ?, signup_url = ?, publish_default = ?, time_zone = ?,
-       people_word = ?, member_categories_json = ?, renewal_days = ?, renewal_url = ?, join_open = ?, track_renewals = ? WHERE id = ?`,
+       people_word = ?, member_categories_json = ?, renewal_days = ?, renewal_url = ?, join_open = ?, track_renewals = ?, renewal_mode = ? WHERE id = ?`,
   )
-    .bind(name, limit, signup, publishDefault, tz, word, categories, renewalDays, renewalUrl, joinOpen, trackRenewals, actor.orgId)
+    .bind(name, limit, signup, publishDefault, tz, word, categories, renewalDays, renewalUrl, joinOpen, trackRenewals, renewalMode, actor.orgId)
     .run();
   return c.json({ org: publicOrg((await loadOrg(c.env.DB, actor.orgId))!) });
 });

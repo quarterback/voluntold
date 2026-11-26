@@ -25,6 +25,8 @@ The owner read the [membership research](../research/membership-language-2026-11
 - **Agent:** a person's page shows their roles, and how many times they were asked, accepted and took part.
 - **Owner, November 26:** "Expiring members should be a report you run nobody is gonna view 000s of menbwrs in a snapshot youbhave tomake this tool's reports scannable". Renewal status moved off the People list into a Reports screen.
 - **Agent:** Reports show counts first. Renewal groups don't overlap (next 30 days, 31 to 60, 61 to 90, expired in the last 90), and picking one lists only those people, with Export CSV and Email. The screen also counts participation, roles and applications.
+- **Owner, November 26:** "It can autosend updates or hage the person be able to do it manuually". Renewal reminders are automatic or manual, set per organization.
+- **Agent:** automatic is the default. In manual mode nothing goes out on a schedule. Reports shows who has been reminded, and "Send reminders" sends the standard renewal email to the people in a group who haven't been reminded for their current expiry date. A person counts as reminded only when the email goes out.
 - **Agent:** the sign-up page is titled "Request free access". Approval from 0013 is the control on registration.
 
 ## Consequences

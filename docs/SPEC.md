@@ -116,7 +116,7 @@ Asks, confirmations and reminders come from the organization's name, and replies
 
 From [decision 0014](decisions/0014-membership-management.md). Each person can have a membership category, a member since date, an expiry date and a dues paid date. Renewal status lives in Reports, not on the People screen. Each organization chooses whether its people are called volunteers, members or participants.
 
-- **Renewal reminders** go out once per expiry date, 30 days before by default, with the organization's renewal link.
+- **Renewal reminders** are automatic or manual, the organization's choice. Automatic ones go out once per expiry date, 30 days before by default, with the organization's renewal link. Manual ones go out when a coordinator sends them to a group from Reports. Either way, a person counts as reminded only once their email has gone out.
 - **Applications:** an organization can open a public page where adults apply. A coordinator accepts or declines each one. Accepting adds the person.
 - **Group email:** a coordinator filters the People screen and emails everyone shown. It skips people who haven't agreed to be contacted or who unsubscribed. Every group email and renewal reminder has an unsubscribe link.
 - **Dues** are recorded, not collected.

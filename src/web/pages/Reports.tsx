@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Card, CardActionArea, CardContent, Divider, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
+import { Alert, Button, Card, CardActionArea, CardContent, Divider, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { api } from '../api';
 import { useOrg } from './OrgShell';
-import { Loading, Page, Section, useLoad } from './common';
+import { Loading, Page, Section, errorText, useDialogs, useLoad } from './common';
 import { FONT_DISPLAY } from '../theme';
 import { MessageDialog, peopleWords } from './membership';
 
@@ -26,6 +26,7 @@ interface RenewalRow {
   category: string | null;
   expiresAt: number;
   duesPaidAt: number | null;
+  reminded: boolean;
 }
 
 const GROUP_LABEL: Record<Group, string> = {
@@ -109,12 +110,29 @@ export function Reports() {
 }
 
 function Renewals({ counts, canEdit }: { counts: Record<Group, number>; canEdit: boolean }) {
-  const { path } = useOrg();
+  const { path, org } = useOrg();
   const navigate = useNavigate();
+  const dialogs = useDialogs();
+  const [notice, setNotice] = useState<{ tone: 'success' | 'warning' | 'error'; text: string } | null>(null);
   const [group, setGroup] = useState<Group>('d30');
   const [messaging, setMessaging] = useState(false);
   const rows = useLoad(() => api<{ rows: RenewalRow[] }>(path(`/reports/renewals/${group}`)), [group, path]);
   const list = rows.data?.rows ?? [];
+  const due = list.filter((r) => !r.reminded && r.email).length;
+  const NOT_SENT: Record<string, string> = { off: 'Email is off', limit: 'Daily limit reached', failed: 'Email failed' };
+  async function remind() {
+    if (!(await dialogs.confirm({ title: `Send renewal reminders to ${due} people?`, confirm: 'Send reminders' }))) return;
+    setNotice(null);
+    try {
+      const res = await api<{ sent: number; recipients: number; reason: string | null }>(path(`/reports/renewals/${group}/remind`), { body: {} });
+      setNotice(res.sent === res.recipients
+        ? { tone: 'success', text: `Sent ${res.sent}` }
+        : { tone: 'warning', text: `Sent ${res.sent} of ${res.recipients}: ${NOT_SENT[res.reason ?? ''] ?? 'Not sent'}` });
+      await rows.reload();
+    } catch (err) {
+      setNotice({ tone: 'error', text: errorText(err) });
+    }
+  }
   return (
     <Section title="Renewals">
       <Counts>
@@ -126,9 +144,12 @@ function Renewals({ counts, canEdit }: { counts: Record<Group, number>; canEdit:
         <Typography variant="h3">{GROUP_LABEL[group]}</Typography>
         <Stack direction="row" spacing={1}>
           <Button size="small" variant="outlined" disabled={list.length === 0} href={path(`/reports/renewals/${group}?format=csv`)}>Export CSV</Button>
-          {canEdit && <Button size="small" variant="contained" disabled={list.length === 0} onClick={() => setMessaging(true)}>Email {list.length}</Button>}
+          {canEdit && <Button size="small" variant="outlined" disabled={list.length === 0} onClick={() => setMessaging(true)}>Email {list.length}</Button>}
+          {canEdit && <Button size="small" variant="contained" disabled={due === 0} onClick={remind}>{due === 0 && list.length > 0 ? 'All reminded' : `Send ${due} reminders`}</Button>}
         </Stack>
       </Stack>
+      {org.renewalMode === 'auto' && <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Reminders send automatically</Typography>}
+      {notice && <Alert severity={notice.tone} sx={{ mb: 1.5 }} onClose={() => setNotice(null)}>{notice.text}</Alert>}
       {!rows.data ? <Loading error={rows.error} /> : list.length === 0 ? <Typography color="text.secondary">None</Typography> : (
         <TableContainer sx={{ maxHeight: 480 }}>
           <Table size="small" stickyHeader>
@@ -138,6 +159,7 @@ function Renewals({ counts, canEdit }: { counts: Record<Group, number>; canEdit:
                 <TableCell sx={wide}>Category</TableCell>
                 <TableCell>Expires</TableCell>
                 <TableCell sx={wide}>Dues paid</TableCell>
+                <TableCell>Reminded</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -150,6 +172,7 @@ function Renewals({ counts, canEdit }: { counts: Record<Group, number>; canEdit:
                   <TableCell sx={wide}>{r.category}</TableCell>
                   <TableCell sx={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{md(r.expiresAt)}</TableCell>
                   <TableCell sx={{ ...wide, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{md(r.duesPaidAt)}</TableCell>
+                  <TableCell>{r.reminded ? 'Yes' : ''}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -127,6 +127,7 @@ export function publicOrg(r: Row) {
     renewalUrl: r.renewal_url ?? null,
     joinOpen: r.join_open === 1,
     trackRenewals: r.track_renewals === 1,
+    renewalMode: r.renewal_mode ?? 'auto',
     atproto: r.atproto_did ? { did: r.atproto_did, handle: r.atproto_handle, service: r.atproto_service } : null,
   };
 }

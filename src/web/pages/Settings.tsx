@@ -86,7 +86,7 @@ function MembershipSection() {
   const { error, run } = useAction();
   const [saved, setSaved] = useState(false);
   const [form, setForm] = useState({
-    peopleWord: org.peopleWord, renewalDays: org.renewalDays, renewalUrl: org.renewalUrl ?? '', joinOpen: org.joinOpen, trackRenewals: org.trackRenewals,
+    peopleWord: org.peopleWord, renewalDays: org.renewalDays, renewalUrl: org.renewalUrl ?? '', joinOpen: org.joinOpen, trackRenewals: org.trackRenewals, renewalMode: org.renewalMode,
   });
   const admin = me.role === 'admin';
   const joinLink = `${location.origin}/join/${org.id}`;
@@ -116,9 +116,18 @@ function MembershipSection() {
           </Stack>
         </Box>
         <FormControlLabel control={<Switch size="small" disabled={!admin} checked={form.trackRenewals} onChange={(e) => setForm({ ...form, trackRenewals: e.target.checked })} />} label="Track renewals and dues" />
+        {form.trackRenewals && (
+          <FormControl fullWidth>
+            <InputLabel id="renewal-mode">Renewal reminders</InputLabel>
+            <Select labelId="renewal-mode" label="Renewal reminders" value={form.renewalMode} disabled={!admin} onChange={(e) => setForm({ ...form, renewalMode: e.target.value as 'auto' | 'manual' })}>
+              <MenuItem value="auto">Send automatically</MenuItem>
+              <MenuItem value="manual">Send from Reports</MenuItem>
+            </Select>
+          </FormControl>
+        )}
         {form.trackRenewals && <Stack direction="row" spacing={1.5}>
-          <TextField label="Renewal reminder days" type="number" disabled={!admin} value={form.renewalDays} sx={{ width: 200, flexShrink: 0 }}
-            onChange={(e) => setForm({ ...form, renewalDays: Number(e.target.value) })} slotProps={{ htmlInput: { min: 0, max: 120 } }} />
+          {form.renewalMode === 'auto' && <TextField label="Renewal reminder days" type="number" disabled={!admin} value={form.renewalDays} sx={{ width: 200, flexShrink: 0 }}
+            onChange={(e) => setForm({ ...form, renewalDays: Number(e.target.value) })} slotProps={{ htmlInput: { min: 0, max: 120 } }} />}
           <TextField label="Renewal link" placeholder="https://" disabled={!admin} value={form.renewalUrl} onChange={(e) => setForm({ ...form, renewalUrl: e.target.value })} />
         </Stack>}
         <FormControlLabel control={<Switch size="small" disabled={!admin} checked={form.joinOpen} onChange={(e) => setForm({ ...form, joinOpen: e.target.checked })} />} label="Open application page" />

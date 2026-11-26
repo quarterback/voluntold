@@ -6,6 +6,8 @@ import { Hono } from 'hono';
 import type { AppBindings } from '../env';
 import { loadOrg } from '../db';
 import { fail } from '../util';
+import { must } from '../auth';
+import { memberEmail, remindRenewals, type RenewalPerson } from '../mail';
 import { DAY } from '../../shared/rules';
 import { ENDING_SOON } from './roles';
 
@@ -72,11 +74,11 @@ reportRoutes.get('/reports/renewals/:group', async (c) => {
   if (!RENEWAL_GROUPS.includes(group)) fail(404, 'Not found');
   const [from, to] = window(group, c.get('now'));
   const { results } = await c.env.DB.prepare(
-    `SELECT id, name, email, member_category, member_expires_at, dues_paid_at FROM volunteers
+    `SELECT id, name, email, member_category, member_expires_at, dues_paid_at, renewal_reminded_for FROM volunteers
      WHERE org_id = ? AND member_expires_at > ? AND member_expires_at <= ? ORDER BY member_expires_at, name LIMIT 5000`,
   )
     .bind(orgId, from, to)
-    .all<{ id: string; name: string; email: string | null; member_category: string | null; member_expires_at: number; dues_paid_at: number | null }>();
+    .all<{ id: string; name: string; email: string | null; member_category: string | null; member_expires_at: number; dues_paid_at: number | null; renewal_reminded_for: number | null }>();
 
   if (c.req.query('format') === 'csv') {
     const day = (ms: number | null) => (ms === null ? '' : new Date(ms).toISOString().slice(0, 10));
@@ -93,6 +95,40 @@ reportRoutes.get('/reports/renewals/:group', async (c) => {
     return c.body(lines.join('\n') + '\n');
   }
   return c.json({
-    rows: results.map((r) => ({ id: r.id, name: r.name, email: r.email, category: r.member_category, expiresAt: r.member_expires_at, duesPaidAt: r.dues_paid_at })),
+    rows: results.map((r) => ({
+      id: r.id, name: r.name, email: r.email, category: r.member_category, expiresAt: r.member_expires_at, duesPaidAt: r.dues_paid_at,
+      reminded: r.renewal_reminded_for !== null && r.renewal_reminded_for === r.member_expires_at,
+    })),
+  });
+});
+
+/**
+ * Sends the renewal reminder to everyone in a group now. People who were
+ * already reminded for this expiry date are skipped unless the coordinator
+ * asks to send again. Only people who agreed to be contacted and haven't
+ * unsubscribed get it.
+ */
+reportRoutes.post('/reports/renewals/:group/remind', async (c) => {
+  const actor = c.get('actor');
+  must(actor, 'manage_people');
+  const group = c.req.param('group') as RenewalGroup;
+  if (!RENEWAL_GROUPS.includes(group)) fail(404, 'Not found');
+  const body = await c.req.json().catch(() => ({}));
+  const now = c.get('now');
+  const [from, to] = window(group, now);
+  const { results } = await c.env.DB.prepare(
+    `SELECT id, name, email, member_category, member_expires_at, renewal_reminded_for FROM volunteers
+     WHERE org_id = ? AND member_expires_at > ? AND member_expires_at <= ?
+       AND status != 'stopped' AND contact_ok_at IS NOT NULL AND email IS NOT NULL LIMIT 5000`,
+  )
+    .bind(actor.orgId, from, to)
+    .all<RenewalPerson & { renewal_reminded_for: number | null }>();
+  const people = body.again === true ? results : results.filter((r) => r.renewal_reminded_for !== r.member_expires_at);
+  const statuses = await remindRenewals(c.env, actor.orgId, people, await memberEmail(c.env.DB, actor.memberId), now);
+  return c.json({
+    sent: statuses.filter((s) => s === 'sent').length,
+    recipients: people.length,
+    alreadyReminded: results.length - people.length,
+    reason: statuses.find((s) => s !== 'sent') ?? null,
   });
 });

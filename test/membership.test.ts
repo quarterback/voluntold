@@ -22,6 +22,44 @@ async function approve(orgId: string) {
 
 afterEach(() => vi.restoreAllMocks());
 
+describe('renewal reminders, automatic or manual', () => {
+  it('sends nothing on schedule in manual mode, and sends from Reports once per expiry date', async () => {
+    const org = await newOrg('Manual Org');
+    await approve(org.orgId);
+    await org.client.patch(org.api(''), { trackRenewals: true, renewalMode: 'manual' });
+    expect((await org.client.get(org.api(''))).body.org.renewalMode).toBe('manual');
+    const now = Date.now();
+    await addVolunteer(org, 'Due Soon', {}, { memberExpiresAt: now + 10 * DAY });
+    await org.client.post(org.api('/volunteers'), { name: 'No Consent', email: 'nc@example.com', memberExpiresAt: now + 12 * DAY });
+
+    const sent = fakeResend();
+    await sendDueEmails(withMail(), now);
+    expect(sent.filter((m) => m.from.includes('Manual Org'))).toHaveLength(0);
+
+    // The test server has no email provider: the right person is chosen, nothing goes out, and nobody is marked reminded.
+    const first = (await org.client.post(org.api('/reports/renewals/d30/remind'))).body;
+    expect(first).toMatchObject({ recipients: 1, sent: 0, alreadyReminded: 0, reason: 'off' });
+    const rows = (await org.client.get(org.api('/reports/renewals/d30'))).body.rows;
+    expect(rows.find((r: any) => r.name === 'Due Soon').reminded).toBe(false);
+    expect((await org.client.post(org.api('/reports/renewals/d30/remind'))).body.recipients).toBe(1);
+    expect((await org.client.patch(org.api(''), { renewalMode: 'sometimes' })).status).toBe(400);
+  });
+
+  it('marks people reminded only when the reminder goes out', async () => {
+    const org = await newOrg('Sent Org');
+    await approve(org.orgId);
+    await org.client.patch(org.api(''), { trackRenewals: true, renewalMode: 'manual' });
+    const id = await addVolunteer(org, 'Due Soon', {}, { memberExpiresAt: Date.now() + 10 * DAY });
+    const sent = fakeResend();
+    const { remindRenewals } = await import('../src/worker/mail');
+    const row = await env.DB.prepare('SELECT id, name, email, member_category, member_expires_at FROM volunteers WHERE id = ?').bind(id).first<any>();
+    expect(await remindRenewals(withMail(), org.orgId, [row], null, Date.now())).toEqual(['sent']);
+    expect(sent[0].subject).toMatch(/^Your Sent Org membership expires/);
+    const rows = (await org.client.get(org.api('/reports/renewals/d30'))).body.rows;
+    expect(rows[0].reminded).toBe(true);
+  });
+});
+
 describe('membership', () => {
   it('keeps category, dates and dues on each person, and exports them', async () => {
     const org = await newOrg('Coaches Association');

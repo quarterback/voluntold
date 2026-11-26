@@ -22,7 +22,7 @@ import { BROWSER_DEMO, StartOverButton } from '../demoMode';
 const SWITCH = BROWSER_DEMO ? '/start?demo=1' : '/start?choose=1';
 
 export interface OrgInfo {
-  org: { id: string; name: string; approved: boolean; peopleWord: 'volunteers' | 'members' | 'participants'; memberCategories: string[]; renewalDays: number; renewalUrl: string | null; joinOpen: boolean; trackRenewals: boolean; weeklyAskLimit: number; signupUrl: string | null; publishDefault: boolean; timeZone: string; sample: boolean; sampleKind: string | null; atproto: { did: string; handle: string } | null };
+  org: { id: string; name: string; approved: boolean; peopleWord: 'volunteers' | 'members' | 'participants'; memberCategories: string[]; renewalDays: number; renewalUrl: string | null; joinOpen: boolean; trackRenewals: boolean; renewalMode: 'auto' | 'manual'; weeklyAskLimit: number; signupUrl: string | null; publishDefault: boolean; timeZone: string; sample: boolean; sampleKind: string | null; atproto: { did: string; handle: string } | null };
   me: { role: 'admin' | 'coordinator' | 'lead'; memberId: string; leadTeamIds: string[]; email: string };
   atprotoReady: boolean;
   demo: boolean;

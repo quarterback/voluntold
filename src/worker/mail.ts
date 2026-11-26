@@ -384,10 +384,12 @@ export async function sendDueEmails(env: Env, now: number): Promise<void> {
  */
 async function sendRenewals(env: Env, now: number): Promise<void> {
   const db = env.DB;
+  // Nothing can go out, so nothing is marked, and the next run tries again.
+  if (!mailEnabled(env)) return;
   const { results } = await db
     .prepare(
       `SELECT v.id, v.org_id, v.name, v.email, v.member_category, v.member_expires_at FROM volunteers v JOIN orgs o ON o.id = v.org_id
-       WHERE o.track_renewals = 1 AND o.renewal_days > 0 AND v.member_expires_at > ? AND v.member_expires_at <= ? + o.renewal_days * 86400000
+       WHERE o.track_renewals = 1 AND o.renewal_mode = 'auto' AND o.approved_at IS NOT NULL AND o.sample = 0 AND o.renewal_days > 0 AND v.member_expires_at > ? AND v.member_expires_at <= ? + o.renewal_days * 86400000
          AND (v.renewal_reminded_for IS NULL OR v.renewal_reminded_for != v.member_expires_at)
          AND v.status != 'stopped' AND v.contact_ok_at IS NOT NULL AND v.email IS NOT NULL
        LIMIT 1000`,
@@ -396,21 +398,33 @@ async function sendRenewals(env: Env, now: number): Promise<void> {
     .all<{ id: string; org_id: string; name: string; email: string; member_category: string | null; member_expires_at: number }>();
   const byOrg = new Map<string, typeof results>();
   for (const r of results) byOrg.set(r.org_id, [...(byOrg.get(r.org_id) ?? []), r]);
-  for (const [orgId, rows] of byOrg) {
-    const org = await loadOrg(db, orgId);
-    if (!org) continue;
-    const admins = await coordinatorsFor(db, orgId, null);
-    const replyTo = admins[0]?.email ?? null;
-    const mails: Outgoing[] = [];
-    for (const r of rows) {
-      mails.push({
-        kind: 'renewal', to: r.email, replyTo, volunteerId: r.id,
-        ...renewalEmail(r.name, String(org.name), r.member_category, r.member_expires_at, (org.renewal_url as string | null) ?? null, String(org.time_zone), await unsubscribeLink(env, r.id)),
-      });
-    }
-    await db.batch(rows.map((r) => db.prepare('UPDATE volunteers SET renewal_reminded_for = member_expires_at WHERE id = ?').bind(r.id)));
-    await deliver(env, orgId, mails, now);
+  for (const [orgId, rows] of byOrg) await remindRenewals(env, orgId, rows, null, now);
+}
+
+export type RenewalPerson = { id: string; name: string; email: string; member_category: string | null; member_expires_at: number };
+
+/**
+ * Sends the renewal reminder to these people and records that each was
+ * reminded for their current expiry date. Used by the cron run (automatic)
+ * and by a coordinator sending from Reports (manual).
+ */
+export async function remindRenewals(env: Env, orgId: string, people: RenewalPerson[], replyTo: string | null, now: number): Promise<MailStatus[]> {
+  const db = env.DB;
+  const org = await loadOrg(db, orgId);
+  if (!org || people.length === 0) return [];
+  const reply = replyTo ?? (await coordinatorsFor(db, orgId, null))[0]?.email ?? null;
+  const mails: Outgoing[] = [];
+  for (const r of people) {
+    mails.push({
+      kind: 'renewal', to: r.email, replyTo: reply, volunteerId: r.id,
+      ...renewalEmail(r.name, String(org.name), r.member_category, r.member_expires_at, (org.renewal_url as string | null) ?? null, String(org.time_zone), await unsubscribeLink(env, r.id)),
+    });
   }
+  const statuses = await deliver(env, orgId, mails, now);
+  // Only people whose reminder went out count as reminded.
+  const sent = people.filter((_, i) => statuses[i] === 'sent');
+  if (sent.length) await db.batch(sent.map((r) => db.prepare('UPDATE volunteers SET renewal_reminded_for = member_expires_at WHERE id = ? AND org_id = ?').bind(r.id, orgId)));
+  return statuses;
 }
 
 export function renewalEmail(name: string, orgName: string, category: string | null, expiresAt: number, renewalUrl: string | null, timeZone: string, unsubscribe: string): Pick<Outgoing, 'subject' | 'text'> {
