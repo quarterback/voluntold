@@ -15,6 +15,7 @@ import { VolunteerPage } from './pages/VolunteerPage';
 import { Needs } from './pages/Needs';
 import { Offers } from './pages/Offers';
 import { Admin } from './pages/Admin';
+import { RoleDetail, Roles } from './pages/Roles';
 import { BROWSER_DEMO } from './demoMode';
 
 /** The browser demo has no sign-in. A full load signs the visitor in again. */
@@ -44,6 +45,8 @@ export function App() {
         <Route path="tasks/:taskId/edit" element={<TaskEdit />} />
         <Route path="people" element={<People />} />
         <Route path="people/:volunteerId" element={<Person />} />
+        <Route path="roles" element={<Roles />} />
+        <Route path="roles/:roleId" element={<RoleDetail />} />
         <Route path="settings" element={<Settings />} />
         <Route path="import" element={<Import />} />
       </Route>

@@ -86,7 +86,7 @@ function MembershipSection() {
   const { error, run } = useAction();
   const [saved, setSaved] = useState(false);
   const [form, setForm] = useState({
-    peopleWord: org.peopleWord, renewalDays: org.renewalDays, renewalUrl: org.renewalUrl ?? '', joinOpen: org.joinOpen,
+    peopleWord: org.peopleWord, renewalDays: org.renewalDays, renewalUrl: org.renewalUrl ?? '', joinOpen: org.joinOpen, trackRenewals: org.trackRenewals,
   });
   const admin = me.role === 'admin';
   const joinLink = `${location.origin}/join/${org.id}`;
@@ -115,11 +115,12 @@ function MembershipSection() {
             {admin && <AddOnEnter label="Add category" onAdd={(v) => save({ memberCategories: [...org.memberCategories, v] })} />}
           </Stack>
         </Box>
-        <Stack direction="row" spacing={1.5}>
+        <FormControlLabel control={<Switch size="small" disabled={!admin} checked={form.trackRenewals} onChange={(e) => setForm({ ...form, trackRenewals: e.target.checked })} />} label="Track renewals and dues" />
+        {form.trackRenewals && <Stack direction="row" spacing={1.5}>
           <TextField label="Renewal reminder days" type="number" disabled={!admin} value={form.renewalDays} sx={{ width: 200, flexShrink: 0 }}
             onChange={(e) => setForm({ ...form, renewalDays: Number(e.target.value) })} slotProps={{ htmlInput: { min: 0, max: 120 } }} />
           <TextField label="Renewal link" placeholder="https://" disabled={!admin} value={form.renewalUrl} onChange={(e) => setForm({ ...form, renewalUrl: e.target.value })} />
-        </Stack>
+        </Stack>}
         <FormControlLabel control={<Switch size="small" disabled={!admin} checked={form.joinOpen} onChange={(e) => setForm({ ...form, joinOpen: e.target.checked })} />} label="Open application page" />
         {org.joinOpen && <TextField label="Application page" value={joinLink} slotProps={{ htmlInput: { readOnly: true } }} />}
         {admin && <Box><Button variant="contained" onClick={() => save(form)}>Save</Button></Box>}

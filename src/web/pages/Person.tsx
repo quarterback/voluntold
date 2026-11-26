@@ -106,7 +106,7 @@ export function Person() {
   return (
     <Page
       title={v.name}
-      subtitle={`${v.standing} · accepted ${v.yes} of ${v.asked}`}
+      subtitle={<>{v.standing}<br />{`${v.asked} asked · ${v.yes} accepted · ${data.spots.filter((s: any) => s.status === 'done').length} attended`}</>}
       back={<Button size="small" startIcon={<BackIcon fontSize="small" />} onClick={() => navigate('..', { relative: 'path' })} sx={{ color: 'text.secondary', ml: -1 }}>People</Button>}
       action={canEdit && <Button variant="contained" onClick={() => run(() => api(path(`/volunteers/${v.id}`), { method: 'PATCH', body: form }), () => { setSaved(true); reloadOrg(); })}>Save</Button>}
     >
@@ -141,8 +141,24 @@ export function Person() {
           </Section>
 
           <Stack spacing={2}>
+            {data.roles.length > 0 && (
+              <Section title="Roles">
+                <Stack spacing={1}>
+                  {data.roles.map((r: any) => (
+                    <Box key={`${r.roleId}-${r.startsAt}`}>
+                      <Typography variant="h3">
+                        <Box component="a" href={`../roles/${r.roleId}`} onClick={(e: React.MouseEvent) => { e.preventDefault(); navigate(`../../roles/${r.roleId}`, { relative: 'path' }); }} sx={{ color: 'inherit' }}>{r.name}</Box>
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {r.endedAt ? `${new Date(r.startsAt).getFullYear()} to ${new Date(r.endedAt).getFullYear()}` : `Since ${new Date(r.startsAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Stack>
+              </Section>
+            )}
             <Section title="Membership">
-              <MembershipFields value={form} disabled={!canEdit} categories={org.memberCategories} expiresAt={v.memberExpiresAt} renewalDays={org.renewalDays} onChange={(m) => setForm({ ...form, ...m })} />
+              <MembershipFields value={form} disabled={!canEdit} categories={org.memberCategories} expiresAt={v.memberExpiresAt} renewalDays={org.renewalDays} trackRenewals={org.trackRenewals} onChange={(m) => setForm({ ...form, ...m })} />
             </Section>
             <Section title="Tags">
               <TagPicker kind="volunteers" id={v.id} tagIds={tagIds} onChanged={setTagIds} disabled={!canEdit} />

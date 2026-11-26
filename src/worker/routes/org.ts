@@ -125,11 +125,12 @@ orgRoutes.patch('/', async (c) => {
     if (renewalUrl && !/^https:\/\/[^\s]+$/.test(renewalUrl)) fail(400, 'The renewal link must start with https://');
   }
   const joinOpen = body.joinOpen === undefined ? org.join_open : body.joinOpen ? 1 : 0;
+  const trackRenewals = body.trackRenewals === undefined ? org.track_renewals : body.trackRenewals ? 1 : 0;
   await c.env.DB.prepare(
     `UPDATE orgs SET name = ?, weekly_ask_limit = ?, signup_url = ?, publish_default = ?, time_zone = ?,
-       people_word = ?, member_categories_json = ?, renewal_days = ?, renewal_url = ?, join_open = ? WHERE id = ?`,
+       people_word = ?, member_categories_json = ?, renewal_days = ?, renewal_url = ?, join_open = ?, track_renewals = ? WHERE id = ?`,
   )
-    .bind(name, limit, signup, publishDefault, tz, word, categories, renewalDays, renewalUrl, joinOpen, actor.orgId)
+    .bind(name, limit, signup, publishDefault, tz, word, categories, renewalDays, renewalUrl, joinOpen, trackRenewals, actor.orgId)
     .run();
   return c.json({ org: publicOrg((await loadOrg(c.env.DB, actor.orgId))!) });
 });
@@ -199,7 +200,7 @@ orgRoutes.delete('/', async (c) => {
   const owned = [
     'spots', 'asks', 'events', 'fields', 'imports', 'lists', 'need_items', 'offer_skips',
     'reports', 'taggings', 'volunteer_sessions', 'team_leads', 'team_members', 'tasks',
-    'needs', 'tags', 'teams', 'volunteers', 'emails', 'ask_links', 'applications', 'messages',
+    'needs', 'tags', 'teams', 'volunteers', 'emails', 'ask_links', 'applications', 'messages', 'role_terms', 'roles',
   ];
   await db.batch([
     ...owned.map((t) => db.prepare(`DELETE FROM ${t} WHERE org_id = ?`).bind(actor.orgId)),

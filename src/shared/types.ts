@@ -79,6 +79,8 @@ export interface Task {
   publish: boolean;
   status: TaskStatus;
   needId: string | null;
+  /** The role this work belongs to, so it passes to the next holder. */
+  roleId: string | null;
   remote: boolean;
   effortMinutes: number | null;
   bring: string;

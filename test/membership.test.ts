@@ -57,10 +57,19 @@ describe('membership', () => {
     expect(after.memberExpiresAt).toBe(Date.parse('2028-01-31'));
   });
 
+  it('sends no renewal reminders while renewals are off', async () => {
+    const org = await newOrg('Off Org');
+    await approve(org.orgId);
+    await addVolunteer(org, 'Soon', {}, { memberExpiresAt: Date.now() + 10 * DAY });
+    const sent = fakeResend();
+    await sendDueEmails(withMail(), Date.now());
+    expect(sent.filter((m) => m.from.includes('Off Org'))).toHaveLength(0);
+  });
+
   it('sends one renewal reminder before a membership expires, with an unsubscribe link', async () => {
     const org = await newOrg('Renewal Org');
     await approve(org.orgId);
-    await org.client.patch(org.api(''), { renewalUrl: 'https://example.org/renew' });
+    await org.client.patch(org.api(''), { renewalUrl: 'https://example.org/renew', trackRenewals: true });
     const now = Date.now();
     await addVolunteer(org, 'Soon Expiring', {}, { memberExpiresAt: now + 10 * DAY });
     await addVolunteer(org, 'Far Away', {}, { memberExpiresAt: now + 200 * DAY });

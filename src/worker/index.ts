@@ -11,6 +11,7 @@ import { linkRoute, volunteerApi } from './routes/volunteer';
 import { publicRoutes } from './routes/public';
 import { adminRoutes } from './routes/admin';
 import { joinRoute, membershipRoutes, unsubscribeRoute } from './routes/membership';
+import { roleRoutes } from './routes/roles';
 import { sweep } from './engine';
 import { createSampleOrg, DATASETS } from './sample';
 import { fail } from './util';
@@ -66,6 +67,7 @@ org.route('/', taskRoutes);
 org.route('/', needRoutes);
 org.route('/', tagRoutes);
 org.route('/', membershipRoutes);
+org.route('/', roleRoutes);
 signedIn.route('/orgs/:orgId', org);
 signedIn.route('/admin', adminRoutes);
 

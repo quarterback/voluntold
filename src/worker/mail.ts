@@ -387,7 +387,7 @@ async function sendRenewals(env: Env, now: number): Promise<void> {
   const { results } = await db
     .prepare(
       `SELECT v.id, v.org_id, v.name, v.email, v.member_category, v.member_expires_at FROM volunteers v JOIN orgs o ON o.id = v.org_id
-       WHERE o.renewal_days > 0 AND v.member_expires_at > ? AND v.member_expires_at <= ? + o.renewal_days * 86400000
+       WHERE o.track_renewals = 1 AND o.renewal_days > 0 AND v.member_expires_at > ? AND v.member_expires_at <= ? + o.renewal_days * 86400000
          AND (v.renewal_reminded_for IS NULL OR v.renewal_reminded_for != v.member_expires_at)
          AND v.status != 'stopped' AND v.contact_ok_at IS NOT NULL AND v.email IS NOT NULL
        LIMIT 1000`,

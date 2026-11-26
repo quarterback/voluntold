@@ -121,6 +121,10 @@ From [decision 0014](decisions/0014-membership-management.md). Each person can h
 - **Group email:** a coordinator filters the People screen and emails everyone shown. It skips people who haven't agreed to be contacted or who unsubscribed. Every group email and renewal reminder has an unsubscribe link.
 - **Dues** are recorded, not collected.
 
+## Roles
+
+From [decision 0015](decisions/0015-roles-and-succession.md). A role is a job someone holds, such as chair, treasurer or committee member. It has responsibilities, handoff notes and terms: who held it, from when and until when. The Roles screen puts vacant roles first, then terms ending within 60 days. Handing off a role ends the current term and starts the next. A task can belong to a role, so the next holder inherits it. Renewals and dues are off until an organization turns them on.
+
 ## What the volunteer sees
 
 No account. No app. A private link opens a page on their phone with:

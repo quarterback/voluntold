@@ -4,6 +4,7 @@ import {
   Alert, AppBar, BottomNavigation, BottomNavigationAction, Box, Button, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Paper, Toolbar, Typography, useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import RoleIcon from '@mui/icons-material/BadgeOutlined';
 import { FONT_DISPLAY } from '../theme';
 import TodayIcon from '@mui/icons-material/TodayOutlined';
 import TaskIcon from '@mui/icons-material/AssignmentOutlined';
@@ -20,7 +21,7 @@ import { BROWSER_DEMO, StartOverButton } from '../demoMode';
 const SWITCH = BROWSER_DEMO ? '/start?demo=1' : '/start?choose=1';
 
 export interface OrgInfo {
-  org: { id: string; name: string; approved: boolean; peopleWord: 'volunteers' | 'members' | 'participants'; memberCategories: string[]; renewalDays: number; renewalUrl: string | null; joinOpen: boolean; weeklyAskLimit: number; signupUrl: string | null; publishDefault: boolean; timeZone: string; sample: boolean; sampleKind: string | null; atproto: { did: string; handle: string } | null };
+  org: { id: string; name: string; approved: boolean; peopleWord: 'volunteers' | 'members' | 'participants'; memberCategories: string[]; renewalDays: number; renewalUrl: string | null; joinOpen: boolean; trackRenewals: boolean; weeklyAskLimit: number; signupUrl: string | null; publishDefault: boolean; timeZone: string; sample: boolean; sampleKind: string | null; atproto: { did: string; handle: string } | null };
   me: { role: 'admin' | 'coordinator' | 'lead'; memberId: string; leadTeamIds: string[]; email: string };
   atprotoReady: boolean;
   demo: boolean;
@@ -42,6 +43,7 @@ const TABS = [
   { key: 'needs', label: 'Needs', icon: <NeedIcon fontSize="small" /> },
   { key: 'tasks', label: 'Tasks', icon: <TaskIcon fontSize="small" /> },
   { key: 'people', label: 'People', icon: <PeopleIcon fontSize="small" /> },
+  { key: 'roles', label: 'Roles', icon: <RoleIcon fontSize="small" /> },
 ];
 const SETTINGS = { key: 'settings', label: 'Settings', icon: <SettingsIcon fontSize="small" /> };
 const ALL_TABS = [...TABS, SETTINGS, { key: 'offers', label: 'Today', icon: null }];

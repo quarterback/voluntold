@@ -133,7 +133,7 @@ export function People() {
                   color={filter.status === k ? 'primary' : 'default'} onClick={() => setFilter({ ...filter, status: k })} />
               ))}
             </Stack>
-            {data.volunteers.some((v) => v.memberExpiresAt !== null) && (
+            {org.trackRenewals && (
               <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
                 {(Object.keys(MEMBERSHIP_TEXT) as (keyof typeof MEMBERSHIP_TEXT)[]).map((k) => (
                   <Chip key={k} variant="outlined" label={`${MEMBERSHIP_TEXT[k][0]} ${data.volunteers.filter((v) => membershipState(v.memberExpiresAt, Date.now(), org.renewalDays) === k).length}`}

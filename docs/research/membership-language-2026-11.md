@@ -85,13 +85,38 @@ These are recommendations for the owner, not decisions.
 5. **Don't chase the all-in-one.** Bookkeeping, file storage, project management and newsletter design are each a product with strong free or cheap options. The useful part of the first-hand account is the pricing and the count of tools: one free tool that replaces the spreadsheet, the sign-up sheet and the group-chat asks is a fair promise. Replacing Google Workspace is not.
 6. **Volley's place is different from membership databases.** The owner corrected the agent's first reading on November 25. Free tiers on paid products, such as Spond, TeamLinkt, MemberPlanet and Raklet, aren't a free product: they cap groups and charge when the group grows ([Capterra](https://www.capterra.com/membership-management-software/s/free/)). And the organizations Volley is for don't use those tools at all. Membership databases keep records; they don't get people involved. Volley does: it asks the right people for each job, spreads the work past the regulars, and shows who has never been asked. The launch copy should lead with that.
 
-## Next research
+## What the owner decided
 
-Talk to six to ten people who run small groups: two clubs, two volunteer-run nonprofits, a parent group, a neighborhood association, a mutual aid group and an association with no staff. Questions:
+On November 26 the owner approved recommendations 1 to 3, changed 4, and kept 5 and 6 as launch rules. See [decision 0015](../decisions/0015-roles-and-succession.md).
+
+- Renewals and dues are optional, so formal and informal organizations both fit.
+- The messaging leads with participation, but keeps "membership management" and "volunteer management" as the categories people search for.
+- Roles with terms, including past holders, vacancies and terms ending soon.
+- Nobody is labeled inactive. The product shows what each person was offered, accepted and took part in.
+- No all-in-one suite before launch. Customer interviews explore it.
+- Free stays an acquisition strategy, not the only selling point.
+- New: succession. When a leader leaves, the role keeps its responsibilities, open tasks and history, so the next person sees what they inherit.
+
+The owner also named the larger opportunity: distributing responsibility across a membership. "Having 5,000 members means relatively little if the same 25 people do everything."
+
+## Customer discovery
+
+Compare three kinds of organization instead of a mixed sample:
+
+- **Large membership, small staff:** statewide athletic associations, coaches associations and professional societies. Commercially the most interesting: thousands of members, set budgets and heavy coordination. They can use the free product now and pay for automation later.
+- **Rotating volunteer leadership:** PTAs, professional chapters, neighborhood associations and amateur sports clubs.
+- **Recurring operational demands:** festivals, food distribution programs and community service organizations.
+
+Ask each to show their real artifacts: spreadsheets, committee rosters, recruitment emails and leadership handoff documents. They show the work better than a question about which features people want.
+
+Questions to ask alongside the artifacts:
 
 - Where does your list of people live today, and who has the login?
 - The last time something needed doing, how did you find someone? How long did it take?
 - Who does most of the work? What would it take for someone new to do part of it?
 - What happened the last time a leader stepped down?
 - Do your members pay anything? If they do, how do you know who has?
-- What do you pay for today, and what would you stop paying for?
+
+## What this research doesn't show
+
+Much of the evidence comes from vendors and practitioner publications. It shows the problems recur. It doesn't show how often organizations have them together, or whether they would adopt a new product to solve them. The launch tests that. After launch, product decisions should come from what organizations do in the product, more than from further research.

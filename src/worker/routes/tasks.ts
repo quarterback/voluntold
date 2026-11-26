@@ -5,6 +5,7 @@ import { loadFields, loadOrg, loadTask, logEvent, toTask } from '../db';
 import { cleanText, fail, newId } from '../util';
 import { batchSize, DAY, requirementText } from '../../shared/rules';
 import type { AskMode, Field, Requirement, RequirementOp, Task, Timing } from '../../shared/types';
+import { setTaskRole } from './roles';
 import { activeCount, askMessage, candidates, createAsks, describeWhen, firstOffers, holdingCount, renewLink, shareTask, splitTask, sweep } from '../engine';
 import { syncTask } from '../atproto';
 import { standing } from '../../shared/sentences';
@@ -152,6 +153,7 @@ taskRoutes.post('/tasks', async (c) => {
     ),
     logEvent(c.env.DB, { orgId: actor.orgId, actorKind: 'member', actorId: actor.memberId, verb: 'created', objectType: 'task', objectId: id, at: now }),
   ]);
+  await setTaskRole(c.env.DB, actor.orgId, id, body.roleId);
   if (body.open === true) await openTask(c.env, actor.orgId, id, now);
   afterResponse(c, autoTag(c.env, actor.orgId, 'task', [{ id, text: await taskTagText(c.env.DB, actor.orgId, input) }], now));
   return c.json({ id }, 201);
@@ -285,6 +287,7 @@ taskRoutes.patch('/tasks/:taskId', async (c) => {
       task.id, actor.orgId,
     )
     .run();
+  await setTaskRole(c.env.DB, actor.orgId, task.id, body.roleId);
   await syncTask(c.env, actor.orgId, task.id);
   return c.json({ ok: true });
 });

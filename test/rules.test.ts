@@ -60,6 +60,7 @@ function task(over: Partial<Task> = {}): Task {
     publish: false,
     status: 'open',
     needId: null,
+    roleId: null,
     remote: false,
     effortMinutes: null,
     bring: '',

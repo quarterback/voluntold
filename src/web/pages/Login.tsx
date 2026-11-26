@@ -47,7 +47,7 @@ export function Login() {
     <Box sx={{ maxWidth: 400, mx: 'auto', px: 2, py: { xs: 6, md: 12 } }}>
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3, color: 'text.primary' }}><Wordmark height={36} /></Box>
       <Card><CardContent sx={{ p: 3 }}>
-      <Typography variant="h1" component="h1" gutterBottom>{signup ? 'Get started' : 'Sign in'}</Typography>
+      <Typography variant="h1" component="h1" gutterBottom>{signup ? 'Request free access' : 'Sign in'}</Typography>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {!sent ? (
         <form onSubmit={start}>

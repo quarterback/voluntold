@@ -27,6 +27,7 @@ The pilot in [SPEC.md](docs/SPEC.md):
 - emailing asks, confirmations, reminders and notes about tasks that aren't full
 - membership: categories, expiry and dues dates, renewal reminders, a public application page and email to a filtered group
 - approving new organizations at `/admin`
+- roles with terms, past holders, handoff notes and open tasks that pass to the next holder
 - tags on people, tasks and needs, applied by the model when one is set up
 
 It runs on Cloudflare Workers and D1, with a React and MUI web app.

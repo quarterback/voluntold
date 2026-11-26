@@ -4,6 +4,7 @@ import { must } from '../auth';
 import { loadFields, loadVolunteer, loadVolunteers, logEvent, toTask } from '../db';
 import { cleanText, fail, newId, normalizeEmail, normalizePhone, optionalText, parseJson } from '../util';
 import { parseDate } from '../../shared/membership';
+import { rolesOf } from './roles';
 import { standing } from '../../shared/sentences';
 import type { AskStatus, Field, FieldValue, Tier, Volunteer } from '../../shared/types';
 import { DAY_KEYS, PART_KEYS } from '../../shared/rules';
@@ -157,9 +158,12 @@ peopleRoutes.get('/volunteers/:volunteerId', async (c) => {
       .bind(orgId, v.id)
       .all(),
   ]);
-  const [answers, history, tags] = await Promise.all([lastAnswers(c.env.DB, orgId), histories(c.env.DB, orgId), tagIdsOf(c.env.DB, orgId, 'volunteer', v.id)]);
+  const [answers, history, tags, roles] = await Promise.all([
+    lastAnswers(c.env.DB, orgId), histories(c.env.DB, orgId), tagIdsOf(c.env.DB, orgId, 'volunteer', v.id), rolesOf(c.env.DB, orgId, v.id),
+  ]);
   return c.json({
     volunteer: { ...view(v, answers.get(v.id) ?? null, c.get('now'), history.get(v.id)), tags },
+    roles,
     asks: asks.results,
     spots: spots.results.map((r) => ({ id: r.spot_id, status: r.spot_status, task: toTask(r) })),
   });
@@ -294,6 +298,7 @@ peopleRoutes.delete('/volunteers/:volunteerId', async (c) => {
     db.prepare('DELETE FROM asks WHERE volunteer_id = ? AND org_id = ?').bind(id, actor.orgId),
     db.prepare('DELETE FROM team_members WHERE volunteer_id = ? AND org_id = ?').bind(id, actor.orgId),
     db.prepare("DELETE FROM taggings WHERE object_type = 'volunteer' AND object_id = ? AND org_id = ?").bind(id, actor.orgId),
+    db.prepare('DELETE FROM role_terms WHERE volunteer_id = ? AND org_id = ?').bind(id, actor.orgId),
     db.prepare('DELETE FROM volunteers WHERE id = ? AND org_id = ?').bind(id, actor.orgId),
     logEvent(db, { orgId: actor.orgId, actorKind: 'member', actorId: actor.memberId, verb: 'deleted', objectType: 'volunteer', objectId: id, at: c.get('now') }),
   ]);

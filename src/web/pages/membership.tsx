@@ -29,13 +29,15 @@ export interface MembershipForm {
   duesPaidAt: string;
 }
 
-export function MembershipFields({ value, onChange, categories, disabled, expiresAt, renewalDays }: {
+export function MembershipFields({ value, onChange, categories, disabled, expiresAt, renewalDays, trackRenewals }: {
   value: MembershipForm;
   onChange: (m: Partial<MembershipForm>) => void;
   categories: string[];
   disabled?: boolean;
   expiresAt: number | null;
   renewalDays: number;
+  /** Expiry, dues and the renewal badge show only when the organization tracks renewals. */
+  trackRenewals: boolean;
 }) {
   const date = (key: keyof MembershipForm, label: string) => (
     <TextField label={label} type="date" value={value[key]} disabled={disabled} onChange={(e) => onChange({ [key]: e.target.value })}
@@ -43,7 +45,7 @@ export function MembershipFields({ value, onChange, categories, disabled, expire
   );
   return (
     <Stack spacing={2}>
-      <MembershipBadge expiresAt={expiresAt} renewalDays={renewalDays} />
+      {trackRenewals && <MembershipBadge expiresAt={expiresAt} renewalDays={renewalDays} />}
       {categories.length > 0 ? (
         <FormControl fullWidth>
           <InputLabel id="member-category">Category</InputLabel>
@@ -56,8 +58,8 @@ export function MembershipFields({ value, onChange, categories, disabled, expire
         <TextField label="Category" value={value.memberCategory} disabled={disabled} onChange={(e) => onChange({ memberCategory: e.target.value })} />
       )}
       {date('memberSince', 'Member since')}
-      {date('memberExpiresAt', 'Expires')}
-      {date('duesPaidAt', 'Dues paid')}
+      {trackRenewals && date('memberExpiresAt', 'Expires')}
+      {trackRenewals && date('duesPaidAt', 'Dues paid')}
     </Stack>
   );
 }

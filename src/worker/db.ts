@@ -59,6 +59,7 @@ export function toTask(r: Row): Task {
     publish: r.publish === 1,
     status: r.status,
     needId: r.need_id ?? null,
+    roleId: r.role_id ?? null,
     remote: r.remote === 1,
     effortMinutes: r.effort_minutes ?? null,
     bring: r.bring ?? '',
@@ -125,6 +126,7 @@ export function publicOrg(r: Row) {
     renewalDays: r.renewal_days ?? 30,
     renewalUrl: r.renewal_url ?? null,
     joinOpen: r.join_open === 1,
+    trackRenewals: r.track_renewals === 1,
     atproto: r.atproto_did ? { did: r.atproto_did, handle: r.atproto_handle, service: r.atproto_service } : null,
   };
 }
