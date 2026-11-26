@@ -114,7 +114,7 @@ export function makeTheme(isDark: boolean): Theme {
       fontFamily: FONT_TEXT,
       fontSize: 15,
       h1: { ...display, fontSize: '2.25rem', letterSpacing: '-0.025em', lineHeight: 1.05 },
-      h2: { ...display, fontSize: '1.125rem', letterSpacing: '-0.01em', lineHeight: 1.25 },
+      h2: { ...display, fontSize: '1.125rem', letterSpacing: 0, lineHeight: 1.25 },
       h3: { fontSize: '0.9375rem', fontWeight: 600, lineHeight: 1.4 },
       body1: { fontSize: '0.9375rem', lineHeight: 1.5 },
       body2: { fontSize: '0.875rem', lineHeight: 1.5 },

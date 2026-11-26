@@ -1,9 +1,11 @@
 import { createContext, useContext } from 'react';
 import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
-  AppBar, BottomNavigation, BottomNavigationAction, Box, Button, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Paper, Toolbar, Typography, useMediaQuery,
+  Alert, AppBar, BottomNavigation, BottomNavigationAction, Box, Button, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Paper, Toolbar, Typography, useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import RoleIcon from '@mui/icons-material/BadgeOutlined';
+import ReportIcon from '@mui/icons-material/InsertChartOutlined';
 import { FONT_DISPLAY } from '../theme';
 import TodayIcon from '@mui/icons-material/TodayOutlined';
 import TaskIcon from '@mui/icons-material/AssignmentOutlined';
@@ -20,7 +22,7 @@ import { BROWSER_DEMO, StartOverButton } from '../demoMode';
 const SWITCH = BROWSER_DEMO ? '/start?demo=1' : '/start?choose=1';
 
 export interface OrgInfo {
-  org: { id: string; name: string; weeklyAskLimit: number; signupUrl: string | null; publishDefault: boolean; timeZone: string; sample: boolean; sampleKind: string | null; atproto: { did: string; handle: string } | null };
+  org: { id: string; name: string; approved: boolean; peopleWord: 'volunteers' | 'members' | 'participants'; memberCategories: string[]; renewalDays: number; renewalUrl: string | null; joinOpen: boolean; trackRenewals: boolean; renewalMode: 'auto' | 'manual'; weeklyAskLimit: number; signupUrl: string | null; publishDefault: boolean; timeZone: string; sample: boolean; sampleKind: string | null; atproto: { did: string; handle: string } | null };
   me: { role: 'admin' | 'coordinator' | 'lead'; memberId: string; leadTeamIds: string[]; email: string };
   atprotoReady: boolean;
   demo: boolean;
@@ -42,9 +44,11 @@ const TABS = [
   { key: 'needs', label: 'Needs', icon: <NeedIcon fontSize="small" /> },
   { key: 'tasks', label: 'Tasks', icon: <TaskIcon fontSize="small" /> },
   { key: 'people', label: 'People', icon: <PeopleIcon fontSize="small" /> },
+  { key: 'roles', label: 'Roles', icon: <RoleIcon fontSize="small" /> },
 ];
 const SETTINGS = { key: 'settings', label: 'Settings', icon: <SettingsIcon fontSize="small" /> };
-const ALL_TABS = [...TABS, SETTINGS, { key: 'offers', label: 'Today', icon: null }];
+const REPORTS = { key: 'reports', label: 'Reports', icon: <ReportIcon fontSize="small" /> };
+const ALL_TABS = [...TABS, REPORTS, SETTINGS, { key: 'offers', label: 'Today', icon: null }];
 
 const SIDEBAR = 232;
 
@@ -77,7 +81,7 @@ export function OrgShell() {
             <Typography component="span" noWrap sx={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: '1.0625rem', letterSpacing: '-0.01em' }}>{data.org.name}</Typography>
           </Button>
           <List disablePadding>
-            {[...TABS, SETTINGS].map((t) => (
+            {[...TABS, REPORTS, SETTINGS].map((t) => (
               <ListItemButton key={t.key} selected={tab === t.key} onClick={() => go(t.key)}
                 aria-current={tab === t.key ? 'page' : undefined}
                 sx={{ mb: 0.5, py: 1, color: theme.vt.onInk, '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
@@ -119,8 +123,10 @@ export function OrgShell() {
 /** The page column. It leaves room for the demo guide on wide screens. */
 function Main({ wide }: { wide: boolean }) {
   const guide = useGuideOpen();
+  const { org } = useOrg();
   return (
     <Box component="main" sx={{ ml: wide ? `${SIDEBAR}px` : 0, mr: wide && guide ? `${GUIDE_WIDTH}px` : 0 }}>
+      {!org.approved && !org.sample && !BROWSER_DEMO && <Alert severity="info" sx={{ borderRadius: 0 }}>Pending approval: email is off</Alert>}
       <Outlet />
     </Box>
   );

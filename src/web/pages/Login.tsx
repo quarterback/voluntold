@@ -11,6 +11,8 @@ export function Login() {
   const [devCode, setDevCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // New organizations come here from Get started. Signing up and signing in are the same steps.
+  const signup = new URLSearchParams(location.search).has('signup');
 
   async function start(e: React.FormEvent) {
     e.preventDefault();
@@ -45,7 +47,7 @@ export function Login() {
     <Box sx={{ maxWidth: 400, mx: 'auto', px: 2, py: { xs: 6, md: 12 } }}>
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3, color: 'text.primary' }}><Wordmark height={36} /></Box>
       <Card><CardContent sx={{ p: 3 }}>
-      <Typography variant="h1" component="h1" gutterBottom>Sign in</Typography>
+      <Typography variant="h1" component="h1" gutterBottom>{signup ? 'Request free access' : 'Sign in'}</Typography>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {!sent ? (
         <form onSubmit={start}>
@@ -67,7 +69,7 @@ export function Login() {
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
             />
-            <Button type="submit" variant="contained" size="large" disabled={busy || code.length !== 6}>Sign in</Button>
+            <Button type="submit" variant="contained" size="large" disabled={busy || code.length !== 6}>{signup ? 'Continue' : 'Sign in'}</Button>
             <Button onClick={() => { setSent(false); setCode(''); }}>Use a different email</Button>
           </Stack>
         </form>

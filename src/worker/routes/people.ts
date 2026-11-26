@@ -2,7 +2,9 @@ import { Hono } from 'hono';
 import type { AppBindings } from '../env';
 import { must } from '../auth';
 import { loadFields, loadVolunteer, loadVolunteers, logEvent, toTask } from '../db';
-import { cleanText, fail, newId, normalizeEmail, normalizePhone, parseJson } from '../util';
+import { cleanText, fail, newId, normalizeEmail, normalizePhone, optionalText, parseJson } from '../util';
+import { parseDate } from '../../shared/membership';
+import { rolesOf } from './roles';
 import { standing } from '../../shared/sentences';
 import type { AskStatus, Field, FieldValue, Tier, Volunteer } from '../../shared/types';
 import { DAY_KEYS, PART_KEYS } from '../../shared/rules';
@@ -156,9 +158,12 @@ peopleRoutes.get('/volunteers/:volunteerId', async (c) => {
       .bind(orgId, v.id)
       .all(),
   ]);
-  const [answers, history, tags] = await Promise.all([lastAnswers(c.env.DB, orgId), histories(c.env.DB, orgId), tagIdsOf(c.env.DB, orgId, 'volunteer', v.id)]);
+  const [answers, history, tags, roles] = await Promise.all([
+    lastAnswers(c.env.DB, orgId), histories(c.env.DB, orgId), tagIdsOf(c.env.DB, orgId, 'volunteer', v.id), rolesOf(c.env.DB, orgId, v.id),
+  ]);
   return c.json({
     volunteer: { ...view(v, answers.get(v.id) ?? null, c.get('now'), history.get(v.id)), tags },
+    roles,
     asks: asks.results,
     spots: spots.results.map((r) => ({ id: r.spot_id, status: r.spot_status, task: toTask(r) })),
   });
@@ -177,6 +182,24 @@ export function readAvailability(body: Record<string, unknown>, current: Pick<Vo
   const days = body.days === undefined ? current.days : Array.isArray(body.days) ? [...new Set(body.days.map(String))].filter((d) => SLOTS.has(d)) : [];
   const remoteOk = body.remoteOk === undefined ? current.remoteOk : Boolean(body.remoteOk);
   return { tier, hoursWeek, days, remoteOk };
+}
+
+type MemberCols = { memberCategory: string | null; memberSince: number | null; memberExpiresAt: number | null; duesPaidAt: number | null };
+
+/** Membership details from a request body. Missing keys keep what's saved; empty clears. */
+function readMembership(body: Record<string, unknown>, current: MemberCols): MemberCols {
+  const date = (key: keyof MemberCols, label: string) => {
+    if (body[key] === undefined) return current[key] as number | null;
+    const t = parseDate(body[key]);
+    if (t === 'bad') fail(400, `Enter a valid date for ${label}.`);
+    return t;
+  };
+  return {
+    memberCategory: body.memberCategory === undefined ? current.memberCategory : optionalText(body.memberCategory, 80),
+    memberSince: date('memberSince', 'member since'),
+    memberExpiresAt: date('memberExpiresAt', 'expires'),
+    duesPaidAt: date('duesPaidAt', 'dues paid'),
+  };
 }
 
 function contactFrom(body: Record<string, unknown>) {
@@ -198,10 +221,12 @@ peopleRoutes.post('/volunteers', async (c) => {
   const values = coerceValues(fields, body.values);
   const now = c.get('now');
   const id = newId();
+  const m = readMembership(body, { memberCategory: null, memberSince: null, memberExpiresAt: null, duesPaidAt: null });
   await c.env.DB.batch([
     c.env.DB.prepare(
-      'INSERT INTO volunteers (id, org_id, name, email, phone, contact_ok_at, values_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    ).bind(id, actor.orgId, name, email, phone, body.contactOk ? now : null, JSON.stringify(values), now, now),
+      `INSERT INTO volunteers (id, org_id, name, email, phone, contact_ok_at, values_json, created_at, updated_at, member_category, member_since, member_expires_at, dues_paid_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).bind(id, actor.orgId, name, email, phone, body.contactOk ? now : null, JSON.stringify(values), now, now, m.memberCategory, m.memberSince, m.memberExpiresAt, m.duesPaidAt),
     logEvent(c.env.DB, { orgId: actor.orgId, actorKind: 'member', actorId: actor.memberId, verb: 'added', objectType: 'volunteer', objectId: id, at: now }),
   ]);
   await growOptions(c.env.DB, actor.orgId, fields, [values]);
@@ -240,15 +265,18 @@ peopleRoutes.patch('/volunteers/:volunteerId', async (c) => {
     status = 'stopped';
   }
   const avail = readAvailability(body, v);
+  const m = readMembership(body, v);
   await c.env.DB.prepare(
     `UPDATE volunteers SET name = ?, email = ?, phone = ?, contact_ok_at = ?, values_json = ?, status = ?, paused_until = ?, paused_reason = ?,
        unanswered_streak = CASE WHEN ? = 'active' THEN 0 ELSE unanswered_streak END, updated_at = ?,
-       tier = ?, hours_week = ?, days_json = ?, remote_ok = ?
+       tier = ?, hours_week = ?, days_json = ?, remote_ok = ?,
+       member_category = ?, member_since = ?, member_expires_at = ?, dues_paid_at = ?
      WHERE id = ? AND org_id = ?`,
   )
     .bind(
       name, contact.email, contact.phone, contactOkAt, JSON.stringify(values), status, pausedUntil, pausedReason, status, now,
-      avail.tier, avail.hoursWeek, JSON.stringify(avail.days), avail.remoteOk ? 1 : 0, v.id, actor.orgId,
+      avail.tier, avail.hoursWeek, JSON.stringify(avail.days), avail.remoteOk ? 1 : 0,
+      m.memberCategory, m.memberSince, m.memberExpiresAt, m.duesPaidAt, v.id, actor.orgId,
     )
     .run();
   await growOptions(c.env.DB, actor.orgId, fields, [values]);
@@ -264,10 +292,13 @@ peopleRoutes.delete('/volunteers/:volunteerId', async (c) => {
   const db = c.env.DB;
   await db.batch([
     db.prepare('DELETE FROM volunteer_sessions WHERE volunteer_id = ? AND org_id = ?').bind(id, actor.orgId),
+    db.prepare('DELETE FROM ask_links WHERE volunteer_id = ? AND org_id = ?').bind(id, actor.orgId),
+    db.prepare('DELETE FROM emails WHERE volunteer_id = ? AND org_id = ?').bind(id, actor.orgId),
     db.prepare('DELETE FROM spots WHERE volunteer_id = ? AND org_id = ?').bind(id, actor.orgId),
     db.prepare('DELETE FROM asks WHERE volunteer_id = ? AND org_id = ?').bind(id, actor.orgId),
     db.prepare('DELETE FROM team_members WHERE volunteer_id = ? AND org_id = ?').bind(id, actor.orgId),
     db.prepare("DELETE FROM taggings WHERE object_type = 'volunteer' AND object_id = ? AND org_id = ?").bind(id, actor.orgId),
+    db.prepare('DELETE FROM role_terms WHERE volunteer_id = ? AND org_id = ?').bind(id, actor.orgId),
     db.prepare('DELETE FROM volunteers WHERE id = ? AND org_id = ?').bind(id, actor.orgId),
     logEvent(db, { orgId: actor.orgId, actorKind: 'member', actorId: actor.memberId, verb: 'deleted', objectType: 'volunteer', objectId: id, at: c.get('now') }),
   ]);
@@ -330,13 +361,22 @@ peopleRoutes.post('/import/preview', async (c) => {
   return c.json({ rows: result });
 });
 
-type Target = 'name' | 'email' | 'phone' | 'ignore' | `field:${string}` | `new:${string}`;
+type Target = 'name' | 'email' | 'phone' | 'ignore' | `field:${string}` | `new:${string}` | `member:${'category' | 'since' | 'expires' | 'dues'}`;
 
 interface CommitRow {
   cells: Record<string, string>;
   action: 'add' | 'merge' | 'skip';
   mergeInto?: string;
   mergeIntoRow?: number;
+}
+
+/** Membership cells from an import row. A date that can't be read is left empty. */
+function importMembership(member: Record<string, string>) {
+  const date = (raw: string | undefined) => {
+    const t = parseDate(raw);
+    return t === 'bad' ? null : t;
+  };
+  return { category: optionalText(member.category, 80), since: date(member.since), expires: date(member.expires), dues: date(member.dues) };
 }
 
 function mergeValues(fields: Field[], base: Record<string, FieldValue>, extra: Record<string, FieldValue>) {
@@ -396,11 +436,14 @@ peopleRoutes.post('/import/commit', async (c) => {
     if (row.action === 'skip') return;
     const raw: Record<string, unknown> = {};
     const values: Record<string, FieldValue> = {};
+    const member: Record<string, string> = {};
     for (const [column, target] of Object.entries(columnMap)) {
       const cell = row.cells?.[column];
       if (cell === undefined) continue;
       if (target === 'name' || target === 'email' || target === 'phone') {
         raw[target] = raw[target] ? `${raw[target]} ${cell}` : cell;
+      } else if (typeof target === 'string' && target.startsWith('member:')) {
+        member[target.slice(7)] = cell;
       } else if (typeof target === 'string' && target.startsWith('field:')) {
         const field = fieldById.get(target.slice(6));
         if (!field) continue;
@@ -421,6 +464,13 @@ peopleRoutes.post('/import/commit', async (c) => {
           db
             .prepare('UPDATE volunteers SET email = COALESCE(email, ?), phone = COALESCE(phone, ?), values_json = ?, contact_ok_at = COALESCE(contact_ok_at, ?), updated_at = ? WHERE id = ? AND org_id = ?')
             .bind(email, phone, JSON.stringify(next), now, now, v.id, actor.orgId),
+          // A re-imported roster updates membership details it has.
+          db
+            .prepare(
+              `UPDATE volunteers SET member_category = COALESCE(?, member_category), member_since = COALESCE(?, member_since),
+                 member_expires_at = COALESCE(?, member_expires_at), dues_paid_at = COALESCE(?, dues_paid_at) WHERE id = ? AND org_id = ?`,
+            )
+            .bind(...Object.values(importMembership(member)), v.id, actor.orgId),
         );
         v.values = next;
         merged++;
@@ -444,10 +494,14 @@ peopleRoutes.post('/import/commit', async (c) => {
     const id = newId();
     created.set(index, { id, values });
     added++;
+    const m = importMembership(member);
     statements.push(
       db
-        .prepare('INSERT INTO volunteers (id, org_id, name, email, phone, contact_ok_at, values_json, import_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-        .bind(id, actor.orgId, name, email, phone, now, '{}', importId, now, now),
+        .prepare(
+          `INSERT INTO volunteers (id, org_id, name, email, phone, contact_ok_at, values_json, import_id, created_at, updated_at, member_category, member_since, member_expires_at, dues_paid_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .bind(id, actor.orgId, name, email, phone, now, '{}', importId, now, now, m.category, m.since, m.expires, m.dues),
     );
   });
   // Values for new rows are written last, after any merges from later rows.
@@ -546,9 +600,13 @@ peopleRoutes.get('/export/:kind{(volunteers|tasks|asks|spots)\\.csv}', async (c)
         last_asked: iso(v.lastAskedAt),
         teams: v.teamIds.map((t) => teamName.get(t) ?? t),
         tags: v.tags,
+        membership_category: v.memberCategory,
+        member_since: iso(v.memberSince),
+        membership_expires: iso(v.memberExpiresAt),
+        dues_paid: iso(v.duesPaidAt),
         ...Object.fromEntries(data.fields.map((f) => [f.label, v.values[f.id]])),
       })),
-      ['id', 'name', 'email', 'phone', 'status', 'agreed_to_contact', 'last_asked', 'teams', 'tags', ...data.fields.map((f) => f.label)],
+      ['id', 'name', 'email', 'phone', 'status', 'agreed_to_contact', 'last_asked', 'teams', 'tags', 'membership_category', 'member_since', 'membership_expires', 'dues_paid', ...data.fields.map((f) => f.label)],
     );
   } else if (kind === 'tasks') {
     body = csv(

@@ -85,7 +85,7 @@ export interface Org {
 
 export async function newOrg(name = 'Chapter A'): Promise<Org> {
   const client = await signIn();
-  const res = await client.post('/api/orgs', { name, timeZone: 'America/New_York' });
+  const res = await client.post('/api/orgs', { name, timeZone: 'America/New_York', adultsConfirmed: true });
   const orgId = res.body.id;
   const fields = await client.get(`/api/orgs/${orgId}/fields`);
   return {

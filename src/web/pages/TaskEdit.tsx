@@ -8,7 +8,7 @@ import DeleteIcon from '@mui/icons-material/DeleteOutlined';
 import AddIcon from '@mui/icons-material/Add';
 import { api } from '../api';
 import { useOrg } from './OrgShell';
-import { Loading, Page, Section, errorText } from './common';
+import { Loading, Page, Section, errorText, useLoad } from './common';
 import BackIcon from '@mui/icons-material/ArrowBack';
 import { toLocalDate, toLocalInput } from '../format';
 import type { Field, Requirement, RequirementOp } from '../../shared/types';
@@ -44,6 +44,7 @@ interface Form {
   askBatch: string;
   askWaitHours: number;
   teamId: string;
+  roleId: string;
   publish: boolean;
   needId: string | null;
   remote: boolean;
@@ -57,6 +58,7 @@ interface Form {
 export function TaskEdit() {
   const { taskId } = useParams();
   const { path, fields, teams, org, me } = useOrg();
+  const roles = useLoad(() => api<{ roles: { id: string; name: string }[] }>(path('/roles')), [path]);
   const navigate = useNavigate();
   const [form, setForm] = useState<Form | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -74,7 +76,7 @@ export function TaskEdit() {
       setForm({
         title: '', description: '', contact: '', timing: 'at_time', startsAt: urgent ? toLocalInput(soon.getTime()) : '',
         endsAt: urgent ? toLocalInput(soon.getTime() + 2 * 60 * 60 * 1000) : '', dueAt: '', placePublic: '', placePrivate: '',
-        peopleNeeded: urgent ? 1 : 2, requirements: [], askMode: urgent ? 'everyone' : 'few', askBatch: '', askWaitHours: 24, teamId: leadOnly ? me.leadTeamIds[0] ?? '' : '',
+        peopleNeeded: urgent ? 1 : 2, requirements: [], askMode: urgent ? 'everyone' : 'few', askBatch: '', askWaitHours: 24, teamId: leadOnly ? me.leadTeamIds[0] ?? '' : '', roleId: '',
         publish: Boolean(org.atproto) && org.publishDefault, needId: query.get('need'), remote: false, effortMinutes: '', bring: '', fileName: '', fileUrl: '',
       });
       return;
@@ -88,6 +90,7 @@ export function TaskEdit() {
         dueAt: toLocalDate(task.dueAt),
         askBatch: task.askBatch ? String(task.askBatch) : '',
         teamId: task.teamId ?? '',
+        roleId: task.roleId ?? '',
         effortMinutes: task.effortMinutes ? String(task.effortMinutes) : '',
         fileName: task.files[0]?.name ?? '',
         fileUrl: task.files[0]?.url ?? '',
@@ -108,6 +111,7 @@ export function TaskEdit() {
       dueAt: form!.dueAt ? new Date(`${form!.dueAt}T23:59`).getTime() : null,
       askBatch: form!.askBatch ? Number(form!.askBatch) : null,
       teamId: form!.teamId || null,
+      roleId: form!.roleId || null,
       effortMinutes: form!.effortMinutes ? Number(form!.effortMinutes) : null,
       files: form!.fileUrl ? [{ name: form!.fileName || 'File', url: form!.fileUrl }] : [],
     };
@@ -185,7 +189,7 @@ export function TaskEdit() {
               <TextField label="Address" value={form.placePrivate} onChange={(e) => set('placePrivate', e.target.value)} />
             </Stack>
             <Stack direction="row" spacing={2}>
-              <TextField label="Volunteers needed" type="number" value={form.peopleNeeded} onChange={(e) => set('peopleNeeded', Number(e.target.value))}
+              <TextField label="People needed" type="number" value={form.peopleNeeded} onChange={(e) => set('peopleNeeded', Number(e.target.value))}
                 slotProps={{ htmlInput: { min: 1, max: 500 } }} sx={{ width: 170, flexShrink: 0 }} />
               <TextField label="Contact" value={form.contact} onChange={(e) => set('contact', e.target.value)} />
             </Stack>
@@ -273,6 +277,15 @@ export function TaskEdit() {
                   <Select labelId="team" label="Team" value={form.teamId} displayEmpty onChange={(e) => set('teamId', e.target.value)}>
                     {!leadOnly && <MenuItem value="">No team</MenuItem>}
                     {visibleTeams.map((t) => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
+                  </Select>
+                </FormControl>
+              )}
+              {(roles.data?.roles.length ?? 0) > 0 && (
+                <FormControl fullWidth>
+                  <InputLabel id="role">Role</InputLabel>
+                  <Select labelId="role" label="Role" value={form.roleId} displayEmpty onChange={(e) => set('roleId', e.target.value)}>
+                    <MenuItem value="">No role</MenuItem>
+                    {roles.data!.roles.map((r) => <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>)}
                   </Select>
                 </FormControl>
               )}

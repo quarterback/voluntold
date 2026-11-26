@@ -20,10 +20,15 @@ linkRoute.get('/:token', async (c) => {
   await rateLimit(c, `link:${clientIp(c)}`, 60, 10 * 60 * 1000);
   const token = c.req.param('token');
   const now = c.get('now');
-  const ask = token.length >= 20
-    ? await c.env.DB.prepare('SELECT id, org_id, volunteer_id, link_expires_at, revoked_at FROM asks WHERE token_hash = ?')
-        .bind(await hashToken(c.env, token))
-        .first<{ id: string; org_id: string; volunteer_id: string; link_expires_at: number; revoked_at: number | null }>()
+  type LinkRow = { id: string; org_id: string; volunteer_id: string; link_expires_at: number; revoked_at: number | null };
+  const hash = token.length >= 20 ? await hashToken(c.env, token) : null;
+  const ask = hash
+    ? (await c.env.DB.prepare('SELECT id, org_id, volunteer_id, link_expires_at, revoked_at FROM asks WHERE token_hash = ?').bind(hash).first<LinkRow>()) ??
+      // A link from a confirmation or a reminder.
+      (await c.env.DB.prepare(
+        `SELECT a.id, a.org_id, a.volunteer_id, l.expires_at AS link_expires_at, a.revoked_at FROM ask_links l
+         JOIN asks a ON a.id = l.ask_id AND a.org_id = l.org_id WHERE l.token_hash = ?`,
+      ).bind(hash).first<LinkRow>())
     : null;
   if (!ask || ask.revoked_at || ask.link_expires_at <= now) {
     return c.html(

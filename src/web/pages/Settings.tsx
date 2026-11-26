@@ -12,6 +12,7 @@ import { StatusBadge } from './common';
 import { TagChip } from './tags';
 import { api } from '../api';
 import { useOrg } from './OrgShell';
+import { peopleWords } from './membership';
 import { Page, Section, errorText, useDialogs, useLoad } from './common';
 import { BROWSER_DEMO, StartOverButton } from '../demoMode';
 import type { FieldType } from '../../shared/types';
@@ -75,6 +76,63 @@ function OrgSection() {
         <TextField label="Sign-up link" placeholder="https://" disabled={!admin} value={form.signupUrl} onChange={(e) => setForm({ ...form, signupUrl: e.target.value })} />
         <FormControlLabel control={<Switch size="small" disabled={!admin} checked={form.publishDefault} onChange={(e) => setForm({ ...form, publishDefault: e.target.checked })} />} label="Post new tasks on AT Protocol" />
         {admin && <Box><Button variant="contained" onClick={async () => { if (await run(() => api(path(''), { method: 'PATCH', body: form }))) { setSaved(true); reload(); } }}>Save</Button></Box>}
+      </Stack>
+    </Section>
+  );
+}
+
+function MembershipSection() {
+  const { org, path, reload, me } = useOrg();
+  const { error, run } = useAction();
+  const [saved, setSaved] = useState(false);
+  const [form, setForm] = useState({
+    peopleWord: org.peopleWord, renewalDays: org.renewalDays, renewalUrl: org.renewalUrl ?? '', joinOpen: org.joinOpen, trackRenewals: org.trackRenewals, renewalMode: org.renewalMode,
+  });
+  const admin = me.role === 'admin';
+  const joinLink = `${location.origin}/join/${org.id}`;
+  const save = async (body: unknown) => {
+    if (await run(() => api(path(''), { method: 'PATCH', body }))) { setSaved(true); reload(); }
+  };
+  return (
+    <Section title="Membership">
+      <Stack spacing={1.5}>
+        {error && <Alert severity="error">{error}</Alert>}
+        {saved && <Alert severity="success">Saved</Alert>}
+        <FormControl fullWidth>
+          <InputLabel id="people-word">Call people</InputLabel>
+          <Select labelId="people-word" label="Call people" value={form.peopleWord} disabled={!admin} onChange={(e) => setForm({ ...form, peopleWord: e.target.value as typeof form.peopleWord })}>
+            <MenuItem value="volunteers">Volunteers</MenuItem>
+            <MenuItem value="members">Members</MenuItem>
+            <MenuItem value="participants">Participants</MenuItem>
+          </Select>
+        </FormControl>
+        <Box>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>Categories</Typography>
+          <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
+            {org.memberCategories.map((c) => (
+              <Chip key={c} size="small" label={c} onDelete={admin ? () => save({ memberCategories: org.memberCategories.filter((x) => x !== c) }) : undefined} />
+            ))}
+            {admin && <AddOnEnter label="Add category" onAdd={(v) => save({ memberCategories: [...org.memberCategories, v] })} />}
+          </Stack>
+        </Box>
+        <FormControlLabel control={<Switch size="small" disabled={!admin} checked={form.trackRenewals} onChange={(e) => setForm({ ...form, trackRenewals: e.target.checked })} />} label="Track renewals and dues" />
+        {form.trackRenewals && (
+          <FormControl fullWidth>
+            <InputLabel id="renewal-mode">Renewal reminders</InputLabel>
+            <Select labelId="renewal-mode" label="Renewal reminders" value={form.renewalMode} disabled={!admin} onChange={(e) => setForm({ ...form, renewalMode: e.target.value as 'auto' | 'manual' })}>
+              <MenuItem value="auto">Send automatically</MenuItem>
+              <MenuItem value="manual">Send from Reports</MenuItem>
+            </Select>
+          </FormControl>
+        )}
+        {form.trackRenewals && <Stack direction="row" spacing={1.5}>
+          {form.renewalMode === 'auto' && <TextField label="Renewal reminder days" type="number" disabled={!admin} value={form.renewalDays} sx={{ width: 200, flexShrink: 0 }}
+            onChange={(e) => setForm({ ...form, renewalDays: Number(e.target.value) })} slotProps={{ htmlInput: { min: 0, max: 120 } }} />}
+          <TextField label="Renewal link" placeholder="https://" disabled={!admin} value={form.renewalUrl} onChange={(e) => setForm({ ...form, renewalUrl: e.target.value })} />
+        </Stack>}
+        <FormControlLabel control={<Switch size="small" disabled={!admin} checked={form.joinOpen} onChange={(e) => setForm({ ...form, joinOpen: e.target.checked })} />} label="Open application page" />
+        {org.joinOpen && <TextField label="Application page" value={joinLink} slotProps={{ htmlInput: { readOnly: true } }} />}
+        {admin && <Box><Button variant="contained" onClick={() => save(form)}>Save</Button></Box>}
       </Stack>
     </Section>
   );
@@ -232,7 +290,7 @@ function MembersSection({ members, reloadMembers }: { members: { id: string; ema
   const { error, run } = useAction();
   const admin = me.role === 'admin';
   return (
-    <Section title="Members">
+    <Section title="Coordinators">
       {error && <Alert severity="error" sx={{ mb: 1.5 }}>{error}</Alert>}
       <List disablePadding>
         {members.map((m) => (
@@ -249,7 +307,7 @@ function MembersSection({ members, reloadMembers }: { members: { id: string; ema
             <MenuItem value="coordinator">Coordinator</MenuItem>
             <MenuItem value="lead">Team lead</MenuItem>
           </Select>
-          <Button variant="outlined" disabled={!email.includes('@')} onClick={async () => { if (await run(() => api(path('/members'), { body: { email, role } }))) { setEmail(''); reloadMembers(); } }}>Add member</Button>
+          <Button variant="outlined" disabled={!email.includes('@')} onClick={async () => { if (await run(() => api(path('/members'), { body: { email, role } }))) { setEmail(''); reloadMembers(); } }}>Add coordinator</Button>
         </Stack>
       )}
     </Section>
@@ -287,7 +345,7 @@ function AtprotoSection() {
 }
 
 export function Settings() {
-  const { path, me } = useOrg();
+  const { path, me, org } = useOrg();
   const navigate = useNavigate();
   const { data, reload } = useLoad(() => api(path('/members')), [path]);
   const members = data?.members ?? [];
@@ -295,11 +353,12 @@ export function Settings() {
     <Page title="Settings" width={760}>
       <Stack spacing={2}>
         {me.role !== 'lead' && (
-          <Section title="Import volunteers">
+          <Section title={`Import ${peopleWords(org.peopleWord).people}`}>
             <Button variant="contained" onClick={() => navigate('../import', { relative: 'path' })}>Import file</Button>
           </Section>
         )}
         <OrgSection />
+        <MembershipSection />
         <FieldsSection />
         <TagsSection />
         <TeamsSection members={members} />

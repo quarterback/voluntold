@@ -34,6 +34,11 @@ export interface Volunteer {
   days: string[];
   remoteOk: boolean;
   createdAt: number;
+  memberCategory: string | null;
+  memberSince: number | null;
+  memberExpiresAt: number | null;
+  /** When dues were last paid. Payment happens outside the tool. */
+  duesPaidAt: number | null;
 }
 
 export type Tier = 'one_time' | 'seasonal' | 'regular' | 'core';
@@ -74,6 +79,8 @@ export interface Task {
   publish: boolean;
   status: TaskStatus;
   needId: string | null;
+  /** The role this work belongs to, so it passes to the next holder. */
+  roleId: string | null;
   remote: boolean;
   effortMinutes: number | null;
   bring: string;

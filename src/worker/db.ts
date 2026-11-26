@@ -30,6 +30,10 @@ export function toVolunteer(r: Row, teamIds: string[] = []): Volunteer {
     days: parseJson<string[]>(r.days_json, []),
     remoteOk: r.remote_ok === 1,
     createdAt: r.created_at,
+    memberCategory: r.member_category ?? null,
+    memberSince: r.member_since ?? null,
+    memberExpiresAt: r.member_expires_at ?? null,
+    duesPaidAt: r.dues_paid_at ?? null,
   };
 }
 
@@ -55,6 +59,7 @@ export function toTask(r: Row): Task {
     publish: r.publish === 1,
     status: r.status,
     needId: r.need_id ?? null,
+    roleId: r.role_id ?? null,
     remote: r.remote === 1,
     effortMinutes: r.effort_minutes ?? null,
     bring: r.bring ?? '',
@@ -115,6 +120,14 @@ export function publicOrg(r: Row) {
     timeZone: r.time_zone,
     sample: r.sample === 1,
     sampleKind: r.sample_kind ?? null,
+    approved: r.approved_at !== null && r.approved_at !== undefined,
+    peopleWord: r.people_word ?? 'volunteers',
+    memberCategories: parseJson<string[]>(r.member_categories_json, []),
+    renewalDays: r.renewal_days ?? 30,
+    renewalUrl: r.renewal_url ?? null,
+    joinOpen: r.join_open === 1,
+    trackRenewals: r.track_renewals === 1,
+    renewalMode: r.renewal_mode ?? 'auto',
     atproto: r.atproto_did ? { did: r.atproto_did, handle: r.atproto_handle, service: r.atproto_service } : null,
   };
 }

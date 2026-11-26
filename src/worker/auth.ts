@@ -3,6 +3,7 @@ import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import type { Actor, AppBindings, Env } from './env';
 import { fail, hashToken, isDev, newId, newToken, normalizeEmail } from './util';
 import { DAY } from '../shared/rules';
+import { mailEnabled, sendEmail } from './mail';
 
 const SESSION_COOKIE = 'sid';
 const SESSION_LIFETIME = 30 * DAY;
@@ -47,18 +48,14 @@ export function clientIp(c: Context<AppBindings>): string {
 }
 
 async function sendCode(env: Env, email: string, code: string): Promise<'sent' | 'dev'> {
-  if (env.RESEND_API_KEY && env.EMAIL_FROM) {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
-      body: JSON.stringify({
-        from: env.EMAIL_FROM,
-        to: email,
-        subject: `Your sign-in code: ${code}`,
-        text: `Your sign-in code is ${code}. It works for 10 minutes.`,
-      }),
+  if (mailEnabled(env)) {
+    const ok = await sendEmail(env, {
+      from: env.EMAIL_FROM!,
+      to: email,
+      subject: `Your sign-in code: ${code}`,
+      text: `Your sign-in code is ${code}. It works for 10 minutes.`,
     });
-    if (!res.ok) fail(503, 'Could not send the sign-in email. Try again.');
+    if (!ok) fail(503, 'Could not send the sign-in email. Try again.');
     return 'sent';
   }
   if (isDev(env)) return 'dev';

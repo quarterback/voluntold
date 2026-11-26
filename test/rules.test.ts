@@ -29,6 +29,10 @@ function volunteer(over: Partial<Volunteer> = {}): Volunteer {
     days: [],
     remoteOk: false,
     createdAt: 0,
+    memberCategory: null,
+    memberSince: null,
+    memberExpiresAt: null,
+    duesPaidAt: null,
     ...over,
   };
 }
@@ -56,6 +60,7 @@ function task(over: Partial<Task> = {}): Task {
     publish: false,
     status: 'open',
     needId: null,
+    roleId: null,
     remote: false,
     effortMinutes: null,
     bring: '',

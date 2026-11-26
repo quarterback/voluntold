@@ -17,6 +17,7 @@ import SplitIcon from '@mui/icons-material/CallSplit';
 import HubIcon from '@mui/icons-material/HubOutlined';
 import { STATUS_TONE } from './Tasks';
 import { TagPicker } from './tags';
+import { peopleWords } from './membership';
 
 interface NewAsk {
   askId: string;
@@ -25,6 +26,7 @@ interface NewAsk {
   phone: string | null;
   link: string;
   message: string;
+  emailed?: boolean;
 }
 
 const ASK_STATUS: Record<string, string> = {
@@ -42,6 +44,8 @@ const SPOT_STATUS: Record<string, string> = {
   missed: 'No-show',
 };
 
+const people = (n: number) => `${n} ${n === 1 ? 'person' : 'people'}`;
+
 async function copy(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text);
@@ -55,19 +59,25 @@ async function copy(text: string): Promise<boolean> {
 export function CopyList({ asks, onClose }: { asks: NewAsk[]; onClose: () => void }) {
   const { demo } = useOrg();
   const [copied, setCopied] = useState<string | null>(null);
-  const all = asks.map((a) => a.message).join('\n\n');
+  // People who were emailed come last: the ones to copy for are the work left.
+  const toCopy = asks.filter((a) => !a.emailed);
+  const emailed = asks.length - toCopy.length;
+  const ordered = [...toCopy, ...asks.filter((a) => a.emailed)];
+  const all = toCopy.map((a) => a.message).join('\n\n');
+  const title = toCopy.length === 0 ? `Emailed ${people(emailed)}` : `Share ${toCopy.length === 1 ? 'link' : `${toCopy.length} links`}`;
   return (
     <Dialog open fullWidth maxWidth="sm" onClose={onClose}>
-      <DialogTitle>Share {asks.length === 1 ? 'link' : `${asks.length} links`}</DialogTitle>
+      <DialogTitle>{title}</DialogTitle>
       <DialogContent>
         <Stack spacing={1.5}>
-          {asks.map((a) => (
+          {ordered.map((a) => (
             <Box key={a.askId} sx={{ border: (t) => `1px solid ${t.vt.border}`, borderRadius: 2, p: 1.5 }}>
               <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
                 <Box sx={{ minWidth: 0 }}>
                   <Typography variant="h3">{a.name}</Typography>
                   <Typography variant="caption" noWrap component="p">{[a.email, a.phone].filter(Boolean).join(' · ')}</Typography>
                 </Box>
+                {a.emailed && <Chip size="small" label="Emailed" />}
                 {demo && <Button size="small" href={a.link} target="_blank" rel="noopener" aria-label={`Open page for ${a.name}`}>Open</Button>}
                 <Button variant="outlined" size="small" aria-label={`Copy for ${a.name}`} onClick={async () => setCopied((await copy(a.message)) ? `Copied for ${a.name}` : "Couldn't copy")}>
                   Copy
@@ -79,7 +89,7 @@ export function CopyList({ asks, onClose }: { asks: NewAsk[]; onClose: () => voi
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button variant="outlined" onClick={async () => setCopied((await copy(all)) ? 'Copied' : "Couldn't copy")}>Copy all</Button>
+        {toCopy.length > 1 && <Button variant="outlined" onClick={async () => setCopied((await copy(all)) ? 'Copied' : "Couldn't copy")}>Copy all</Button>}
         <Button variant="contained" onClick={onClose}>Done</Button>
       </DialogActions>
       <Snackbar open={!!copied} autoHideDuration={2500} onClose={() => setCopied(null)} message={copied} />
@@ -156,7 +166,6 @@ export function TaskDetail() {
     if (ok) act(async () => { await api(path(`/tasks/${taskId}`), { method: 'DELETE' }); navigate('..', { relative: 'path' }); });
   }
 
-  const people = (n: number) => `${n} ${n === 1 ? 'person' : 'people'}`;
   const startLabel = task.askMode === 'hand' ? 'Select people' : `Ask ${people(data.nextGroup.length)}`;
   const canAsk = task.status === 'open' && data.openSpots > 0;
   const editable = ['draft', 'open', 'filled'].includes(task.status);
@@ -287,7 +296,7 @@ export function TaskDetail() {
                 {data.options.partners.map((p: any) => (
                   <ListItemButton key={p.id} disabled={busy} onClick={() => act(async () => { await api(path(`/tasks/${taskId}/share`), { body: { partnerOrgId: p.id } }); setShared(`Sent to ${p.name.replace(/^Sample: /, '')}`); })} sx={{ borderRadius: 0, px: 2.5, gap: 1.5 }}>
                     <IconTile icon={<HubIcon />} />
-                    <ListItemText primary={`Share with ${p.name.replace(/^Sample: /, '')}`} secondary={`Partner · ${p.active} active volunteers`} />
+                    <ListItemText primary={`Share with ${p.name.replace(/^Sample: /, '')}`} secondary={`Partner · ${p.active} active`} />
                   </ListItemButton>
                 ))}
                 <Box sx={{ height: 8 }} />
@@ -295,7 +304,7 @@ export function TaskDetail() {
             )}
             <Card>
               <CardContent>
-                <Typography variant="h2" component="h2">Volunteers</Typography>
+                <Typography variant="h2" component="h2">{peopleWords(org.peopleWord).People}</Typography>
                 {data.spots.length === 0 ? <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>No one yet</Typography> : (
                   <List disablePadding>
                     {data.spots.map((s: any) => (

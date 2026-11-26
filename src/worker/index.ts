@@ -9,6 +9,10 @@ import { needRoutes } from './routes/needs';
 import { tagRoutes } from './routes/tags';
 import { linkRoute, volunteerApi } from './routes/volunteer';
 import { publicRoutes } from './routes/public';
+import { adminRoutes } from './routes/admin';
+import { joinRoute, membershipRoutes, unsubscribeRoute } from './routes/membership';
+import { roleRoutes } from './routes/roles';
+import { reportRoutes } from './routes/reports';
 import { sweep } from './engine';
 import { createSampleOrg, DATASETS } from './sample';
 import { fail } from './util';
@@ -63,13 +67,19 @@ org.route('/', peopleRoutes);
 org.route('/', taskRoutes);
 org.route('/', needRoutes);
 org.route('/', tagRoutes);
+org.route('/', membershipRoutes);
+org.route('/', roleRoutes);
+org.route('/', reportRoutes);
 signedIn.route('/orgs/:orgId', org);
+signedIn.route('/admin', adminRoutes);
 
 // The volunteer API comes first: the signed-in routes below match all of /api.
 app.route('/api/v', volunteerApi);
 app.route('/api', signedIn);
 app.route('/v', linkRoute);
 app.route('/t', publicRoutes);
+app.route('/u', unsubscribeRoute);
+app.route('/join', joinRoute);
 
 app.all('/api/*', (c) => c.json({ error: 'Not found' }, 404));
 

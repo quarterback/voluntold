@@ -98,11 +98,36 @@ Each task uses one ready-made way to ask. The coordinator picks it when writing 
 
 ## Sending asks
 
-In the pilot, the tool sends nothing itself.
+The tool emails each ask itself ([decision 0012](decisions/0012-free-launch-and-email.md)). When the coordinator taps Ask, everyone with an email address gets the ask with their private link. The coordinator gets the link and a short message for everyone else: "Hi Sam, can you help with the registration desk on Thursday, 12:00 to 14:00? Answer here: [link]". There is a Copy button for each person, and "Copy all" when more than one person needs a copied link. People who were emailed are marked Emailed.
 
-For each ask, the coordinator gets the person's private link and a short message to go with it: "Hi Sam, can you help with the registration desk on Thursday, 12:00 to 14:00? Answer here: [link]". There is a Copy button for each person, and "Copy all" for the whole group. The coordinator pastes it into email, a text, Slack or WhatsApp. An ask counts as sent when the coordinator taps Ask, and the weekly limit counts it from then. Links are shown once. If one gets lost, the coordinator makes a new link from the task, and the old one stops working.
+An ask counts as sent when the coordinator taps Ask, and the weekly limit counts it from then. Links are shown once. If one gets lost, the coordinator makes a new link from the task, and the old one stops working, along with links from confirmations and reminders.
 
 An ask expires after 48 hours, or 6 hours before the task starts, whichever comes first.
+
+The tool sends three other emails, each once:
+
+- **Confirmation,** when a person accepts. It has the place, the address, who to ask for, and a link to cancel the spot.
+- **Reminder,** 24 hours before work at a set time. People who accepted within that last day already have a confirmation, so they get no reminder.
+- **Not full,** to the coordinator who wrote the task, 48 hours before work at a set time that still has open spots. If that coordinator has left, the admins get it.
+
+Asks, confirmations and reminders come from the organization's name, and replies go to the coordinator. Every email to a volunteer says how to unsubscribe. One organization can send 300 emails in 24 hours unless an admin of the tool raises it. Past that, the coordinator copies links. Sample organizations never send email, and neither do new organizations until an admin approves them ([decision 0013](decisions/0013-approve-new-organizations.md)). Each email is recorded without its text, because the text holds a private link. Email goes through Resend or Amazon SES, whichever has keys set.
+
+## Membership
+
+From [decision 0014](decisions/0014-membership-management.md). Each person can have a membership category, a member since date, an expiry date and a dues paid date. Renewal status lives in Reports, not on the People screen. Each organization chooses whether its people are called volunteers, members or participants.
+
+- **Renewal reminders** are automatic or manual, the organization's choice. Automatic ones go out once per expiry date, 30 days before by default, with the organization's renewal link. Manual ones go out when a coordinator sends them to a group from Reports. Either way, a person counts as reminded only once their email has gone out.
+- **Applications:** an organization can open a public page where adults apply. A coordinator accepts or declines each one. Accepting adds the person.
+- **Group email:** a coordinator filters the People screen and emails everyone shown. It skips people who haven't agreed to be contacted or who unsubscribed. Every group email and renewal reminder has an unsubscribe link.
+- **Dues** are recorded, not collected.
+
+## Reports
+
+A Reports screen gives counts first, then only the people in the group a coordinator picks, so nobody scans thousands of members. Renewals (when turned on) count people due in the next 30 days, 31 to 60, 61 to 90, and those who expired in the last 90. Picking a group lists those people soonest first, with Export CSV and Email. It also counts who was offered a task, accepted and took part in the last 90 days, who has never been offered one, roles, vacancies, terms ending soon, waiting applications and members by category.
+
+## Roles
+
+From [decision 0015](decisions/0015-roles-and-succession.md). A role is a job someone holds, such as chair, treasurer or committee member. It has responsibilities, handoff notes and terms: who held it, from when and until when. The Roles screen puts vacant roles first, then terms ending within 60 days. Handing off a role ends the current term and starts the next. A task can belong to a role, so the next holder inherits it. Renewals and dues are off until an organization turns them on.
 
 ## What the volunteer sees
 
@@ -156,7 +181,7 @@ An admin can download everything as CSV: volunteers with their fields, tasks, as
 
 ## For the coding agent
 
-**Stack:** Cloudflare Workers and D1. A React web app using MUI, themed from the Material 3 seed color `#00B8A9`, with dark mode from the same seed. Sign-in uses 6 digit email codes sent through an email provider (Resend in the pilot). There are no passwords. Posting to AT Protocol uses an app password the organization makes in its Bluesky settings. AT Protocol OAuth and "Log in with Bluesky" come later. They replace the app password once the OAuth client passes a one-day test on Workers ([decision 0008](decisions/0008-pilot-build-choices.md)).
+**Stack:** Cloudflare Workers and D1. A React web app using MUI, themed from the Material 3 seed color `#00B8A9`, with dark mode from the same seed. Sign-in uses 6 digit email codes sent through Resend or Amazon SES. There are no passwords. Posting to AT Protocol uses an app password the organization makes in its Bluesky settings. AT Protocol OAuth and "Log in with Bluesky" come later. They replace the app password once the OAuth client passes a one-day test on Workers ([decision 0008](decisions/0008-pilot-build-choices.md)).
 
 **Model for imports:** used only to pull rows out of text, Word and PDF files. Its output must be checked against a schema. Use a provider whose terms say it doesn't train on prompts or keep them. Record which provider and the date it was checked in a decision record before any real file goes through it.
 

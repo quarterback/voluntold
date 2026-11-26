@@ -3,8 +3,10 @@ import type { AppBindings } from '../env';
 import { must, mustManageTeam } from '../auth';
 import { loadFields, loadOrg, logEvent, publicOrg } from '../db';
 import { cleanText, fail, isDev, newId, normalizeEmail, optionalText } from '../util';
+import { isAdmin, tellAdmins } from './admin';
 import { connectAccount, disconnectAccount, syncTask } from '../atproto';
 import type { FieldType, Requirement } from '../../shared/types';
+import { CURRENT_TOOLS, PEOPLE_WORDS, SIZE_BANDS } from '../../shared/membership';
 
 export const STARTER_FIELDS: { label: string; type: FieldType; options: string[] }[] = [
   { label: 'Skills', type: 'many', options: [] },
@@ -39,18 +41,27 @@ accountRoutes.get('/me', async (c) => {
   )
     .bind(c.get('userId'))
     .all();
-  return c.json({ email: c.get('email'), orgs: results });
+  return c.json({ email: c.get('email'), orgs: results, admin: isAdmin(c.env, c.get('email')) });
 });
 
 accountRoutes.post('/orgs', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const name = cleanText(body.name, 120);
   if (!name) fail(400, 'Enter an organization name.');
+  if (body.adultsConfirmed !== true) fail(400, 'Confirm everyone on your roster is 18 or older.');
+  let website = optionalText(body.website, 300);
+  if (website && !/^https?:\/\//.test(website)) website = `https://${website}`;
+  const size = SIZE_BANDS.includes(body.size) ? body.size : null;
+  const tool = CURRENT_TOOLS.includes(body.currentTool) ? body.currentTool : null;
+  const toolName = tool === 'Paid software' ? optionalText(body.toolName, 120) : null;
+  const currentTool = tool && toolName ? `${tool}: ${toolName}` : tool;
+  const intendedUse = optionalText(body.intendedUse, 1000);
   const now = c.get('now');
   const orgId = newId();
   const db = c.env.DB;
   await db.batch([
-    db.prepare('INSERT INTO orgs (id, name, time_zone, created_at) VALUES (?, ?, ?, ?)').bind(orgId, name, validTimeZone(body.timeZone), now),
+    db.prepare('INSERT INTO orgs (id, name, time_zone, created_at, website, size_band, current_tool, intended_use, adults_confirmed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(orgId, name, validTimeZone(body.timeZone), now, website, size, currentTool, intendedUse, now),
     db.prepare("INSERT INTO members (id, org_id, user_id, role, created_at) VALUES (?, ?, ?, 'admin', ?)").bind(newId(), orgId, c.get('userId'), now),
     ...STARTER_FIELDS.map((f, i) =>
       db
@@ -59,6 +70,7 @@ accountRoutes.post('/orgs', async (c) => {
     ),
     logEvent(db, { orgId, actorKind: 'member', actorId: c.get('userId'), verb: 'created', objectType: 'org', objectId: orgId, at: now }),
   ]);
+  await tellAdmins(c.env, name, c.get('email'), { website, size, currentTool, intendedUse });
   return c.json({ id: orgId }, 201);
 });
 
@@ -95,8 +107,32 @@ orgRoutes.patch('/', async (c) => {
   }
   const publishDefault = body.publishDefault === undefined ? org.publish_default : body.publishDefault ? 1 : 0;
   const tz = body.timeZone === undefined ? org.time_zone : validTimeZone(body.timeZone);
-  await c.env.DB.prepare('UPDATE orgs SET name = ?, weekly_ask_limit = ?, signup_url = ?, publish_default = ?, time_zone = ? WHERE id = ?')
-    .bind(name, limit, signup, publishDefault, tz, actor.orgId)
+  const word = body.peopleWord === undefined ? org.people_word : body.peopleWord;
+  if (!PEOPLE_WORDS.includes(word)) fail(400, 'Choose volunteers, members or participants.');
+  let categories = org.member_categories_json;
+  if (body.memberCategories !== undefined) {
+    if (!Array.isArray(body.memberCategories)) fail(400, 'Membership categories must be a list.');
+    categories = JSON.stringify([...new Set(body.memberCategories.map((x: unknown) => cleanText(x, 80)).filter(Boolean))].slice(0, 50));
+  }
+  let renewalDays = org.renewal_days;
+  if (body.renewalDays !== undefined) {
+    renewalDays = Number(body.renewalDays);
+    if (!Number.isInteger(renewalDays) || renewalDays < 0 || renewalDays > 120) fail(400, 'Reminder days must be 0 to 120.');
+  }
+  let renewalUrl = org.renewal_url;
+  if (body.renewalUrl !== undefined) {
+    renewalUrl = optionalText(body.renewalUrl, 500);
+    if (renewalUrl && !/^https:\/\/[^\s]+$/.test(renewalUrl)) fail(400, 'The renewal link must start with https://');
+  }
+  const joinOpen = body.joinOpen === undefined ? org.join_open : body.joinOpen ? 1 : 0;
+  const trackRenewals = body.trackRenewals === undefined ? org.track_renewals : body.trackRenewals ? 1 : 0;
+  const renewalMode = body.renewalMode === undefined ? org.renewal_mode : body.renewalMode;
+  if (renewalMode !== 'auto' && renewalMode !== 'manual') fail(400, 'Choose automatic or manual reminders.');
+  await c.env.DB.prepare(
+    `UPDATE orgs SET name = ?, weekly_ask_limit = ?, signup_url = ?, publish_default = ?, time_zone = ?,
+       people_word = ?, member_categories_json = ?, renewal_days = ?, renewal_url = ?, join_open = ?, track_renewals = ?, renewal_mode = ? WHERE id = ?`,
+  )
+    .bind(name, limit, signup, publishDefault, tz, word, categories, renewalDays, renewalUrl, joinOpen, trackRenewals, renewalMode, actor.orgId)
     .run();
   return c.json({ org: publicOrg((await loadOrg(c.env.DB, actor.orgId))!) });
 });
@@ -166,7 +202,7 @@ orgRoutes.delete('/', async (c) => {
   const owned = [
     'spots', 'asks', 'events', 'fields', 'imports', 'lists', 'need_items', 'offer_skips',
     'reports', 'taggings', 'volunteer_sessions', 'team_leads', 'team_members', 'tasks',
-    'needs', 'tags', 'teams', 'volunteers',
+    'needs', 'tags', 'teams', 'volunteers', 'emails', 'ask_links', 'applications', 'messages', 'role_terms', 'roles',
   ];
   await db.batch([
     ...owned.map((t) => db.prepare(`DELETE FROM ${t} WHERE org_id = ?`).bind(actor.orgId)),

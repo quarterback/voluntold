@@ -14,6 +14,8 @@ import { TIER_TEXT, usualTimes } from '../format';
 import { meetsRequirement, byLongestWait } from '../../shared/rules';
 import { TagFilter, TagRow } from './tags';
 import type { Requirement, Volunteer } from '../../shared/types';
+import { membershipState, type MembershipState } from '../../shared/membership';
+import { Applications, MessageDialog, peopleWords } from './membership';
 
 type Row = Volunteer & { standing: string; asked: number; yes: number; offerReady: boolean; tags: string[] };
 
@@ -25,9 +27,13 @@ interface Filter {
   teamId?: string;
   fieldId?: string;
   value?: string;
+  membership?: MembershipState | '';
+  category?: string;
 }
 
-function matches(v: Row, f: Filter, fields: ReturnType<typeof useOrg>['fields']): boolean {
+function matches(v: Row, f: Filter, fields: ReturnType<typeof useOrg>['fields'], renewalDays = 30): boolean {
+  if (f.membership && membershipState(v.memberExpiresAt, Date.now(), renewalDays) !== f.membership) return false;
+  if (f.category && v.memberCategory !== f.category) return false;
   if (f.q && !`${v.name} ${v.email ?? ''} ${v.phone ?? ''}`.toLowerCase().includes(f.q.toLowerCase())) return false;
   if (f.status === 'never' && v.lastAskedAt !== null) return false;
   if (f.status === 'paused' && v.status !== 'paused') return false;
@@ -73,7 +79,8 @@ function history(v: Row): string {
 }
 
 export function People() {
-  const { path, fields, teams, me } = useOrg();
+  const { path, fields, teams, me, org } = useOrg();
+  const words = peopleWords(org.peopleWord);
   const navigate = useNavigate();
   const dialogs = useDialogs();
   const [params] = useSearchParams();
@@ -83,10 +90,11 @@ export function People() {
   }, [path]);
   const [filter, setFilter] = useState<Filter>({ status: (params.get('filter') as Filter['status']) ?? '' });
   const [adding, setAdding] = useState(false);
+  const [messaging, setMessaging] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
   const shown = useMemo(
-    () => (data ? data.volunteers.filter((v) => matches(v, filter, fields)).sort(byLongestWait) : []),
+    () => (data ? data.volunteers.filter((v) => matches(v, filter, fields, org.renewalDays)).sort(byLongestWait) : []),
     [data, filter, fields],
   );
   if (!data) return <Loading error={error} />;
@@ -102,12 +110,19 @@ export function People() {
     reload();
   }
 
-  const addButton = canEdit && <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAdding(true)}>Add person</Button>;
+  const addButton = (
+    <Stack direction="row" spacing={1}>
+      <Button variant="outlined" onClick={() => navigate('../reports', { relative: 'path' })}>Reports</Button>
+      {canEdit && <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAdding(true)}>Add person</Button>}
+    </Stack>
+  );
 
   return (
     <Page title="People" action={addButton}>
+      {messaging && <MessageDialog path={path} volunteerIds={shown.map((v) => v.id)} onClose={() => setMessaging(false)} />}
+      {canEdit && <Box sx={{ mb: 2 }}><Applications path={path} onChange={reload} /></Box>}
       {data.volunteers.length === 0 ? (
-        <EmptyState title="No volunteers yet"
+        <EmptyState title={`No ${words.people} yet`}
           action={<Button variant="contained" onClick={() => navigate('../import', { relative: 'path' })}>Import file</Button>} />
       ) : (
         <>
@@ -134,8 +149,17 @@ export function People() {
               <Button size="small" onClick={saveList}>Save list</Button>
             </Stack>
             <TagFilter value={filter.tagId ?? ''} counts={tagCounts} onChange={(tagId) => setFilter({ ...filter, tagId })} />
-            {(showFilters || filter.teamId || filter.fieldId) && (
+            {(showFilters || filter.teamId || filter.fieldId || filter.category) && (
               <Stack direction="row" spacing={1}>
+                {org.memberCategories.length > 0 && (
+                  <FormControl fullWidth>
+                    <InputLabel id="category-filter">Category</InputLabel>
+                    <Select labelId="category-filter" label="Category" value={filter.category ?? ''} displayEmpty onChange={(e) => setFilter({ ...filter, category: e.target.value })}>
+                      <MenuItem value="">Any category</MenuItem>
+                      {org.memberCategories.map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+                    </Select>
+                  </FormControl>
+                )}
                 {teams.length > 0 && (
                   <FormControl fullWidth>
                     <InputLabel id="team-filter">Team</InputLabel>
@@ -170,7 +194,10 @@ export function People() {
 
           <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
             <Typography variant="body2" color="text.secondary">Longest wait first</Typography>
-            <Typography variant="body2" color="text.secondary">{shown.length} shown</Typography>
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+              <Typography variant="body2" color="text.secondary">{shown.length} shown</Typography>
+              {canEdit && shown.length > 0 && <Button size="small" variant="outlined" onClick={() => setMessaging(true)}>Email {shown.length}</Button>}
+            </Stack>
           </Stack>
           <Card>
             {shown.length === 0 && <Typography color="text.secondary" sx={{ p: 2.5 }}>No results</Typography>}
@@ -183,7 +210,7 @@ export function People() {
                   <ListItemButton onClick={() => navigate(v.id)} sx={{ borderRadius: 0, px: 2, py: 1.25, gap: 1.5, alignItems: 'flex-start' }}>
                     <Initials name={v.name} muted={muted} />
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant="h3" noWrap>{v.name}{v.tier ? <Typography component="span" variant="body2" color="text.secondary"> · {TIER_TEXT[v.tier]}</Typography> : null}</Typography>
+                      <Typography variant="h3" noWrap>{v.name}{[v.memberCategory, v.tier ? TIER_TEXT[v.tier] : null].filter(Boolean).map((x) => <Typography key={x} component="span" variant="body2" color="text.secondary"> · {x}</Typography>)}</Typography>
                       {about(v, fields) && <Typography variant="body2" color="text.secondary" noWrap>{about(v, fields)}</Typography>}
                       <Typography variant="body2" sx={{ color: 'text.disabled' }} noWrap>{history(v)}</Typography>
                       <TagRow tagIds={v.tags} sx={{ mt: 0.5 }} />
