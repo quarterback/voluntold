@@ -1,6 +1,9 @@
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { BRAND } from './src/shared/brand';
+
+const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 
 // `vite build --mode browser-demo` builds the demo that runs entirely in the
 // visitor's browser (src/browser/main.ts) into dist-demo/.
@@ -9,6 +12,11 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
+      {
+        name: 'brand',
+        transformIndexHtml: (html: string) =>
+          html.replace(/%BRAND_NAME%/g, escape(BRAND.name)).replace(/%BRAND_TAGLINE%/g, escape(BRAND.tagline)).replace(/%BRAND_DESCRIPTION%/g, escape(BRAND.description)),
+      },
       browserDemo && {
         name: 'browser-demo-entry',
         transformIndexHtml: {
