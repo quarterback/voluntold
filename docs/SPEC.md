@@ -114,12 +114,16 @@ Asks, confirmations and reminders come from the organization's name, and replies
 
 ## Membership
 
-From [decision 0014](decisions/0014-membership-management.md). Each person can have a membership category, a member since date, an expiry date and a dues paid date. The People screen filters by Current, Expiring and Expired. Each organization chooses whether its people are called volunteers, members or participants.
+From [decision 0014](decisions/0014-membership-management.md). Each person can have a membership category, a member since date, an expiry date and a dues paid date. Renewal status lives in Reports, not on the People screen. Each organization chooses whether its people are called volunteers, members or participants.
 
 - **Renewal reminders** go out once per expiry date, 30 days before by default, with the organization's renewal link.
 - **Applications:** an organization can open a public page where adults apply. A coordinator accepts or declines each one. Accepting adds the person.
 - **Group email:** a coordinator filters the People screen and emails everyone shown. It skips people who haven't agreed to be contacted or who unsubscribed. Every group email and renewal reminder has an unsubscribe link.
 - **Dues** are recorded, not collected.
+
+## Reports
+
+A Reports screen gives counts first, then only the people in the group a coordinator picks, so nobody scans thousands of members. Renewals (when turned on) count people due in the next 30 days, 31 to 60, 61 to 90, and those who expired in the last 90. Picking a group lists those people soonest first, with Export CSV and Email. It also counts who was offered a task, accepted and took part in the last 90 days, who has never been offered one, roles, vacancies, terms ending soon, waiting applications and members by category.
 
 ## Roles
 

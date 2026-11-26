@@ -5,6 +5,7 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import RoleIcon from '@mui/icons-material/BadgeOutlined';
+import ReportIcon from '@mui/icons-material/InsertChartOutlined';
 import { FONT_DISPLAY } from '../theme';
 import TodayIcon from '@mui/icons-material/TodayOutlined';
 import TaskIcon from '@mui/icons-material/AssignmentOutlined';
@@ -46,7 +47,8 @@ const TABS = [
   { key: 'roles', label: 'Roles', icon: <RoleIcon fontSize="small" /> },
 ];
 const SETTINGS = { key: 'settings', label: 'Settings', icon: <SettingsIcon fontSize="small" /> };
-const ALL_TABS = [...TABS, SETTINGS, { key: 'offers', label: 'Today', icon: null }];
+const REPORTS = { key: 'reports', label: 'Reports', icon: <ReportIcon fontSize="small" /> };
+const ALL_TABS = [...TABS, REPORTS, SETTINGS, { key: 'offers', label: 'Today', icon: null }];
 
 const SIDEBAR = 232;
 
@@ -79,7 +81,7 @@ export function OrgShell() {
             <Typography component="span" noWrap sx={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: '1.0625rem', letterSpacing: '-0.01em' }}>{data.org.name}</Typography>
           </Button>
           <List disablePadding>
-            {[...TABS, SETTINGS].map((t) => (
+            {[...TABS, REPORTS, SETTINGS].map((t) => (
               <ListItemButton key={t.key} selected={tab === t.key} onClick={() => go(t.key)}
                 aria-current={tab === t.key ? 'page' : undefined}
                 sx={{ mb: 0.5, py: 1, color: theme.vt.onInk, '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },

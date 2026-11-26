@@ -15,7 +15,7 @@ import { meetsRequirement, byLongestWait } from '../../shared/rules';
 import { TagFilter, TagRow } from './tags';
 import type { Requirement, Volunteer } from '../../shared/types';
 import { membershipState, type MembershipState } from '../../shared/membership';
-import { Applications, MEMBERSHIP_TEXT, MembershipBadge, MessageDialog, peopleWords } from './membership';
+import { Applications, MessageDialog, peopleWords } from './membership';
 
 type Row = Volunteer & { standing: string; asked: number; yes: number; offerReady: boolean; tags: string[] };
 
@@ -110,7 +110,12 @@ export function People() {
     reload();
   }
 
-  const addButton = canEdit && <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAdding(true)}>Add person</Button>;
+  const addButton = (
+    <Stack direction="row" spacing={1}>
+      <Button variant="outlined" onClick={() => navigate('../reports', { relative: 'path' })}>Reports</Button>
+      {canEdit && <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAdding(true)}>Add person</Button>}
+    </Stack>
+  );
 
   return (
     <Page title="People" action={addButton}>
@@ -133,14 +138,6 @@ export function People() {
                   color={filter.status === k ? 'primary' : 'default'} onClick={() => setFilter({ ...filter, status: k })} />
               ))}
             </Stack>
-            {org.trackRenewals && (
-              <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
-                {(Object.keys(MEMBERSHIP_TEXT) as (keyof typeof MEMBERSHIP_TEXT)[]).map((k) => (
-                  <Chip key={k} variant="outlined" label={`${MEMBERSHIP_TEXT[k][0]} ${data.volunteers.filter((v) => membershipState(v.memberExpiresAt, Date.now(), org.renewalDays) === k).length}`}
-                    color={filter.membership === k ? 'primary' : 'default'} onClick={() => setFilter({ ...filter, membership: filter.membership === k ? '' : k })} />
-                ))}
-              </Stack>
-            )}
             <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
               {Object.entries(TIER_TEXT).map(([k, label]) => (
                 <Chip key={k} variant="outlined" label={`${label} ${data.volunteers.filter((v) => v.tier === k).length}`}
@@ -218,7 +215,7 @@ export function People() {
                       <Typography variant="body2" sx={{ color: 'text.disabled' }} noWrap>{history(v)}</Typography>
                       <TagRow tagIds={v.tags} sx={{ mt: 0.5 }} />
                     </Box>
-                    {b ? <StatusBadge label={b[0]} tone={b[1]} /> : org.trackRenewals && membershipState(v.memberExpiresAt, Date.now(), org.renewalDays) !== 'current' && <MembershipBadge expiresAt={v.memberExpiresAt} renewalDays={org.renewalDays} />}
+                    {b && <StatusBadge label={b[0]} tone={b[1]} />}
                   </ListItemButton>
                 </Box>
               );

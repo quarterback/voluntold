@@ -12,6 +12,7 @@ import { publicRoutes } from './routes/public';
 import { adminRoutes } from './routes/admin';
 import { joinRoute, membershipRoutes, unsubscribeRoute } from './routes/membership';
 import { roleRoutes } from './routes/roles';
+import { reportRoutes } from './routes/reports';
 import { sweep } from './engine';
 import { createSampleOrg, DATASETS } from './sample';
 import { fail } from './util';
@@ -68,6 +69,7 @@ org.route('/', needRoutes);
 org.route('/', tagRoutes);
 org.route('/', membershipRoutes);
 org.route('/', roleRoutes);
+org.route('/', reportRoutes);
 signedIn.route('/orgs/:orgId', org);
 signedIn.route('/admin', adminRoutes);
 

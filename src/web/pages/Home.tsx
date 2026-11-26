@@ -94,8 +94,8 @@ export function Home() {
         <Stack spacing={{ xs: 8, md: 14 }} sx={{ mb: { xs: 8, md: 14 } }}>
           <Feature
             title="Your roster, your way"
-            lines={['Call them members, volunteers or participants. Track the details that matter to you.', 'Turn on renewals and dues if you have them. Leave them off if you don\'t.']}
-            img="/screens/roster.png" alt="The people list for a coaches association, with membership categories and Current, Expiring and Expired filters" flip
+            lines={['Call them members, volunteers or participants. Track the details that matter to you.', 'Turn on renewals and dues if you have them, and run a report of who is due.']}
+            img="/screens/roster.png" alt="The people list for a coaches association, with each member's category" flip
           />
           <Feature
             title="Every role has a history"
