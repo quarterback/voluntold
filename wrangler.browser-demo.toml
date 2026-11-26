@@ -8,9 +8,11 @@
 name = "voluntold-demo"
 compatibility_date = "2026-08-15"
 workers_dev = true
-# Add { pattern = "demo.manyarms.app", custom_domain = true } once manyarms.app
-# is on this Cloudflare account. Keep the old address so shared links still work.
-routes = [{ pattern = "volleydemo.vloora.com", custom_domain = true }]
+# Keep the old address so shared links still work.
+routes = [
+  { pattern = "demo.manyarms.app", custom_domain = true },
+  { pattern = "volleydemo.vloora.com", custom_domain = true },
+]
 
 [assets]
 directory = "./dist-demo"
