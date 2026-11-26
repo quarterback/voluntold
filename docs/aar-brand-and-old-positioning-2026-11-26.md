@@ -61,3 +61,9 @@ No machine trace of this run was available for reconciliation.
 **Instruction (actual wording):** "remove the old sample", "and update it", then "make sure to clean up the text against humanizer and ap style skill and remove any slop".
 **What changed:** The demo's membership sample, Riverbend Design Alliance, now calls its people members, has categories (Professional, Student, Life member), renewal dates spread so every renewal report has people in it, six roles (one vacant, one term ending soon, one with a past holder, three with linked tasks), and two pending applications. It is first in the demo's sample picker. `src/worker/samples/common.ts` gained an optional `membership` block, and `src/worker/sample.ts` writes it. The Vloora site's Volley page now uses screenshots from this sample instead of the food pantry. 60 tests pass.
 **Decision made alone:** The renewal dates, roles, terms and applications in the sample, and putting it first in the picker.
+
+## Follow-up: the name ManyArms
+
+**Instruction (actual wording):** "new product is gonna be called EightArms or ManyArms (.app) deciding now", then "Many Arms is easier to say and could be fun to brand with a wordmark".
+**What changed:** `BRAND.name` is ManyArms. New wordmark outlines drawn from PP Object Sans Heavy with fontTools, at the old wordmark's tracking (checked by rebuilding the Volley outlines first). New favicon and app icons, share card and `public/wordmark.svg`. Link previews point at manyarms.app. Added an `[env.production]` block in `wrangler.toml` for manyarms.app, `scripts/deploy-production.sh`, which refuses to run until the database id and `ADMIN_EMAILS` are set, and the checklist `docs/launch/deploy.md`. Decision 0016 records the name. 60 tests pass.
+**Decisions made alone:** One word, ManyArms. The address plan. Keeping volleydemo.vloora.com alive. Leaving `ADMIN_EMAILS` empty in the repository, so no personal address is committed.
