@@ -15,7 +15,7 @@ import { meetsRequirement, byLongestWait } from '../../shared/rules';
 import { TagFilter, TagRow } from './tags';
 import type { Requirement, Volunteer } from '../../shared/types';
 import { membershipState, type MembershipState } from '../../shared/membership';
-import { Applications, MEMBERSHIP_TEXT, MessageDialog, peopleWords } from './membership';
+import { Applications, MEMBERSHIP_TEXT, MembershipBadge, MessageDialog, peopleWords } from './membership';
 
 type Row = Volunteer & { standing: string; asked: number; yes: number; offerReady: boolean; tags: string[] };
 
@@ -213,12 +213,12 @@ export function People() {
                   <ListItemButton onClick={() => navigate(v.id)} sx={{ borderRadius: 0, px: 2, py: 1.25, gap: 1.5, alignItems: 'flex-start' }}>
                     <Initials name={v.name} muted={muted} />
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant="h3" noWrap>{v.name}{v.tier ? <Typography component="span" variant="body2" color="text.secondary"> · {TIER_TEXT[v.tier]}</Typography> : null}</Typography>
+                      <Typography variant="h3" noWrap>{v.name}{[v.memberCategory, v.tier ? TIER_TEXT[v.tier] : null].filter(Boolean).map((x) => <Typography key={x} component="span" variant="body2" color="text.secondary"> · {x}</Typography>)}</Typography>
                       {about(v, fields) && <Typography variant="body2" color="text.secondary" noWrap>{about(v, fields)}</Typography>}
                       <Typography variant="body2" sx={{ color: 'text.disabled' }} noWrap>{history(v)}</Typography>
                       <TagRow tagIds={v.tags} sx={{ mt: 0.5 }} />
                     </Box>
-                    {b && <StatusBadge label={b[0]} tone={b[1]} />}
+                    {b ? <StatusBadge label={b[0]} tone={b[1]} /> : org.trackRenewals && membershipState(v.memberExpiresAt, Date.now(), org.renewalDays) !== 'current' && <MembershipBadge expiresAt={v.memberExpiresAt} renewalDays={org.renewalDays} />}
                   </ListItemButton>
                 </Box>
               );

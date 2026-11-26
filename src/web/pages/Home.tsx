@@ -71,7 +71,7 @@ export function Home() {
         </Box>
 
         <Box sx={{ maxWidth: 760, mb: { xs: 8, md: 14 } }}>
-          <Typography component="h2" sx={{ ...heading, fontSize: { xs: '2rem', md: '3rem' }, letterSpacing: '-0.03em', mb: 2.5 }}>A big list means little if the same few people do everything.</Typography>
+          <Typography component="h2" sx={{ ...heading, fontSize: { xs: '1.75rem', md: '2.25rem' }, mb: 2.5 }}>A big list means little if the same few people do everything.</Typography>
           {[
             'Most groups keep their people in a spreadsheet and their asks in a group chat.',
             'The reliable few get asked again, and everyone else waits to be asked.',
@@ -81,11 +81,10 @@ export function Home() {
 
         <Box sx={{ mb: { xs: 8, md: 14 } }}>
           <Typography component="h2" sx={{ ...heading, fontSize: { xs: '1.75rem', md: '2.25rem' }, mb: 3 }}>How it works</Typography>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
+          <Box component="ol" sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: { xs: 3, md: 5 }, listStyle: 'none', p: 0, m: 0 }}>
             {STEPS.map((step, i) => (
-              <Box key={step.title} sx={{ ...frame, boxShadow: 'none', p: 3 }}>
-                <Typography sx={{ ...heading, color: vt.tangerine, fontSize: '1.5rem', mb: 1 }}>{i + 1}</Typography>
-                <Typography component="h3" sx={{ ...heading, fontSize: '1.375rem', mb: 1 }}>{step.title}</Typography>
+              <Box component="li" key={step.title} sx={{ borderTop: `1px solid ${vt.border}`, pt: 2 }}>
+                <Typography component="h3" sx={{ fontWeight: 600, fontSize: '1.125rem', mb: 0.75 }}>{i + 1}. {step.title}</Typography>
                 <Typography sx={{ color: vt.text2 }}>{step.text}</Typography>
               </Box>
             ))}
@@ -96,7 +95,7 @@ export function Home() {
           <Feature
             title="Your roster, your way"
             lines={['Call them members, volunteers or participants. Track the details that matter to you.', 'Turn on renewals and dues if you have them. Leave them off if you don\'t.']}
-            img="/screens/people.png" alt="The people list with tags, tiers and availability" flip
+            img="/screens/roster.png" alt="The people list for a coaches association, with membership categories and Current, Expiring and Expired filters" flip
           />
           <Feature
             title="Every role has a history"
@@ -105,18 +104,8 @@ export function Home() {
           />
           <Feature
             title="Two buttons on their phone"
-            lines={['Each ask opens a page with the date, the place, what to bring and who to find.', 'Volunteers tap Accept or Decline. They never make an account.']}
+            lines={['Each ask opens a page with the date, the place, what to bring and who to find.', 'People tap Accept or Decline. They never make an account.']}
             img="/screens/volunteer.png" alt="A volunteer's page on a phone, with a request and the Accept and Decline buttons" phone flip
-          />
-          <Feature
-            title="Fair to everyone on your list"
-            lines={["Only people who meet the task's requirements get asked. Whoever has waited longest goes first.", 'Nobody gets more than two asks a week, unless you change the limit.']}
-            img="/screens/task.png" alt="A task page showing the people holding spots and the next group to ask"
-          />
-          <Feature
-            title="Plan the whole event"
-            lines={['A Saturday delivery or a pledge drive holds every assignment and supply it takes.', 'Each assignment shows who fits, or where you have a gap.']}
-            img="/screens/needs.png" alt="The Needs screen with a Saturday delivery and its assignments" flip
           />
         </Stack>
 
@@ -155,7 +144,7 @@ export function Home() {
 const STEPS = [
   { title: 'Bring your list', text: "Upload a spreadsheet or your old system's export. Volley recognizes the usual columns." },
   { title: 'Set up your roles', text: 'Add your board, committees and positions, with who holds each one and until when.' },
-  { title: 'Put people to work', text: 'Write a task, and Volley emails the people who fit. They answer from their phone.' },
+  { title: 'Put people to work', text: 'Write a task, and Volley emails the people who fit. Whoever has waited longest goes first.' },
 ];
 
 const QUESTIONS = [
@@ -174,7 +163,7 @@ function Feature({ title, lines, img, alt, phone, flip }: { title: string; lines
   return (
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 3fr' }, gap: { xs: 3, md: 8 }, alignItems: 'center' }}>
       <Box sx={{ order: { md: flip ? 2 : 1 } }}>
-        <Typography component="h2" sx={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: { xs: '1.75rem', md: '2.25rem' }, letterSpacing: '-0.025em', lineHeight: 1.05, mb: 2 }}>{title}</Typography>
+        <Typography component="h2" sx={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: '1.75rem', letterSpacing: '-0.02em', lineHeight: 1.1, mb: 2 }}>{title}</Typography>
         {lines.map((t) => <Typography key={t} sx={{ color: vt.text2, fontSize: '1.0625rem', mb: 1 }}>{t}</Typography>)}
       </Box>
       <Box sx={{ order: { md: flip ? 1 : 2 }, display: 'flex', justifyContent: 'center' }}>
