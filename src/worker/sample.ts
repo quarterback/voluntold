@@ -117,6 +117,7 @@ export async function createSampleOrg(env: Env, userId: string, now: number, kin
     ).bind(newId(), orgId, d.import.fileName, d.import.fileName.split('.').pop() ?? 'csv', JSON.stringify({}), d.import.added, d.import.merged, JSON.stringify(d.import.setAside), now - 50 * DAY),
   );
 
+  const taskIds = new Map<string, string>();
   const ctx: Ctx = {
     now,
     at: (days, hour, minute) => at(now, d.tz, days, hour, minute),
@@ -125,6 +126,7 @@ export async function createSampleOrg(env: Env, userId: string, now: number, kin
     tag,
     task(t) {
       const tid = newId();
+      taskIds.set(t.title, tid);
       S.push(...addTagStatements(db, orgId, 'task', tid, (t.tags ?? []).map(tag), now - 10 * DAY));
       S.push(
         db.prepare(
@@ -173,6 +175,41 @@ export async function createSampleOrg(env: Env, userId: string, now: number, kin
     },
   };
   await d.story(ctx);
+
+  // Membership details, roles and applications.
+  const m = d.membership;
+  if (m) {
+    S.push(db.prepare('UPDATE orgs SET people_word = ?, member_categories_json = ?, track_renewals = ?, renewal_url = ?, join_open = ? WHERE id = ?')
+      .bind(m.peopleWord, JSON.stringify(m.categories), m.trackRenewals ? 1 : 0, m.renewalUrl ?? null, m.joinOpen ? 1 : 0, orgId));
+    d.people.forEach((p, i) => {
+      const x = m.person(p, i);
+      const days = (n: number | undefined) => (n === undefined ? null : now + n * DAY);
+      S.push(db.prepare('UPDATE volunteers SET member_category = ?, member_since = ?, member_expires_at = ?, dues_paid_at = ? WHERE id = ?')
+        .bind(x.category, days(x.since), days(x.expires), days(x.duesPaid), vol(p.name)));
+    });
+    for (const r of m.roles) {
+      const roleId = newId();
+      S.push(db.prepare('INSERT INTO roles (id, org_id, name, responsibilities, handoff, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+        .bind(roleId, orgId, r.name, r.responsibilities, r.handoff ?? '', now - 400 * DAY));
+      for (const t of r.past ?? []) {
+        S.push(db.prepare('INSERT INTO role_terms (id, org_id, role_id, volunteer_id, starts_at, ends_at, ended_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+          .bind(newId(), orgId, roleId, vol(t.name), now + t.started * DAY, now + t.ended * DAY, now + t.ended * DAY, now + t.started * DAY));
+      }
+      if (r.holder) {
+        S.push(db.prepare('INSERT INTO role_terms (id, org_id, role_id, volunteer_id, starts_at, ends_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+          .bind(newId(), orgId, roleId, vol(r.holder.name), now + r.holder.started * DAY, r.holder.ends === undefined ? null : now + r.holder.ends * DAY, now + r.holder.started * DAY));
+      }
+      for (const title of r.tasks ?? []) {
+        const tid = taskIds.get(title);
+        if (!tid) throw new Error(`sample: no task ${title}`);
+        S.push(db.prepare('UPDATE tasks SET role_id = ? WHERE id = ?').bind(roleId, tid));
+      }
+    }
+    for (const a of m.applications ?? []) {
+      S.push(db.prepare('INSERT INTO applications (id, org_id, name, email, category, note, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+        .bind(newId(), orgId, a.name, `${a.name.split(' ')[0].toLowerCase()}.applicant@example.com`, a.category, a.note, now - a.daysAgo * DAY));
+    }
+  }
   await db.batch(S);
 
   if (d.partner) {

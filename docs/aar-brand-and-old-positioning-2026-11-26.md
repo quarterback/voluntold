@@ -55,3 +55,9 @@
 **Signal that the change worked:** Changing `BRAND.name` and rebuilding renames the product everywhere except the wordmark outlines.
 
 No machine trace of this run was available for reconciliation.
+
+## Follow-up: the membership sample
+
+**Instruction (actual wording):** "remove the old sample", "and update it", then "make sure to clean up the text against humanizer and ap style skill and remove any slop".
+**What changed:** The demo's membership sample, Riverbend Design Alliance, now calls its people members, has categories (Professional, Student, Life member), renewal dates spread so every renewal report has people in it, six roles (one vacant, one term ending soon, one with a past holder, three with linked tasks), and two pending applications. It is first in the demo's sample picker. `src/worker/samples/common.ts` gained an optional `membership` block, and `src/worker/sample.ts` writes it. The Vloora site's Volley page now uses screenshots from this sample instead of the food pantry. 60 tests pass.
+**Decision made alone:** The renewal dates, roles, terms and applications in the sample, and putting it first in the picker.

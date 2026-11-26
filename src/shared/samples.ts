@@ -9,8 +9,8 @@ export interface SampleKind {
 }
 
 export const SAMPLE_KINDS: SampleKind[] = [
+  { kind: 'membership', name: 'Riverbend Design Alliance', sector: 'Membership association', blurb: 'A professional association with yearly renewals, a board and committees, and members who staff its conference and mentoring program.' },
   { kind: 'pantry', name: 'Eastside Pantry', sector: 'Food pantry', blurb: 'A neighborhood pantry with a Saturday distribution, grocery pickups and a new delivery route.' },
-  { kind: 'membership', name: 'Riverbend Design Alliance', sector: 'Nonprofit membership organization', blurb: 'A professional association whose members staff its conference, mentoring program and chapter meetings.' },
   { kind: 'radio', name: 'Riverside Community Radio', sector: 'Community radio station', blurb: 'An all-volunteer station: hosts, board operators, the music library, engineering and the pledge drive.' },
   { kind: 'youth', name: 'Northgate Youth Collective', sector: 'Youth nonprofit', blurb: 'Tutoring, a Saturday soccer program, field trips and a winter camp, where background checks decide who can be asked.' },
   { kind: 'disaster', name: 'Cascade Surge Response', sector: 'Disaster response company', blurb: 'A company that mobilizes a trained volunteer pool within hours of a flood, fire or storm.' },
