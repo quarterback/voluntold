@@ -50,6 +50,7 @@ export function App() {
         <Route path="reports" element={<Reports />} />
         <Route path="roles/:roleId" element={<RoleDetail />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="settings/:section" element={<Settings />} />
         <Route path="import" element={<Import />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

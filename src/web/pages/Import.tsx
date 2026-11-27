@@ -86,6 +86,9 @@ export function Import() {
   const dialogs = useDialogs();
   const words = peopleWords(org.peopleWord);
   const recent = useLoad(() => api(path('/imports')), [path]);
+  // Word, PDF and plain text files need the model that pulls rows out of them.
+  const status = useLoad(() => api<{ modelReady: boolean }>(path('/import/status')), [path]);
+  const anyFile = status.data?.modelReady === true;
   const [step, setStep] = useState<Step>('upload');
   const [file, setFile] = useState<File | null>(null);
   const [table, setTable] = useState<Parsed | null>(null);
@@ -294,10 +297,10 @@ export function Import() {
               <Help sx={{ mb: 2 }}>Use a spreadsheet, or the export from the tool you use now. Nothing is saved until you review it.</Help>
               <Button component="label" variant="contained" size="large" startIcon={<UploadIcon />} disabled={busy}>
                 Choose file
-                <input hidden type="file" accept=".csv,.tsv,.xlsx,.xls,.xml,.json,.txt,.md,.docx,.pdf,.zip" onChange={(e) => { if (e.target.files?.[0]) choose(e.target.files[0]); e.target.value = ''; }} />
+ <input hidden type="file" accept={anyFile ? '.csv,.tsv,.xlsx,.xls,.xml,.json,.txt,.md,.docx,.pdf,.zip' : '.csv,.tsv,.xlsx,.xls,.xml,.json,.txt,.zip'} onChange={(e) => { if (e.target.files?.[0]) choose(e.target.files[0]); e.target.value = ''; }} />
               </Button>
               {file && busy && <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{file.name}, reading…</Typography>}
-              <Help sx={{ mt: 2 }}>CSV and Excel work best. Word, PDF, XML, JSON and text files also work.</Help>
+              <Help sx={{ mt: 2 }}>{anyFile ? 'CSV and Excel work best. Word, PDF, XML, JSON and text files also work.' : 'CSV and Excel work best. XML and JSON files also work.'}</Help>
               <Stack direction="row" spacing={2} sx={{ mt: 1.5 }} useFlexGap>
                 <Link href="/sample-list.csv" download variant="body2">Download a sample file</Link>
                 <Link component="button" type="button" variant="body2" onClick={() => navigate('../people?add=1', { relative: 'path' })}>Add one person instead</Link>

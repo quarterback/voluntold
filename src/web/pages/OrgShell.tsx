@@ -16,6 +16,7 @@ import NeedIcon from '@mui/icons-material/FlagOutlined';
 import { api, orgApi } from '../api';
 import { Loading, useLoad } from './common';
 import type { Field, Tag } from '../../shared/types';
+import type { SetupState } from '../../shared/setup';
 import { GUIDE_WIDTH, Guide, GuideProvider, useGuideOpen } from './Guide';
 import { BROWSER_DEMO, StartOverButton } from '../demoMode';
 
@@ -24,6 +25,7 @@ const SWITCH = BROWSER_DEMO ? '/start?demo=1' : '/start?choose=1';
 export interface OrgInfo {
   org: { id: string; name: string; approved: boolean; peopleWord: 'volunteers' | 'members' | 'participants'; memberCategories: string[]; renewalDays: number; renewalUrl: string | null; joinOpen: boolean; trackRenewals: boolean; renewalMode: 'auto' | 'manual'; weeklyAskLimit: number; signupUrl: string | null; publishDefault: boolean; timeZone: string; sample: boolean; sampleKind: string | null; atproto: { did: string; handle: string } | null };
   me: { role: 'admin' | 'coordinator' | 'lead'; memberId: string; leadTeamIds: string[]; email: string };
+  setup: SetupState & { currentTool: string | null };
   atprotoReady: boolean;
   demo: boolean;
   fields: Field[];
@@ -48,7 +50,7 @@ const TABS = [
 ];
 const SETTINGS = { key: 'settings', label: 'Settings', icon: <SettingsIcon fontSize="small" /> };
 const REPORTS = { key: 'reports', label: 'Reports', icon: <ReportIcon fontSize="small" /> };
-const ALL_TABS = [...TABS, REPORTS, SETTINGS, { key: 'offers', label: 'Today', icon: null }];
+const ALL_TABS = [...TABS, REPORTS, SETTINGS, { key: 'offers', label: 'Today', icon: null }, { key: 'import', label: 'People', icon: null }];
 
 const SIDEBAR = 232;
 
@@ -66,7 +68,7 @@ export function OrgShell() {
 
   if (!data) return <Loading error={error} />;
   const found = ALL_TABS.find((t) => location.pathname.includes(`/${t.key}`))?.key ?? 'today';
-  const tab = found === 'offers' ? 'today' : found;
+  const tab = found === 'offers' ? 'today' : found === 'import' ? 'people' : found;
   const go = (key: string) => navigate(`/o/${orgId}/${key}`);
 
   return (
@@ -92,6 +94,12 @@ export function OrgShell() {
             ))}
           </List>
           <Box sx={{ flex: 1 }} />
+          {!data.org.sample && data.me.role !== 'lead' && !data.setup.finished && (
+            <Button onClick={async () => { await api(path('/setup'), { method: 'PATCH', body: { hidden: false } }); await reload(); go('today'); }}
+              sx={{ justifyContent: 'flex-start', color: theme.vt.lime, px: 1.25, mb: 1 }}>
+              Setup guide · {data.setup.done} of {data.setup.total}
+            </Button>
+          )}
           {BROWSER_DEMO
             ? <StartOverButton size="small" sx={{ alignSelf: 'flex-start', color: theme.vt.onInk2 }} />
             : <Typography variant="caption" sx={{ px: 1.25, color: theme.vt.onInk2 }} noWrap>{data.me.email}</Typography>}

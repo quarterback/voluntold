@@ -91,7 +91,7 @@ orgRoutes.get('/', async (c) => {
   const org = await loadOrg(c.env.DB, actor.orgId);
   return c.json({
     org: publicOrg(org!),
-    setup: await loadSetup(c.env.DB, actor.orgId, parseJson<SetupSaved>(org!.setup_json as string, {})),
+    setup: { ...(await loadSetup(c.env.DB, actor.orgId, parseJson<SetupSaved>(org!.setup_json as string, {}))), currentTool: (org!.current_tool as string | null) ?? null },
     me: { role: actor.role, memberId: actor.memberId, leadTeamIds: actor.leadTeamIds, email: actor.email },
     atprotoReady: Boolean(c.env.ATPROTO_TASK_NSID),
     demo: isDev(c.env),

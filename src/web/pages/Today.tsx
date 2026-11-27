@@ -17,6 +17,7 @@ import { api } from '../api';
 import { useOrg } from './OrgShell';
 import { IconTile, Loading, Page, StatTile, useLoad, type Tone } from './common';
 import { day, time, timeRange } from '../../shared/time';
+import { SetupGuide } from './SetupGuide';
 
 interface Item {
   kind: string;
@@ -73,9 +74,11 @@ function describe(i: Item, tz: string): { icon: ReactNode; tone: Tone; title: st
 const ORDER = ['first_offers', 'need', 'report', 'no_one_left', 'ask_next', 'paused_person', 'paused_no_answer', 'draft', 'set_aside', 'atproto_error'];
 
 export function Today() {
-  const { path } = useOrg();
+  const { path, org, setup, me } = useOrg();
   const navigate = useNavigate();
   const theme = useTheme();
+  // A new organization sees the setup guide alone, not empty lists and zeroes.
+  const settingUp = !org.sample && me.role !== 'lead' && !setup.finished && !setup.hidden;
   const wide = useMediaQuery(theme.breakpoints.up('md'));
   const { data, error } = useLoad(() => api(path('/today')), [path]);
   if (!data) return <Loading error={error} />;
@@ -90,8 +93,9 @@ export function Today() {
 
   return (
     <Page title={date} width={880}>
-      <Typography variant="h2" component="h2" sx={{ mb: 1 }}>To do</Typography>
-      <Card>
+      <SetupGuide />
+      {!(settingUp && items.length === 0) && <Typography variant="h2" component="h2" sx={{ mb: 1 }}>To do</Typography>}
+      <Card sx={{ display: settingUp && items.length === 0 ? 'none' : undefined }}>
         {items.length === 0 && <Typography variant="body2" color="text.secondary" sx={{ p: 2.5 }}>Nothing to do</Typography>}
         {items.map((item, i) => (
           <Box key={i}>
@@ -130,6 +134,7 @@ export function Today() {
         </>
       )}
 
+      {!(settingUp && cap.approved === 0) && <>
       <Stack direction="row" sx={{ mt: 3, mb: 1, justifyContent: 'space-between' }}>
         <Typography variant="h2" component="h2">Capacity</Typography>
       </Stack>
@@ -144,6 +149,7 @@ export function Today() {
         sx={(t) => ({ position: 'fixed', right: 16, bottom: wide ? 24 : 76, gap: 0.75, bgcolor: t.vt.tangerine, color: t.vt.onTangerine, '&:hover': { bgcolor: t.vt.tangerine, filter: 'brightness(0.95)' } })}>
         <BoltIcon fontSize="small" />Urgent ask
       </Fab>
+      </>}
     </Page>
   );
 }

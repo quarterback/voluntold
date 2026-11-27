@@ -178,13 +178,13 @@ const STOPS: Stop[] = [
     ask: 'What shape is your list in now?',
   },
   {
-    group: 'settings', path: 'settings', title: 'Choose the details you track',
+    group: 'settings', path: 'settings/fields', title: 'Choose the details you track',
     body: "Fields are the details you track about volunteers: the four starters, plus anything you add, such as a certification or a background check. You write requirements and filters against them. A team is a group with leads who decide who's on it, and a task can require a team.",
     tryIt: "Add a field or a choice. It appears on every person's record.",
     ask: 'What fields would you add on day one?',
   },
   {
-    group: 'settings', path: 'settings', title: 'Add the people who run the tool',
+    group: 'settings', path: 'settings/admins', title: 'Add the people who run the tool',
     body: `People who run the tool are admins, coordinators or team leads. The weekly ask limit caps how often one person can be asked. You can connect your organization's Bluesky account and post public tasks there; volunteer details stay in ${BRAND.name}. Export downloads everything as CSV and JSON.`,
     ask: 'Who at your organization would use this?',
   },
