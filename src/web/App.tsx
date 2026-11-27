@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { Home } from './pages/Home';
+import { Alternative } from './pages/Alternative';
 import { Login } from './pages/Login';
 import { Start } from './pages/Start';
 import { OrgShell } from './pages/OrgShell';
@@ -32,6 +33,8 @@ export function App() {
       <Route path="/login" element={BROWSER_DEMO ? <DemoLogin /> : <Login />} />
       <Route path="/me" element={<VolunteerPage />} />
       <Route path="/" element={<Home />} />
+      <Route path="/wildapricot-alternative" element={<Alternative id="wildapricot" />} />
+      <Route path="/galaxy-digital-alternative" element={<Alternative id="galaxy" />} />
       <Route path="/start" element={<Start />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="/o/:orgId" element={<OrgShell />}>
