@@ -68,14 +68,14 @@ Its status is draft, open, filled, canceled or done.
 
 ## Bringing people in
 
-The coordinator uploads a file: CSV, Excel (.xlsx), XML, JSON, a text file, a Word file (.docx) or a PDF.
+The coordinator uploads a file: CSV, Excel (.xlsx), XML, JSON, a text file, a Word file (.docx) or a PDF. The steps are Upload, Match columns and Review. The detail is in [the setup guide spec](specs/setup-guide.md).
 
-1. The tool reads the rows. CSV, Excel, XML and JSON are read directly. For text, Word and PDF files, a model pulls out the rows.
-2. The tool suggests which column goes to which field and shows the first 10 rows. The coordinator fixes anything wrong. A column with no matching field can become a new field in one tap.
-3. Likely duplicates (same email or phone) are shown side by side to merge or keep apart. Rows with no email or phone go on a separate list, because nobody can send those people a link.
+1. The tool reads the rows. CSV, Excel, XML and JSON are read directly. For text, Word and PDF files, a model pulls out the rows. The tool finds the row that holds the column names, even under a title.
+2. The tool suggests where each column goes and shows the first three values beside it. It picks the email and phone columns by what the cells hold. A column it doesn't recognize is left out unless the coordinator switches on Keep, which makes it a new field in one tap. The other tool's record numbers and timestamps are left out.
+3. Review shows how many people are new, merged and skipped, and the first three people as they will be saved. Likely duplicates (same email or phone) are shown to merge or keep apart. Rows with no email or phone are skipped with the reason, because nobody can send those people a link.
 4. The coordinator ticks "These people agreed to be contacted by us" before saving.
 
-A coordinator can also add one person by hand. Nothing is saved until the coordinator confirms.
+A coordinator can also add one person by hand. Nothing is saved until the coordinator confirms. An import can be undone, which removes the people it added unless they have been asked since.
 
 ## Ways to ask
 
@@ -146,7 +146,7 @@ There's no timesheet and no "confirm hours" step. A task set for a time is done 
 
 ## Screens for the coordinator
 
-Built for phones first. Navigation: Today, Needs, Tasks, People, with Settings in the top bar. The demo adds needs, first offers, availability, tiers, batches, splitting and partner sharing ([decision 0010](decisions/0010-activation-demo.md)).
+Built for phones first. Navigation: Today, Needs, Tasks, People, with Settings in the top bar. A new organization signs up in two short steps and lands on Today with a setup guide, which takes it to its first ask ([the setup guide spec](specs/setup-guide.md)). The demo adds needs, first offers, availability, tiers, batches, splitting and partner sharing ([decision 0010](decisions/0010-activation-demo.md)).
 
 - **Today:** the short list of things to do now:
   - time to ask the next group for a task
@@ -158,7 +158,7 @@ Built for phones first. Navigation: Today, Needs, Tasks, People, with Settings i
   When there's nothing to do, it says so.
 - **Tasks:** open tasks with how full they are, and **New task**. A task's page shows who accepted, who hasn't replied, and the next group to ask.
 - **People:** everyone, with a filter for any field, team or status, sorted by longest since asked. A filter can be saved as a list ("Spanish speakers who can lead"). Each person's row says in a sentence where they stand: "Asked 3 weeks ago, accepted", "Never asked", "Paused until Nov 15".
-- **Settings:** fields, tags, teams, members, the weekly ask limit, the sign-up link, the AT Protocol account, import, and export.
+- **Settings:** a menu with one page each for the organization, custom fields, tags, teams, membership, admins and coordinators, and import and export. Advanced holds Bluesky posting and deleting the organization.
 
 Buttons and labels use the standard wording common SaaS and consumer apps use (see `EDITORIAL.md`): "Ask 6 people", "Copy all", "Cancel spot", "Publish", "Save". Status shows as a word, never a code.
 
@@ -166,7 +166,7 @@ Buttons and labels use the standard wording common SaaS and consumer apps use (s
 
 Tasks are the only thing that goes on AT Protocol. Nothing about volunteers ever does. See [decision 0006](decisions/0006-only-tasks-go-on-at-protocol.md).
 
-- An organization can connect its AT Protocol account, such as its Bluesky account. Once it's connected, open tasks are posted publicly by default. Any task can be switched to private.
+- An organization can connect its AT Protocol account, such as its Bluesky account. The setting is "Post tasks to Bluesky", under Advanced, and shows once setup is finished or hidden. Once it's connected, open tasks are posted publicly by default. Any task can be switched to private.
 - A posted task is a record in the organization's own account. It holds the title, the description, when, and the public part of the place. It also holds how many people are needed, the requirements as text, the status, and a link to the task's public page.
 - A task set for a time is also written in the shared calendar format, `community.lexicon.calendar.event`, so calendar apps that read AT Protocol can show it.
 - When the task fills, is canceled or is done, the record's status changes. If a coordinator switches the task to private, the record is deleted.

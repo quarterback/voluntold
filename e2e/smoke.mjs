@@ -47,50 +47,71 @@ async function signIn(p, email) {
   await p.getByRole('button', { name: 'Sign in' }).click();
 }
 
-// 1. Create an organization and add a second admin.
+// 1. Sign up in two short steps, land on Today with the setup guide, and add a second admin.
 const email = `coord-${Date.now()}@example.com`;
 await signIn(page, email);
+await page.getByRole('heading', { name: 'Create your organization' }).waitFor();
+await shot('sign-up-step-1');
 await page.getByLabel('Organization name').fill('Chapter A');
+await page.getByRole('button', { name: 'Next' }).click();
+await page.getByLabel('Everyone on our roster is 18 or older').check();
+await shot('sign-up-step-2');
 await page.getByRole('button', { name: 'Create organization' }).click();
-await page.getByText('Custom fields').waitFor();
-await shot('settings-new-org');
+await page.getByRole('heading', { name: 'Get started' }).waitFor();
+check((await page.getByText('1 of 6 done').count()) === 1, 'a new organization lands on Today with the setup guide');
+await shot('today-setup-guide');
+await noSideScroll(page, 'Today with the setup guide');
+const settings = page.url().replace(/\/today.*/, '/settings');
+
+await page.getByRole('button', { name: 'Review custom fields' }).click();
+await page.getByRole('heading', { name: 'Custom fields' }).waitFor();
+check(await page.getByText('Can lead').count() > 0, 'starter field Experience has Can lead');
+await shot('settings-custom-fields');
+await noSideScroll(page, 'Custom fields');
+
+await page.goto(settings);
+await page.getByRole('navigation', { name: 'Settings' }).waitFor();
+check(!/AT Protocol|Bluesky/.test(await page.locator('body').innerText()), 'no AT Protocol in Settings during setup');
+await shot('settings-menu');
 await noSideScroll(page, 'Settings');
+await page.getByRole('button', { name: /Admins and coordinators/ }).click();
 await page.getByLabel('Email', { exact: true }).fill(`second-${Date.now()}@example.com`);
-await page.getByRole('combobox').filter({ hasText: 'Coordinator' }).click();
-await page.getByRole('option', { name: 'Admin' }).click();
-await page.getByRole('button', { name: 'Add member' }).click();
+await page.getByRole('button', { name: 'Add admin' }).click();
 await page.getByText(/second-.*@example.com/).waitFor();
 check((await page.getByText('Admin', { exact: true }).count()) >= 2, 'second admin added');
-check(await page.getByText('Can lead').count() > 0, 'starter field Experience has Can lead');
 
-// 2. Import the sample CSV, merge the duplicate, set aside the row with no contact.
-await page.getByRole('button', { name: 'Import file' }).click();
+// 2. Import the sample CSV, merge the duplicate, skip the row with no contact.
+await page.goto(settings.replace('/settings', '/today'));
+await page.getByRole('button', { name: 'Import a list' }).click();
 await page.locator('input[type=file]').setInputFiles('samples/volunteers.csv');
-await page.getByText('Map columns').waitFor();
-await shot('import-map');
-await noSideScroll(page, 'Import');
+await page.getByRole('heading', { name: 'Match columns' }).waitFor();
+check((await page.getByText('alex@example.com').count()) > 0, 'each column shows what it holds');
+await page.getByLabel('Keep T-shirt').check();
+await shot('import-match');
+await noSideScroll(page, 'Import, match columns');
 await page.getByRole('button', { name: 'Next' }).click();
 await page.getByText('Possible duplicates').waitFor();
 check(await page.getByText(/Beatrice Smith/).count() > 0, 'Bea and Beatrice offered as a duplicate');
-check(await page.getByText(/1 skipped, no email or phone/).count() === 1, 'row with no contact set aside');
-await page.getByLabel('These people consented to contact').check();
-await shot('import-check');
+check(await page.getByText(/Noor Rahman · No email or phone/).count() === 1, 'row with no contact skipped, with the reason');
+await page.getByLabel('These people agreed to be contacted by us').check();
+await shot('import-review');
+await noSideScroll(page, 'Import, review');
 await page.getByRole('button', { name: /^Import \d+ people$/ }).click();
 await page.getByText(/Added 18 · merged 1 · skipped 1/).waitFor();
-console.log('ok - imported 18, merged 1, set aside 1');
+console.log('ok - imported 18, merged 1, skipped 1');
 
 // The XML sample goes through the same screens.
 await page.getByRole('button', { name: 'Import another file' }).click();
 await page.locator('input[type=file]').setInputFiles('samples/volunteers.xml');
-await page.getByText('Map columns').waitFor();
+await page.getByRole('heading', { name: 'Match columns' }).waitFor();
 await page.getByRole('button', { name: 'Next' }).click();
-await page.getByLabel('These people consented to contact').check();
+await page.getByLabel('These people agreed to be contacted by us').check();
 await page.getByRole('button', { name: /^Import \d+ people$/ }).click();
 await page.getByText(/Added 3/).waitFor();
 console.log('ok - imported 3 from XML');
 
 // 3. A team, "Desk crew", with 4 people.
-await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Settings', exact: true }).click();
+await page.goto(`${settings}/teams`);
 await page.getByLabel('Team name').fill('Desk crew');
 await page.getByRole('button', { name: 'Add team' }).click();
 await page.getByText(/Desk crew · 0 people/).waitFor();
@@ -118,7 +139,7 @@ await page.getByLabel('Start', { exact: true }).fill(iso(start));
 await page.getByLabel('End', { exact: true }).fill(iso(new Date(start.getTime() + 2 * 3600000)));
 await page.getByLabel('Location').fill('Downtown library');
 await page.getByLabel('Address').fill('120 Main St, Room 2');
-await page.getByRole('spinbutton', { name: 'Volunteers needed' }).fill('2');
+await page.getByRole('spinbutton', { name: 'People needed' }).fill('2');
 await page.getByRole('button', { name: 'Add requirement' }).click();
 await page.getByLabel('Field').first().click();
 await page.getByRole('option', { name: 'Experience' }).click();
@@ -167,7 +188,7 @@ const two = await phoneSays(links[1], 'Accept');
 await two.answer();
 await two.p.getByText('Accepted', { exact: true }).waitFor();
 await page.reload();
-await page.getByText('2 of 2 filled').waitFor();
+await page.getByText('2 of 2 confirmed').waitFor();
 console.log('ok - task shows 2 of 2');
 const three = await browser.newContext(PHONE);
 const p3 = await three.newPage();
@@ -184,7 +205,7 @@ await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name:
 await page.getByText(/Registration desk/).first().waitFor();
 await shot('today');
 await noSideScroll(page, 'Today');
-check((await page.getByText(/No one left to ask for Registration desk|Ask more people for Registration desk/).count()) > 0, 'Today says what to do about the reopened spot');
+check((await page.getByText(/1 of 2/).count()) > 0, 'Today shows the reopened spot');
 
 // The same screens on a desktop.
 await page.setViewportSize({ width: 1280, height: 860 });

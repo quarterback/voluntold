@@ -123,7 +123,7 @@ export function SetupGuide() {
         <>
           <Divider />
           <Box sx={{ px: 2.5, py: 1.5 }}>
-            <Help>We review each new organization before it can send email. You can set everything up now and copy links until then.</Help>
+            <Help>We review each new organization before it can send email. Until then, set up and copy links.</Help>
           </Box>
         </>
       )}

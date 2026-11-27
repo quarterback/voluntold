@@ -78,7 +78,7 @@ function OrgSection() {
         <Box>
           <TextField label="Asks per person each week" type="number" disabled={!admin} value={form.weeklyAskLimit} sx={{ maxWidth: 240 }}
             onChange={(e) => setForm({ ...form, weeklyAskLimit: Number(e.target.value) })} slotProps={{ htmlInput: { min: 1, max: 14 } }} />
-          <Help sx={{ mt: 0.75 }}>The most times one person is asked to help in 7 days. It keeps the same few from being asked every time.</Help>
+          <Help sx={{ mt: 0.75 }}>The most times one person is asked in 7 days. It spreads the work past the same few people.</Help>
         </Box>
         <Box>
           <TextField label="Your sign-up page" placeholder="https://" disabled={!admin} value={form.signupUrl} onChange={(e) => setForm({ ...form, signupUrl: e.target.value })} />
@@ -161,7 +161,7 @@ function FieldsSection() {
   return (
     <Section>
       {error && <Alert severity="error" sx={{ mb: 1.5 }}>{error}</Alert>}
-      <Help sx={{ mb: 2 }}>What you track about each person. A task can require a field, and People can filter by one. Change these to fit your group.</Help>
+      <Help sx={{ mb: 2 }}>What you track about each person. Tasks can require a field, and People can filter by one.</Help>
       <Stack spacing={2} divider={<Divider />}>
         {fields.map((f) => (
           <Box key={f.id}>
@@ -264,7 +264,7 @@ function TeamsSection({ members }: { members: { id: string; email: string; role:
   return (
     <Section>
       {error && <Alert severity="error" sx={{ mb: 1.5 }}>{error}</Alert>}
-      <Help sx={{ mb: 1.5 }}>Groups of people, such as a sound crew. A lead adds people, and a task can be limited to one team.</Help>
+      <Help sx={{ mb: 1.5 }}>Groups such as a sound crew. A lead adds people, and a task can be limited to one team.</Help>
       <List disablePadding>
         {teams.map((t) => (
           <ListItem key={t.id} disableGutters secondaryAction={canEdit && <IconButton size="small" aria-label={`Delete ${t.name}`} onClick={async () => (await dialogs.confirm({ title: `Delete ${t.name}?`, confirm: 'Delete team', destructive: true })) && run(() => api(path(`/teams/${t.id}`), { method: 'DELETE' })).then(reload)}><DeleteIcon fontSize="small" /></IconButton>}>
@@ -308,7 +308,7 @@ function MembersSection({ members, reloadMembers }: { members: { id: string; ema
   return (
     <Section>
       {error && <Alert severity="error" sx={{ mb: 1.5 }}>{error}</Alert>}
-      <Help sx={{ mb: 1.5 }}>People who sign in to run this. Admins change settings, coordinators manage people and tasks, and team leads manage their own team.</Help>
+      <Help sx={{ mb: 1.5 }}>Admins change settings. Coordinators manage people and tasks. Team leads manage their own team.</Help>
       <List disablePadding>
         {members.map((m) => (
           <ListItem key={m.id} disableGutters secondaryAction={admin && m.id !== me.memberId && <IconButton size="small" aria-label={`Remove ${m.email}`} onClick={() => run(() => api(path(`/members/${m.id}`), { method: 'DELETE' })).then(reloadMembers)}><DeleteIcon fontSize="small" /></IconButton>}>

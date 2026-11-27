@@ -198,7 +198,7 @@ export function Import() {
     try {
       const res = await api<{ removed: number; kept: number }>(path(`/imports/${importId}/undo`), { body: {} });
       setError(null);
-      if (res.kept > 0) setError(`Removed ${res.removed}. Kept ${res.kept} who have been asked since.`);
+      if (res.kept > 0) setError(`Removed ${res.removed} · kept ${res.kept} already asked`);
       if (result?.importId === importId) reset();
       reloadOrg();
       recent.reload();

@@ -18,7 +18,8 @@ The pilot in [SPEC.md](docs/SPEC.md):
 
 - organizations, members and roles (admin, coordinator, team lead)
 - details defined by each organization, and teams
-- import from CSV, Excel, XML, JSON, text, Word and PDF files, with duplicate merging
+- a two-step sign-up and a setup guide that takes a new organization to its first ask
+- import from CSV, Excel, XML, JSON, text, Word and PDF files, with column matching, duplicate merging and undo
 - tasks with requirements, and the three ways to ask
 - private links and the volunteer's page
 - work marked done when its time passes
@@ -55,7 +56,7 @@ npm run db:migrate:local
 npx wrangler dev                      # http://localhost:8787
 ```
 
-Sign in with any email. In dev mode the code shows on the screen. "Try the demo" opens the sample organizations and the guide. You can also import `samples/volunteers.csv`.
+Sign in with any email. In dev mode the code shows on the screen. "Try the demo" opens the sample organizations and the guide. You can also import `samples/volunteers.csv`, or the made-up exports from other tools in `samples/exports/`.
 
 To run the browser demo, the one at volleydemo.vloora.com (moving to demo.manyarms.app), use `npm run dev:demo`. It needs no database or worker.
 
