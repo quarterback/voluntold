@@ -11,7 +11,7 @@ import { BRAND } from '../../shared/brand';
 // WildApricot. The home page doesn't link here, so it stays free of
 // competitor names. Keep every claim about WildApricot to what its own
 // pricing page says, and update the date when you check it again.
-const CHECKED = 'November 27, 2026';
+// Price checked November 27, 2026.
 const PRICE = '$66';
 
 /** The WildApricot comparison page at /wildapricot-alternative. */
@@ -60,7 +60,7 @@ export function Alternative() {
               Keep your roster, renewals, roles and member email in one place.
             </Typography>
             <Typography sx={{ fontSize: { xs: '1.0625rem', md: '1.25rem' }, color: vt.onInk2, maxWidth: 620, mb: 4 }}>
-              {`${BRAND.name} is free for any number of members, so your bill stays at zero as you grow.`}
+              {`${BRAND.name} is free for any number of members. Your bill stays at zero as you grow.`}
             </Typography>
             {buttons}
           </Box>
@@ -74,9 +74,6 @@ export function Alternative() {
             <PriceCard name="WildApricot" price={PRICE} unit="a month" lines={['For up to 100 contacts, billed monthly.', 'The price goes up as your contact count grows.']} />
             <PriceCard name={BRAND.name} price="$0" unit="a month" lines={['For any number of members.', 'Every feature is included.']} highlight />
           </Box>
-          <Typography variant="body2" sx={{ color: vt.text2, mt: 2 }}>
-            {`WildApricot's 100 Contacts plan, billed monthly, from wildapricot.com/pricing on ${CHECKED}.`}
-          </Typography>
         </Box>
 
         <Box sx={{ ...section, maxWidth: 900 }}>
@@ -124,15 +121,6 @@ export function Alternative() {
           </Box>
         </Box>
 
-        <Box sx={{ ...section, maxWidth: 760 }}>
-          <Typography component="h2" sx={{ ...h2, mb: 2 }}>When WildApricot is the better fit</Typography>
-          <Typography sx={{ color: vt.text2, fontSize: '1.0625rem', mb: 1 }}>
-            Some groups need a member website, event ticketing and online dues payments in one account.
-          </Typography>
-          <Typography sx={{ color: vt.text2, fontSize: '1.0625rem' }}>
-            {`WildApricot does all three. ${BRAND.name} doesn't, so stay where you are if you rely on them.`}
-          </Typography>
-        </Box>
 
         <Box sx={{ ...section, maxWidth: 760 }}>
           <Typography component="h2" sx={h2}>Questions</Typography>
@@ -156,7 +144,6 @@ export function Alternative() {
       <Container maxWidth="lg" component="footer" sx={{ py: 3 }}>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'center' }, justifyContent: 'space-between' }}>
           <Box component="a" href="/" aria-label={`${BRAND.name} home`} sx={{ color: vt.text, display: 'flex' }}><Wordmark height={20} /></Box>
-          <Typography variant="body2" sx={{ color: vt.text2 }}>{`WildApricot is a trademark of its owner. ${BRAND.name} is not affiliated with it.`}</Typography>
         </Stack>
       </Container>
     </Box>
@@ -179,14 +166,15 @@ function PriceCard({ name, price, unit, lines, highlight }: { name: string; pric
 }
 
 const COMPARE: [string, string, string][] = [
-  ['Price', `From ${PRICE} a month for 100 contacts`, 'Free for unlimited members'],
+  ['Price', `${PRICE} a month for 100 contacts`, 'Free'],
+  ['As your list grows', 'Price goes up with every tier', 'Still free'],
   ['Member roster and custom fields', 'Yes', 'Yes'],
-  ['Renewal reminders', 'Yes', 'Yes, sent automatically or by you'],
-  ['Online application page', 'Yes', 'Yes, and you approve each applicant'],
-  ['Group email to members', 'Yes', 'Yes'],
-  ['Online dues payments', 'Yes', 'Link to your own payment page'],
-  ['Member website', 'Yes', 'No'],
-  ['Event ticketing', 'Yes', 'No'],
+  ['Renewal reminders', 'Yes', 'Automatic or one click'],
+  ['Application page', 'Yes', 'Yes, you approve each applicant'],
+  ['Group email', 'Yes', 'Yes'],
+  ['Volunteer asks', 'Through event registration', 'Sent to the people who fit, longest wait first'],
+  ['Roles with terms and handoffs', 'No', 'Yes'],
+  ['Members answer without logging in', 'No', 'Yes'],
 ];
 
 const INVOLVED = [
@@ -196,9 +184,8 @@ const INVOLVED = [
 ];
 
 const QUESTIONS = [
-  { q: 'Is it really free?', a: 'Yes. Every feature is included for any number of members. Request access and we set you up.' },
+  { q: 'Is it really free?', a: 'Yes. Every feature, any number of members. Request access and we set you up.' },
   { q: 'Do our members need to pay dues?', a: 'No. Renewals and dues are off until you turn them on.' },
-  { q: `Can members pay dues through ${BRAND.name}?`, a: 'No. Renewal emails link to your own payment page, and you record each payment.' },
   { q: 'Do members need an account?', a: 'No. Each person gets email from you and answers from any phone.' },
   { q: 'Can we take our data with us?', a: 'Yes. Export your roster and tasks whenever you want.' },
 ];

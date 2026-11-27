@@ -24,6 +24,8 @@
 **Stayed within granted authority?** Yes.
 
 ## 3. Judgment: human in the loop
+**Owner revision, same day:** "I dont like all the hedging and cowardly disclaimers". Removed the better-fit section, the dated source line, the trademark note, the dues question and the rows where ManyArms said No. Added rows for growth pricing, volunteer asks, roles with terms and answering without a login.
+
 **Decisions the agent made on its own:**
 - Only WildApricot's own published price, with the date checked. Third-party price lists disagreed and were left out.
 - The table lists only features both products are known to have or lack. It makes no claim about roles or succession in WildApricot.
