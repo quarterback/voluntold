@@ -28,6 +28,8 @@
 
 **Second page, same day:** "Yes to the same for a galaxydigital version without hedging". Galaxy Digital's pricing page returned 404; its FAQ says each product is custom-priced and offers a demo, volunteers sign up by creating a profile, and its product pages list no membership renewals, dues or board terms. The page became one template with a data entry per competitor, and Galaxy Digital is at /galaxy-digital-alternative. The agent dropped an "Application page: No" row for Galaxy Digital because volunteer applications are likely there.
 
+**Third revision, same day:** "front page is cluttered including all of the FAQ on this page which is unnecessary this isn't using the standard syyle of landing paes for SaaS products". The home page now follows the usual order: centered hero with a category label, screenshot, one problem line, three screenshot features, closing call to action. The FAQ and the How it works steps are gone. The comparison pages lost their FAQ and their three-column section. The header Sign in button is hidden on phones, where the header overflowed by 40 pixels; the footer keeps Sign in. The owner also found manyhands.app, a free volunteer sign-up tool with a near-identical name, and plans to rename to a coined word. The owner said to deploy under ManyArms until then.
+
 **Decisions the agent made on its own:**
 - Only WildApricot's own published price, with the date checked. Third-party price lists disagreed and were left out.
 - The table lists only features both products are known to have or lack. It makes no claim about roles or succession in WildApricot.

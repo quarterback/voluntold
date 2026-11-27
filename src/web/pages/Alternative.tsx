@@ -19,9 +19,7 @@ interface Competitor {
   price: { price: string; unit: string; lines: string[] };
   ours: { price: string; unit: string; lines: string[] };
   compare: [string, string, string][];
-  involved: { title: string; text: string }[];
   migrate: string[];
-  questions: { q: string; a: string }[];
 }
 
 /** One comparison page. Each competitor's words live in COMPETITORS below. */
@@ -108,18 +106,6 @@ export function Alternative({ id }: { id: keyof typeof COMPETITORS }) {
           </TableContainer>
         </Box>
 
-        <Box sx={section}>
-          <Typography component="h2" sx={h2}>Built to get people involved</Typography>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: { xs: 3, md: 5 } }}>
-            {c.involved.map((item) => (
-              <Box key={item.title} sx={{ borderTop: `1px solid ${vt.border}`, pt: 2 }}>
-                <Typography component="h3" sx={{ fontWeight: 600, fontSize: '1.125rem', mb: 0.75 }}>{item.title}</Typography>
-                <Typography sx={{ color: vt.text2 }}>{item.text}</Typography>
-              </Box>
-            ))}
-          </Box>
-        </Box>
-
         <Box sx={{ ...section, maxWidth: 760 }}>
           <Typography component="h2" sx={h2}>Moving from {c.name}</Typography>
           <Box component="ol" sx={{ pl: 3, m: 0, '& li': { mb: 1.5, color: vt.text2, fontSize: '1.0625rem' } }}>
@@ -127,17 +113,6 @@ export function Alternative({ id }: { id: keyof typeof COMPETITORS }) {
           </Box>
         </Box>
 
-        <Box sx={{ ...section, maxWidth: 760 }}>
-          <Typography component="h2" sx={h2}>Questions</Typography>
-          <Stack spacing={3}>
-            {c.questions.map((q) => (
-              <Box key={q.q}>
-                <Typography component="h3" sx={{ fontWeight: 600, fontSize: '1.125rem', mb: 0.5 }}>{q.q}</Typography>
-                <Typography sx={{ color: vt.text2 }}>{q.a}</Typography>
-              </Box>
-            ))}
-          </Stack>
-        </Box>
 
         <Box sx={{ ...frame, bgcolor: vt.ink, color: vt.onInk, textAlign: 'center', p: { xs: 4, md: 8 }, mb: { xs: 6, md: 10 } }}>
           <Typography component="h2" sx={{ ...heading, fontSize: { xs: '1.75rem', md: '2.25rem' }, mb: 1.5 }}>Put your membership to work</Typography>
@@ -171,9 +146,6 @@ function PriceCard({ name, price, unit, lines, highlight }: { name: string; pric
 }
 
 const FREE = { price: '$0', unit: 'a month' };
-const INVOLVED = { title: 'The right people for each job', text: `Write a task, and ${BRAND.name} emails the people who fit. Whoever has waited longest goes first.` };
-const ROLES = { title: 'Roles that outlast the person', text: 'Track who holds each position and until when. The next person inherits the notes and open work.' };
-const EXPORT = { q: 'Can we take our data with us?', a: 'Yes. Export your roster and tasks whenever you want.' };
 
 export const COMPETITORS = {
   // Price from wildapricot.com/pricing, checked November 27, 2026.
@@ -194,17 +166,10 @@ export const COMPETITORS = {
       ['Roles with terms and handoffs', 'No', 'Yes'],
       ['Members answer without logging in', 'No', 'Yes'],
     ],
-    involved: [INVOLVED, ROLES, { title: 'Reports you can act on', text: 'See who renews in the next 30, 60 or 90 days, then email them or export the list.' }],
     migrate: [
       'Export your contacts from WildApricot as a CSV file.',
       `Import the file into ${BRAND.name}. It recognizes columns such as Membership level, Renewal due and Member since.`,
       'Check the matches, then add your board, committees and roles.',
-    ],
-    questions: [
-      { q: 'Is it really free?', a: 'Yes. Every feature, any number of members. Request access and we set you up.' },
-      { q: 'Do our members need to pay dues?', a: 'No. Renewals and dues are off until you turn them on.' },
-      { q: 'Do members need an account?', a: 'No. Each person gets email from you and answers from any phone.' },
-      EXPORT,
     ],
   },
   // From galaxydigital.com, checked November 27, 2026: quote-based pricing
@@ -226,21 +191,10 @@ export const COMPETITORS = {
       ['Membership renewals and dues', 'No', 'Yes'],
       ['Board and committee roles with terms', 'No', 'Yes'],
     ],
-    involved: [
-      INVOLVED,
-      { title: 'Members and volunteers together', text: 'One roster for everyone. Turn on renewals and dues when you need them.' },
-      ROLES,
-    ],
     migrate: [
       'Export your volunteer list from Galaxy Digital as a CSV file.',
       `Import the file into ${BRAND.name}. It matches names, email, phone and your own fields.`,
       'Add your roles, then write your first task.',
-    ],
-    questions: [
-      { q: 'Is it really free?', a: 'Yes. Every feature, any number of people. Request access and we set you up.' },
-      { q: 'Do volunteers need an account?', a: 'No. Each person gets email from you and answers from any phone.' },
-      { q: 'Can we track members too?', a: 'Yes. Add categories, renewal dates and dues, and run a report of who is due.' },
-      EXPORT,
     ],
   },
 } satisfies Record<string, Competitor>;
