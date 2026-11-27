@@ -16,7 +16,9 @@ import NeedIcon from '@mui/icons-material/FlagOutlined';
 import { api, orgApi } from '../api';
 import { Loading, useLoad } from './common';
 import type { Field, Tag } from '../../shared/types';
+import type { SetupState } from '../../shared/setup';
 import { GUIDE_WIDTH, Guide, GuideProvider, useGuideOpen } from './Guide';
+import { SETUP_WIDTH, SetupGuide, useSetupOpen } from './SetupGuide';
 import { BROWSER_DEMO, StartOverButton } from '../demoMode';
 
 const SWITCH = BROWSER_DEMO ? '/start?demo=1' : '/start?choose=1';
@@ -24,6 +26,7 @@ const SWITCH = BROWSER_DEMO ? '/start?demo=1' : '/start?choose=1';
 export interface OrgInfo {
   org: { id: string; name: string; approved: boolean; peopleWord: 'volunteers' | 'members' | 'participants'; memberCategories: string[]; renewalDays: number; renewalUrl: string | null; joinOpen: boolean; trackRenewals: boolean; renewalMode: 'auto' | 'manual'; weeklyAskLimit: number; signupUrl: string | null; publishDefault: boolean; timeZone: string; sample: boolean; sampleKind: string | null; atproto: { did: string; handle: string } | null };
   me: { role: 'admin' | 'coordinator' | 'lead'; memberId: string; leadTeamIds: string[]; email: string };
+  setup: SetupState & { currentTool: string | null };
   atprotoReady: boolean;
   demo: boolean;
   fields: Field[];
@@ -48,7 +51,7 @@ const TABS = [
 ];
 const SETTINGS = { key: 'settings', label: 'Settings', icon: <SettingsIcon fontSize="small" /> };
 const REPORTS = { key: 'reports', label: 'Reports', icon: <ReportIcon fontSize="small" /> };
-const ALL_TABS = [...TABS, REPORTS, SETTINGS, { key: 'offers', label: 'Today', icon: null }];
+const ALL_TABS = [...TABS, REPORTS, SETTINGS, { key: 'offers', label: 'Today', icon: null }, { key: 'import', label: 'People', icon: null }];
 
 const SIDEBAR = 232;
 
@@ -66,7 +69,7 @@ export function OrgShell() {
 
   if (!data) return <Loading error={error} />;
   const found = ALL_TABS.find((t) => location.pathname.includes(`/${t.key}`))?.key ?? 'today';
-  const tab = found === 'offers' ? 'today' : found;
+  const tab = found === 'offers' ? 'today' : found === 'import' ? 'people' : found;
   const go = (key: string) => navigate(`/o/${orgId}/${key}`);
 
   return (
@@ -108,6 +111,7 @@ export function OrgShell() {
       )}
       <Main wide={wide} />
       <Guide />
+      <SetupGuide />
       {!wide && (
         <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10 }} elevation={0}>
           <BottomNavigation showLabels value={tab === 'settings' ? false : tab} onChange={(_, v) => go(v)} component="nav" aria-label="Main">
@@ -123,11 +127,14 @@ export function OrgShell() {
 /** The page column. It leaves room for the demo guide on wide screens. */
 function Main({ wide }: { wide: boolean }) {
   const guide = useGuideOpen();
+  const setup = useSetupOpen();
   const { org } = useOrg();
   return (
-    <Box component="main" sx={{ ml: wide ? `${SIDEBAR}px` : 0, mr: wide && guide ? `${GUIDE_WIDTH}px` : 0 }}>
+    <Box component="main" sx={{ ml: wide ? `${SIDEBAR}px` : 0, mr: wide && guide ? `${GUIDE_WIDTH}px` : wide && setup ? `${SETUP_WIDTH}px` : 0 }}>
       {!org.approved && !org.sample && !BROWSER_DEMO && <Alert severity="info" sx={{ borderRadius: 0 }}>Pending approval: email is off</Alert>}
       <Outlet />
+      {/* Room to scroll the page clear of the setup guide's sheet on a phone. */}
+      {!wide && setup && <Box aria-hidden sx={{ height: 200 }} />}
     </Box>
   );
 }

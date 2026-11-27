@@ -1,6 +1,6 @@
 # Spec: onboarding as a feedback conversation
 
-**Status:** design proposal, written October 26, 2026. Needs the owner's review before any of it is built.
+**Status:** design proposal, written October 26, 2026. Needs the owner's review before any of it is built. On November 27, 2026 the owner asked for a guided first run and a working import, so [decision 0017](../decisions/0017-setup-guide-and-import.md) and [the setup guide spec](setup-guide.md) replace the "Not import" and "Not a setup wizard" parts below. The facilitated sessions are unchanged.
 
 ## What this is for
 

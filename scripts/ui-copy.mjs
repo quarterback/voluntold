@@ -44,17 +44,27 @@ export function collect(roots) {
   for (const file of roots.flatMap(files)) {
     const src = readFileSync(file, 'utf8');
     const sf = ts.createSourceFile(file, src, ts.ScriptTarget.Latest, true, file.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+    // Text inside <Help> or passed as a help prop is the one-line help
+    // EDITORIAL.md allows. It gets the 20-word limit, not the 8-word one.
+    const isHelp = (node) => {
+      for (let n = node; n; n = n.parent) {
+        if (ts.isJsxElement(n) && n.openingElement.tagName.getText(sf) === 'Help') return true;
+        if (ts.isJsxAttribute(n) && n.name.getText(sf) === 'help') return true;
+        if (ts.isPropertyAssignment(n) && n.name.getText(sf) === 'help') return true;
+      }
+      return false;
+    };
     const add = (node, text) => {
       if (text && looksLikeProse(text)) {
-        out.push({ file, line: sf.getLineAndCharacterOfPosition(node.getStart()).line + 1, text: text.replace(/\s+/g, ' ').trim() });
+        out.push({ file, line: sf.getLineAndCharacterOfPosition(node.getStart()).line + 1, text: text.replace(/\s+/g, ' ').trim(), help: isHelp(node) });
       }
     };
     const visit = (node) => {
       if (ts.isJsxText(node)) add(node, node.text);
-      else if (ts.isJsxAttribute(node) && node.initializer && TEXT_PROPS.has(node.name.getText(sf))) add(node, textOf(node.initializer, sf));
+      else if (ts.isJsxAttribute(node) && node.initializer && (TEXT_PROPS.has(node.name.getText(sf)) || node.name.getText(sf) === 'help')) add(node, textOf(node.initializer, sf));
       else if (ts.isCallExpression(node) && TEXT_CALLS.has(node.expression.getText(sf).split('.').pop())) {
         for (const arg of node.arguments) add(arg, textOf(arg, sf));
-      } else if (ts.isPropertyAssignment(node) && (file.endsWith('format.ts') || ['title', 'body', 'confirm', 'cancel', 'label'].includes(node.name.getText(sf)))) {
+      } else if (ts.isPropertyAssignment(node) && (file.endsWith('format.ts') || ['title', 'body', 'confirm', 'cancel', 'label', 'help', 'button'].includes(node.name.getText(sf)))) {
         add(node, textOf(node.initializer, sf));
       }
       else if (ts.isConditionalExpression(node) && ts.isJsxExpression(node.parent)) {

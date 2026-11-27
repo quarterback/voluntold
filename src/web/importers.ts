@@ -4,23 +4,21 @@
 
 import Papa from 'papaparse';
 import { api } from './api';
+import { sheetFromMatrix } from '../shared/importing';
 
 export interface Table {
   columns: string[];
   rows: Record<string, string>[];
   notes?: string;
   via: 'direct' | 'model';
+  /** Rows above the column names, such as a report title. */
+  skippedAbove?: number;
 }
 
 const MAX_BYTES = 15 * 1024 * 1024;
 
 function fromMatrix(matrix: unknown[][]): Table {
-  const nonEmpty = matrix.filter((r) => r.some((c) => String(c ?? '').trim() !== ''));
-  if (nonEmpty.length === 0) return { columns: [], rows: [], via: 'direct' };
-  const header = nonEmpty[0].map((c, i) => String(c ?? '').trim() || `Column ${i + 1}`);
-  const columns = header.map((h, i) => (header.indexOf(h) === i ? h : `${h} (${i + 1})`));
-  const rows = nonEmpty.slice(1).map((r) => Object.fromEntries(columns.map((col, i) => [col, cellText(r[i])])));
-  return { columns, rows, via: 'direct' };
+  return { ...sheetFromMatrix(matrix), via: 'direct' };
 }
 
 function cellText(v: unknown): string {
@@ -107,6 +105,9 @@ function looksLikeCsv(text: string): boolean {
 
 export async function readFile(file: File, orgPath: (p: string) => string): Promise<Table> {
   if (file.size > MAX_BYTES) throw new Error('That file is over 15 MB. Split it into smaller files.');
+  if (/\.xls$/i.test(file.name)) throw new Error('Old Excel files (.xls) can\'t be read. Open it and save it as .xlsx or CSV.');
+  if (/\.zip$/i.test(file.name)) throw new Error('That is a zip file. Open it and upload the CSV inside.');
+  if (/\.(numbers|ods)$/i.test(file.name)) throw new Error('Export that sheet as CSV or Excel (.xlsx), then upload it.');
   const ext = file.name.toLowerCase().split('.').pop() ?? '';
   if (ext === 'csv' || ext === 'tsv') {
     const res = Papa.parse<string[]>(await file.text(), { skipEmptyLines: true });

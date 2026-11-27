@@ -296,11 +296,12 @@ export function TaskEdit() {
                 <TextField label="Hours between batches" type="number" value={form.askWaitHours} onChange={(e) => set('askWaitHours', Number(e.target.value))} />
               </Stack>
             )}
-            <FormControlLabel
-              disabled={!org.atproto}
-              control={<Switch checked={form.publish && !!org.atproto} onChange={(e) => set('publish', e.target.checked)} />}
-              label={org.atproto ? `Post to ${org.atproto.handle}` : 'Post on AT Protocol'}
-            />
+            {org.atproto && (
+              <FormControlLabel
+                control={<Switch checked={form.publish} onChange={(e) => set('publish', e.target.checked)} />}
+                label={`Post to ${org.atproto.handle}`}
+              />
+            )}
           </Stack>
         </Section>
 

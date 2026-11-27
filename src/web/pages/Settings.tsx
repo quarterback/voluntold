@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Alert, Box, Button, Chip, FormControl, FormControlLabel, IconButton, InputLabel, Link, List, ListItem,
   ListItemText, MenuItem, Select, Stack, Switch, TextField, Typography,
@@ -13,20 +13,18 @@ import { TagChip } from './tags';
 import { api } from '../api';
 import { useOrg } from './OrgShell';
 import { peopleWords } from './membership';
-import { Page, Section, errorText, useDialogs, useLoad } from './common';
+import { Help, Page, Section, errorText, useDialogs, useLoad } from './common';
+import { FIELD_TYPE_TEXT } from '../format';
+import BackIcon from '@mui/icons-material/ArrowBack';
+import ChevronIcon from '@mui/icons-material/ChevronRight';
+import { Card, Divider, ListItemButton } from '@mui/material';
 import { BROWSER_DEMO, StartOverButton } from '../demoMode';
 import type { FieldType } from '../../shared/types';
 
-const TYPE_TEXT: Record<FieldType, string> = {
-  text: 'Text',
-  number: 'Number',
-  date: 'Date',
-  one: 'One choice',
-  many: 'Many choices',
-  yesno: 'Yes or no',
-};
+const TYPE_TEXT = FIELD_TYPE_TEXT;
 
 const ROLE: Record<string, string> = { admin: 'Admin', coordinator: 'Coordinator', lead: 'Team lead' };
+const ADD_ROLE: Record<string, string> = { admin: 'Add admin', coordinator: 'Add coordinator', lead: 'Add team lead' };
 
 function useAction() {
   const [error, setError] = useState<string | null>(null);
@@ -59,22 +57,33 @@ function AddOnEnter({ label, onAdd }: { label: string; onAdd: (value: string) =>
 
 function OrgSection() {
   const { org, path, reload, me } = useOrg();
-  const [form, setForm] = useState({ name: org.name, weeklyAskLimit: org.weeklyAskLimit, signupUrl: org.signupUrl ?? '', publishDefault: org.publishDefault });
+  const [form, setForm] = useState({ name: org.name, peopleWord: org.peopleWord, weeklyAskLimit: org.weeklyAskLimit, signupUrl: org.signupUrl ?? '' });
   const { error, run } = useAction();
   const [saved, setSaved] = useState(false);
   const admin = me.role === 'admin';
   return (
-    <Section title="Organization">
-      <Stack spacing={1.5}>
+    <Section>
+      <Stack spacing={2.5}>
         {error && <Alert severity="error">{error}</Alert>}
         {saved && <Alert severity="success">Saved</Alert>}
-        <Stack direction="row" spacing={1.5}>
-          <TextField label="Name" value={form.name} disabled={!admin} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <TextField label="Weekly ask limit" type="number" disabled={!admin} value={form.weeklyAskLimit} sx={{ width: 160, flexShrink: 0 }}
+        <TextField label="Organization name" value={form.name} disabled={!admin} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        <FormControl fullWidth>
+          <InputLabel id="people-word">What you call your people</InputLabel>
+          <Select labelId="people-word" label="What you call your people" value={form.peopleWord} disabled={!admin} onChange={(e) => setForm({ ...form, peopleWord: e.target.value as typeof form.peopleWord })}>
+            <MenuItem value="volunteers">Volunteers</MenuItem>
+            <MenuItem value="members">Members</MenuItem>
+            <MenuItem value="participants">Participants</MenuItem>
+          </Select>
+        </FormControl>
+        <Box>
+          <TextField label="Asks per person each week" type="number" disabled={!admin} value={form.weeklyAskLimit} sx={{ maxWidth: 240 }}
             onChange={(e) => setForm({ ...form, weeklyAskLimit: Number(e.target.value) })} slotProps={{ htmlInput: { min: 1, max: 14 } }} />
-        </Stack>
-        <TextField label="Sign-up link" placeholder="https://" disabled={!admin} value={form.signupUrl} onChange={(e) => setForm({ ...form, signupUrl: e.target.value })} />
-        <FormControlLabel control={<Switch size="small" disabled={!admin} checked={form.publishDefault} onChange={(e) => setForm({ ...form, publishDefault: e.target.checked })} />} label="Post new tasks on AT Protocol" />
+          <Help sx={{ mt: 0.75 }}>The most times one person is asked in 7 days. It spreads the work past the same few people.</Help>
+        </Box>
+        <Box>
+          <TextField label="Your sign-up page" placeholder="https://" disabled={!admin} value={form.signupUrl} onChange={(e) => setForm({ ...form, signupUrl: e.target.value })} />
+          <Help sx={{ mt: 0.75 }}>Optional. Public task pages link here, for people who aren't on your list yet.</Help>
+        </Box>
         {admin && <Box><Button variant="contained" onClick={async () => { if (await run(() => api(path(''), { method: 'PATCH', body: form }))) { setSaved(true); reload(); } }}>Save</Button></Box>}
       </Stack>
     </Section>
@@ -86,7 +95,7 @@ function MembershipSection() {
   const { error, run } = useAction();
   const [saved, setSaved] = useState(false);
   const [form, setForm] = useState({
-    peopleWord: org.peopleWord, renewalDays: org.renewalDays, renewalUrl: org.renewalUrl ?? '', joinOpen: org.joinOpen, trackRenewals: org.trackRenewals, renewalMode: org.renewalMode,
+    renewalDays: org.renewalDays, renewalUrl: org.renewalUrl ?? '', joinOpen: org.joinOpen, trackRenewals: org.trackRenewals, renewalMode: org.renewalMode,
   });
   const admin = me.role === 'admin';
   const joinLink = `${location.origin}/join/${org.id}`;
@@ -94,28 +103,24 @@ function MembershipSection() {
     if (await run(() => api(path(''), { method: 'PATCH', body }))) { setSaved(true); reload(); }
   };
   return (
-    <Section title="Membership">
-      <Stack spacing={1.5}>
+    <Section>
+      <Stack spacing={2}>
         {error && <Alert severity="error">{error}</Alert>}
         {saved && <Alert severity="success">Saved</Alert>}
-        <FormControl fullWidth>
-          <InputLabel id="people-word">Call people</InputLabel>
-          <Select labelId="people-word" label="Call people" value={form.peopleWord} disabled={!admin} onChange={(e) => setForm({ ...form, peopleWord: e.target.value as typeof form.peopleWord })}>
-            <MenuItem value="volunteers">Volunteers</MenuItem>
-            <MenuItem value="members">Members</MenuItem>
-            <MenuItem value="participants">Participants</MenuItem>
-          </Select>
-        </FormControl>
         <Box>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>Categories</Typography>
+          <Typography variant="h3" component="h3">Membership types</Typography>
+          <Help sx={{ mb: 1 }}>Such as Individual, Family or Student. Each person can have one.</Help>
           <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
             {org.memberCategories.map((c) => (
               <Chip key={c} size="small" label={c} onDelete={admin ? () => save({ memberCategories: org.memberCategories.filter((x) => x !== c) }) : undefined} />
             ))}
-            {admin && <AddOnEnter label="Add category" onAdd={(v) => save({ memberCategories: [...org.memberCategories, v] })} />}
+            {admin && <AddOnEnter label="Add type" onAdd={(v) => save({ memberCategories: [...org.memberCategories, v] })} />}
           </Stack>
         </Box>
-        <FormControlLabel control={<Switch size="small" disabled={!admin} checked={form.trackRenewals} onChange={(e) => setForm({ ...form, trackRenewals: e.target.checked })} />} label="Track renewals and dues" />
+        <Box>
+          <FormControlLabel control={<Switch size="small" disabled={!admin} checked={form.trackRenewals} onChange={(e) => setForm({ ...form, trackRenewals: e.target.checked })} />} label="Track renewals and dues" />
+          <Help>Adds an expiry date and a dues date to each person, and renewal reminders.</Help>
+        </Box>
         {form.trackRenewals && (
           <FormControl fullWidth>
             <InputLabel id="renewal-mode">Renewal reminders</InputLabel>
@@ -130,8 +135,11 @@ function MembershipSection() {
             onChange={(e) => setForm({ ...form, renewalDays: Number(e.target.value) })} slotProps={{ htmlInput: { min: 0, max: 120 } }} />}
           <TextField label="Renewal link" placeholder="https://" disabled={!admin} value={form.renewalUrl} onChange={(e) => setForm({ ...form, renewalUrl: e.target.value })} />
         </Stack>}
-        <FormControlLabel control={<Switch size="small" disabled={!admin} checked={form.joinOpen} onChange={(e) => setForm({ ...form, joinOpen: e.target.checked })} />} label="Open application page" />
-        {org.joinOpen && <TextField label="Application page" value={joinLink} slotProps={{ htmlInput: { readOnly: true } }} />}
+        <Box>
+          <FormControlLabel control={<Switch size="small" disabled={!admin} checked={form.joinOpen} onChange={(e) => setForm({ ...form, joinOpen: e.target.checked })} />} label="Accept applications online" />
+          <Help>Gives you a public form where adults apply. You accept or decline each one.</Help>
+        </Box>
+        {org.joinOpen && <TextField label="Application form link" value={joinLink} slotProps={{ htmlInput: { readOnly: true } }} />}
         {admin && <Box><Button variant="contained" onClick={() => save(form)}>Save</Button></Box>}
       </Stack>
     </Section>
@@ -146,9 +154,10 @@ function FieldsSection() {
   const { error, run } = useAction();
   const canEdit = me.role !== 'lead';
   return (
-    <Section title="Custom fields">
+    <Section>
       {error && <Alert severity="error" sx={{ mb: 1.5 }}>{error}</Alert>}
-      <Stack spacing={1.5}>
+      <Help sx={{ mb: 2 }}>What you track about each person. Tasks can require a field, and People can filter by one.</Help>
+      <Stack spacing={2} divider={<Divider />}>
         {fields.map((f) => (
           <Box key={f.id}>
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
@@ -168,7 +177,7 @@ function FieldsSection() {
         ))}
         {canEdit && (
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { sm: 'flex-end' } }}>
-            <TextField label="Field name" value={label} onChange={(e) => setLabel(e.target.value)} />
+            <TextField label="New field name" value={label} onChange={(e) => setLabel(e.target.value)} />
             <FormControl sx={{ minWidth: 140 }} fullWidth>
               <InputLabel id="new-type">Type</InputLabel>
               <Select labelId="new-type" label="Type" value={type} onChange={(e) => setType(e.target.value as FieldType)}>
@@ -209,8 +218,9 @@ function TagsSection() {
   }
 
   return (
-    <Section title="Tags">
+    <Section>
       {error && <Alert severity="error" sx={{ mb: 1.5 }}>{error}</Alert>}
+      <Help sx={{ mb: 1.5 }}>Labels you can put on people, tasks and needs, then filter by.</Help>
       <Stack spacing={0.5}>
         {tags.length === 0 && <Typography variant="body2" color="text.secondary">No tags yet</Typography>}
         {tags.map((t) => (
@@ -247,8 +257,9 @@ function TeamsSection({ members }: { members: { id: string; email: string; role:
   const { error, run } = useAction();
   const canEdit = me.role !== 'lead';
   return (
-    <Section title="Teams">
+    <Section>
       {error && <Alert severity="error" sx={{ mb: 1.5 }}>{error}</Alert>}
+      <Help sx={{ mb: 1.5 }}>Groups such as a sound crew. A lead adds people, and a task can be limited to one team.</Help>
       <List disablePadding>
         {teams.map((t) => (
           <ListItem key={t.id} disableGutters secondaryAction={canEdit && <IconButton size="small" aria-label={`Delete ${t.name}`} onClick={async () => (await dialogs.confirm({ title: `Delete ${t.name}?`, confirm: 'Delete team', destructive: true })) && run(() => api(path(`/teams/${t.id}`), { method: 'DELETE' })).then(reload)}><DeleteIcon fontSize="small" /></IconButton>}>
@@ -284,14 +295,15 @@ function TeamsSection({ members }: { members: { id: string; email: string; role:
 }
 
 function MembersSection({ members, reloadMembers }: { members: { id: string; email: string; role: string }[]; reloadMembers: () => void }) {
-  const { path, me } = useOrg();
+  const { path, me, reload } = useOrg();
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState('coordinator');
+  const [role, setRole] = useState('admin');
   const { error, run } = useAction();
   const admin = me.role === 'admin';
   return (
-    <Section title="Coordinators">
+    <Section>
       {error && <Alert severity="error" sx={{ mb: 1.5 }}>{error}</Alert>}
+      <Help sx={{ mb: 1.5 }}>Admins change settings. Coordinators manage people and tasks. Team leads manage their own team.</Help>
       <List disablePadding>
         {members.map((m) => (
           <ListItem key={m.id} disableGutters secondaryAction={admin && m.id !== me.memberId && <IconButton size="small" aria-label={`Remove ${m.email}`} onClick={() => run(() => api(path(`/members/${m.id}`), { method: 'DELETE' })).then(reloadMembers)}><DeleteIcon fontSize="small" /></IconButton>}>
@@ -307,77 +319,149 @@ function MembersSection({ members, reloadMembers }: { members: { id: string; ema
             <MenuItem value="coordinator">Coordinator</MenuItem>
             <MenuItem value="lead">Team lead</MenuItem>
           </Select>
-          <Button variant="outlined" disabled={!email.includes('@')} onClick={async () => { if (await run(() => api(path('/members'), { body: { email, role } }))) { setEmail(''); reloadMembers(); } }}>Add coordinator</Button>
+          <Button variant="outlined" disabled={!email.includes('@')} onClick={async () => { if (await run(() => api(path('/members'), { body: { email, role } }))) { setEmail(''); reloadMembers(); reload(); } }}>{ADD_ROLE[role]}</Button>
         </Stack>
       )}
     </Section>
   );
 }
 
+/** Posting open tasks from the organization's own Bluesky account, over AT Protocol. */
 function AtprotoSection() {
-  const { org, path, reload, me, atprotoReady } = useOrg();
+  const { org, path, reload } = useOrg();
   const dialogs = useDialogs();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const { error, run } = useAction();
-  if (me.role !== 'admin') return null;
   return (
-    <Section title="AT Protocol">
+    <Section title="Post tasks to Bluesky">
+      <Help sx={{ mb: 1.5 }}>Open tasks are posted from your organization's Bluesky account. Nothing about your people is ever posted.</Help>
       {error && <Alert severity="error" sx={{ mb: 1.5 }}>{error}</Alert>}
-      {!atprotoReady && <Alert severity="info" sx={{ mb: 1.5 }}>Not available</Alert>}
       {org.atproto ? (
-        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-          <Typography sx={{ flex: 1 }}>Connected as <strong>{org.atproto.handle}</strong></Typography>
-          <Button color="error" onClick={async () => (await dialogs.confirm({ title: 'Disconnect this account?', confirm: 'Disconnect account', destructive: true })) && run(() => api(path('/atproto'), { method: 'DELETE' })).then(reload)}>Disconnect account</Button>
+        <Stack spacing={1}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+            <Typography sx={{ flex: 1 }}>Connected as <strong>{org.atproto.handle}</strong></Typography>
+            <Button color="error" onClick={async () => (await dialogs.confirm({ title: 'Disconnect this account?', confirm: 'Disconnect account', destructive: true })) && run(() => api(path('/atproto'), { method: 'DELETE' })).then(reload)}>Disconnect account</Button>
+          </Stack>
+          <FormControlLabel control={<Switch size="small" checked={org.publishDefault} onChange={(e) => run(() => api(path(''), { method: 'PATCH', body: { publishDefault: e.target.checked } })).then(reload)} />} label="Post new tasks by default" />
         </Stack>
       ) : (
         <Stack spacing={1.5}>
-          <Stack direction="row" spacing={1.5}>
-            <TextField label="Handle" placeholder="yourgroup.bsky.social" value={identifier} onChange={(e) => setIdentifier(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+            <TextField label="Bluesky handle" placeholder="yourgroup.bsky.social" value={identifier} onChange={(e) => setIdentifier(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
             <TextField label="App password" type="password" autoComplete="off" value={password} onChange={(e) => setPassword(e.target.value)} />
           </Stack>
           <Link variant="body2" href="https://bsky.app/settings/app-passwords" target="_blank" rel="noopener">Create app password</Link>
-          <Box><Button variant="contained" disabled={!atprotoReady || !identifier || !password} onClick={async () => { if (await run(() => api(path('/atproto'), { body: { identifier, appPassword: password } }))) { setPassword(''); reload(); } }}>Connect account</Button></Box>
+          <Box><Button variant="contained" disabled={!identifier || !password} onClick={async () => { if (await run(() => api(path('/atproto'), { body: { identifier, appPassword: password } }))) { setPassword(''); reload(); } }}>Connect account</Button></Box>
         </Stack>
       )}
     </Section>
   );
 }
 
+interface SectionInfo { key: string; title: string; help: string }
+
+/** The settings menu: what each page is, in a line. */
+function sections(o: { admin: boolean; lead: boolean; bluesky: boolean; people: string }): SectionInfo[] {
+  return [
+    { key: 'organization', title: 'Organization', help: 'Name, your sign-up page and how often people are asked' },
+    { key: 'fields', title: 'Custom fields', help: `What you track about ${o.people}` },
+    { key: 'tags', title: 'Tags', help: 'Labels for people, tasks and needs' },
+    { key: 'teams', title: 'Teams', help: 'Groups of people, each with a lead' },
+    { key: 'membership', title: 'Membership', help: 'Membership types, renewals and applications' },
+    { key: 'admins', title: 'Admins and coordinators', help: 'Who can sign in, and what they can do' },
+    ...(o.lead ? [] : [{ key: 'data', title: 'Import and export', help: 'Bring in a list, or download your data' }]),
+    ...(o.admin ? [{ key: 'advanced', title: 'Advanced', help: o.bluesky ? 'Post tasks to Bluesky, or delete this organization' : 'Delete this organization' }] : []),
+  ];
+}
+
 export function Settings() {
-  const { path, me, org } = useOrg();
+  const { path, me, org, setup, atprotoReady, reload: reloadOrg } = useOrg();
   const navigate = useNavigate();
+  const { section } = useParams();
   const { data, reload } = useLoad(() => api(path('/members')), [path]);
   const members = data?.members ?? [];
+  const words = peopleWords(org.peopleWord);
+  const admin = me.role === 'admin';
+  // Bluesky posting waits until setup is finished, and until it can work.
+  const bluesky = admin && atprotoReady && (setup.finished || org.sample || !!org.atproto);
+  const list = sections({ admin, lead: me.role === 'lead', bluesky, people: words.people });
+  const current = list.find((s) => s.key === section);
+  const open = (key: string) => navigate(`/o/${org.id}/settings/${key}`);
+
+  if (current) {
+    return (
+      <Page title={current.title} width={760}
+        back={<Button size="small" startIcon={<BackIcon fontSize="small" />} onClick={() => navigate(`/o/${org.id}/settings`)} sx={{ color: 'text.secondary', ml: -1 }}>Settings</Button>}>
+        <Stack spacing={2}>
+          {current.key === 'organization' && <OrgSection />}
+          {current.key === 'fields' && <FieldsSection />}
+          {current.key === 'tags' && <TagsSection />}
+          {current.key === 'teams' && <TeamsSection members={members} />}
+          {current.key === 'membership' && <MembershipSection />}
+          {current.key === 'admins' && <MembersSection members={members} reloadMembers={reload} />}
+          {current.key === 'data' && (
+            <>
+              <Section title={`Import ${words.people}`}>
+                <Help sx={{ mb: 1.5 }}>Upload a spreadsheet, or the export from the tool you use now.</Help>
+                <Button variant="contained" onClick={() => navigate(`/o/${org.id}/import`)}>Import a list</Button>
+              </Section>
+              {admin && (
+                <Section title="Export">
+                  <Help sx={{ mb: 1.5 }}>Download everything as spreadsheets, or as one file another tool can read.</Help>
+                  <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                    {[['volunteers', words.people], ['tasks', 'tasks'], ['asks', 'asks'], ['spots', 'spots']].map(([k, label]) => <Button key={k} size="small" variant="outlined" href={path(`/export/${k}.csv`)}>Export {label} (CSV)</Button>)}
+                    <Button size="small" variant="outlined" href={path('/export.json')}>Export all as JSON</Button>
+                  </Stack>
+                </Section>
+              )}
+            </>
+          )}
+          {current.key === 'advanced' && (
+            <>
+              {bluesky && <AtprotoSection />}
+              <DeleteOrgSection />
+            </>
+          )}
+        </Stack>
+      </Page>
+    );
+  }
+
   return (
     <Page title="Settings" width={760}>
       <Stack spacing={2}>
-        {me.role !== 'lead' && (
-          <Section title={`Import ${peopleWords(org.peopleWord).people}`}>
-            <Button variant="contained" onClick={() => navigate('../import', { relative: 'path' })}>Import file</Button>
-          </Section>
+        {!org.sample && me.role !== 'lead' && !setup.finished && (
+          <Card>
+            <ListItemButton onClick={async () => { await api(path('/setup'), { method: 'PATCH', body: { hidden: false } }); await reloadOrg(); navigate(`/o/${org.id}/today`); }} sx={{ px: 2.5, py: 1.75, gap: 1.5 }}>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="h3" component="h2">Setup guide</Typography>
+                <Typography variant="body2" color="text.secondary">{setup.done} of {setup.total} done</Typography>
+              </Box>
+              <ChevronIcon fontSize="small" sx={{ color: 'text.disabled' }} />
+            </ListItemButton>
+          </Card>
         )}
-        <OrgSection />
-        <MembershipSection />
-        <FieldsSection />
-        <TagsSection />
-        <TeamsSection members={members} />
-        <MembersSection members={members} reloadMembers={reload} />
-        <AtprotoSection />
-        {me.role === 'admin' && (
-          <Section title="Export">
-            <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
-              {['volunteers', 'tasks', 'asks', 'spots'].map((k) => <Button key={k} size="small" variant="outlined" href={path(`/export/${k}.csv`)}>Export {k} (CSV)</Button>)}
-              <Button size="small" variant="outlined" href={path('/export.json')}>Export all as JSON</Button>
-            </Stack>
-          </Section>
-        )}
-        {me.role === 'admin' && <DeleteOrgSection />}
+        <Card component="nav" aria-label="Settings">
+          {list.map((s, i) => (
+            <Box key={s.key}>
+              {i > 0 && <Divider />}
+              <ListItemButton onClick={() => open(s.key)} sx={{ borderRadius: 0, px: 2.5, py: 1.75, gap: 1.5 }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="h3" component="h2">{s.title}</Typography>
+                  <Typography variant="body2" color="text.secondary">{s.help}</Typography>
+                </Box>
+                <ChevronIcon fontSize="small" sx={{ color: 'text.disabled' }} />
+              </ListItemButton>
+            </Box>
+          ))}
+        </Card>
         <Box>
           {BROWSER_DEMO
             ? <StartOverButton />
             : <Button onClick={async () => { await api('/api/auth/logout', { body: {} }); location.href = '/login'; }}>Sign out</Button>}
         </Box>
+        <Typography variant="body2" color="text.secondary">{me.email}</Typography>
       </Stack>
     </Page>
   );
@@ -401,6 +485,7 @@ function DeleteOrgSection() {
 
   return (
     <Section title="Delete organization">
+      <Help sx={{ mb: 1.5 }}>Removes the organization, its people, tasks and history for everyone. Export first if you want a copy.</Help>
       {problem && <Alert severity="error" sx={{ mb: 2 }}>{problem}</Alert>}
       <Button color="error" variant="outlined" onClick={remove}>Delete organization</Button>
     </Section>

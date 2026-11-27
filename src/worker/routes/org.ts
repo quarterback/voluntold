@@ -2,11 +2,12 @@ import { Hono } from 'hono';
 import type { AppBindings } from '../env';
 import { must, mustManageTeam } from '../auth';
 import { loadFields, loadOrg, logEvent, publicOrg } from '../db';
-import { cleanText, fail, isDev, newId, normalizeEmail, optionalText } from '../util';
+import { cleanText, fail, isDev, newId, normalizeEmail, optionalText, parseJson } from '../util';
 import { isAdmin, tellAdmins } from './admin';
 import { connectAccount, disconnectAccount, syncTask } from '../atproto';
 import type { FieldType, Requirement } from '../../shared/types';
 import { CURRENT_TOOLS, PEOPLE_WORDS, SIZE_BANDS } from '../../shared/membership';
+import { SETUP_STEPS, SKIPPABLE, setupState, type SetupSaved, type SetupStep } from '../../shared/setup';
 
 export const STARTER_FIELDS: { label: string; type: FieldType; options: string[] }[] = [
   { label: 'Skills', type: 'many', options: [] },
@@ -56,12 +57,13 @@ accountRoutes.post('/orgs', async (c) => {
   const toolName = tool === 'Paid software' ? optionalText(body.toolName, 120) : null;
   const currentTool = tool && toolName ? `${tool}: ${toolName}` : tool;
   const intendedUse = optionalText(body.intendedUse, 1000);
+  const peopleWord = PEOPLE_WORDS.includes(body.peopleWord) ? body.peopleWord : 'volunteers';
   const now = c.get('now');
   const orgId = newId();
   const db = c.env.DB;
   await db.batch([
-    db.prepare('INSERT INTO orgs (id, name, time_zone, created_at, website, size_band, current_tool, intended_use, adults_confirmed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .bind(orgId, name, validTimeZone(body.timeZone), now, website, size, currentTool, intendedUse, now),
+    db.prepare('INSERT INTO orgs (id, name, time_zone, created_at, website, size_band, current_tool, intended_use, adults_confirmed_at, people_word) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(orgId, name, validTimeZone(body.timeZone), now, website, size, currentTool, intendedUse, now, peopleWord),
     db.prepare("INSERT INTO members (id, org_id, user_id, role, created_at) VALUES (?, ?, ?, 'admin', ?)").bind(newId(), orgId, c.get('userId'), now),
     ...STARTER_FIELDS.map((f, i) =>
       db
@@ -77,11 +79,19 @@ accountRoutes.post('/orgs', async (c) => {
 /** Routes under /api/orgs/:orgId. */
 export const orgRoutes = new Hono<AppBindings>();
 
+/** Where the organization stands in the setup guide, counted from its own data. */
+async function loadSetup(db: D1Database, orgId: string, saved: SetupSaved) {
+  const count = (table: string) => db.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE org_id = ?`).bind(orgId);
+  const [people, tasks, asks, admins] = (await db.batch<{ n: number }>([count('volunteers'), count('tasks'), count('asks'), count('members')])).map((r) => r.results[0]?.n ?? 0);
+  return setupState({ people, tasks, asks, admins }, saved);
+}
+
 orgRoutes.get('/', async (c) => {
   const actor = c.get('actor');
   const org = await loadOrg(c.env.DB, actor.orgId);
   return c.json({
     org: publicOrg(org!),
+    setup: { ...(await loadSetup(c.env.DB, actor.orgId, parseJson<SetupSaved>(org!.setup_json as string, {}))), currentTool: (org!.current_tool as string | null) ?? null },
     me: { role: actor.role, memberId: actor.memberId, leadTeamIds: actor.leadTeamIds, email: actor.email },
     atprotoReady: Boolean(c.env.ATPROTO_TASK_NSID),
     demo: isDev(c.env),
@@ -135,6 +145,22 @@ orgRoutes.patch('/', async (c) => {
     .bind(name, limit, signup, publishDefault, tz, word, categories, renewalDays, renewalUrl, joinOpen, trackRenewals, renewalMode, actor.orgId)
     .run();
   return c.json({ org: publicOrg((await loadOrg(c.env.DB, actor.orgId))!) });
+});
+
+/** Skip a step, mark one seen, or hide and show the guide. */
+orgRoutes.patch('/setup', async (c) => {
+  const actor = c.get('actor');
+  if (actor.role === 'lead') fail(403, "You don't have permission to do that.");
+  const body = await c.req.json().catch(() => ({}));
+  const org = (await loadOrg(c.env.DB, actor.orgId))!;
+  const saved = parseJson<SetupSaved>(org.setup_json as string, {});
+  const isStep = (v: unknown): v is SetupStep => SETUP_STEPS.includes(v as SetupStep);
+  if (typeof body.hidden === 'boolean') saved.hidden = body.hidden;
+  if (isStep(body.skip) && SKIPPABLE.includes(body.skip)) saved.skipped = [...new Set([...(saved.skipped ?? []), body.skip])];
+  if (isStep(body.unskip)) saved.skipped = (saved.skipped ?? []).filter((s) => s !== body.unskip);
+  if (isStep(body.seen)) saved.seen = [...new Set([...(saved.seen ?? []), body.seen])];
+  await c.env.DB.prepare('UPDATE orgs SET setup_json = ? WHERE id = ?').bind(JSON.stringify(saved), actor.orgId).run();
+  return c.json({ setup: await loadSetup(c.env.DB, actor.orgId, saved) });
 });
 
 // Members: the people who run things in the tool.

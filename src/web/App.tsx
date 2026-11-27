@@ -3,6 +3,7 @@ import { Home } from './pages/Home';
 import { Alternative } from './pages/Alternative';
 import { Login } from './pages/Login';
 import { Start } from './pages/Start';
+import { Signup } from './pages/Signup';
 import { OrgShell } from './pages/OrgShell';
 import { Today } from './pages/Today';
 import { Tasks } from './pages/Tasks';
@@ -36,6 +37,7 @@ export function App() {
       <Route path="/wildapricot-alternative" element={<Alternative id="wildapricot" />} />
       <Route path="/galaxy-digital-alternative" element={<Alternative id="galaxy" />} />
       <Route path="/start" element={<Start />} />
+      <Route path="/signup" element={BROWSER_DEMO ? <Navigate to="/start?demo=1" replace /> : <Signup />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="/o/:orgId" element={<OrgShell />}>
         <Route index element={<Navigate to="today" replace />} />
@@ -53,6 +55,7 @@ export function App() {
         <Route path="reports" element={<Reports />} />
         <Route path="roles/:roleId" element={<RoleDetail />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="settings/:section" element={<Settings />} />
         <Route path="import" element={<Import />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -60,7 +60,11 @@ Adobe rules, with the local decisions that apply:
   - error messages, which say what went wrong
 
   Leave out helper text under fields, section notes, hints, example placeholders, subtitles that explain, and pleasantries. A confirmation is a question and two buttons, with no body text.
-- **Standard wording.** The owner set this on October 25, 2026: use the words people already know from other apps, not wording made up for this one. Sources: [Apple HIG alerts](https://developer.apple.com/design/human-interface-guidelines/alerts), [GitHub Primer confirmation dialogs](https://primer.style/product/components/confirmation-dialog/guidelines), [Shopify Polaris buttons](https://polaris.shopify.com/components/actions/button), [Meetup](https://help.meetup.com/hc/en-us/articles/41229648295181-How-to-Join-an-Event-Waitlist-on-Meetup), [Luma](https://help.luma.com/p/waitlist.md) and the [HubSpot import](https://knowledge.hubspot.com/crm-setup/import-objects).
+- **Help lines.** On November 27, 2026 the owner said the first run "assumes too much from a user". The agent took that as room for one line of help where a person would otherwise have to guess ([decision 0017](docs/decisions/0017-setup-guide-and-import.md)), for the owner to review:
+  - Help goes through the `Help` component, or a `help` property, and nowhere else. That keeps every line easy to find and to remove.
+  - One or two short sentences, 20 words at most. It says what the thing is for or what happens next.
+  - It belongs on sign-up, the setup guide, import, and Settings. Everyday screens stay as they were.
+- **Standard wording.** The owner set this on October 25, 2026: use the words people already know from other apps, not wording made up for this one. Sources: [Apple HIG alerts](https://developer.apple.com/design/human-interface-guidelines/alerts), [GitHub Primer confirmation dialogs](https://primer.style/product/components/confirmation-dialog/guidelines), [Shopify Polaris buttons](https://polaris.shopify.com/components/actions/button), [Meetup](https://help.meetup.com/hc/en-us/articles/41229648295181-How-to-Join-an-Event-Waitlist-on-Meetup), [Luma](https://help.luma.com/p/waitlist.md) and the [HubSpot import](https://knowledge.hubspot.com/crm-setup/import-objects). The November 27, 2026 rows come from [the naming research](docs/research/onboarding-and-import-2026-11.md).
 
   | Use | Not |
   |---|---|
@@ -73,7 +77,12 @@ Adobe rules, with the local decisions that apply:
   | Confirmed, Canceled, Attended, No-show | Coming, Can't make it, Done, Missed |
   | Location, Contact, Description, Volunteers needed | Place, Who to find, What to do, People |
   | Custom fields, Field, Condition, Add option | Details, Rule, Add choice |
-  | Map columns, Import as, Don't import, Next, Import history, Skipped | Match columns, Goes to, Skip, Find duplicates, Past imports, Set aside |
+  | Dropdown, Checkboxes, Short text | One choice, Many choices, Text |
+  | Membership types, Accept applications online | Categories, Open application page |
+  | Admins and coordinators, Add admin | Coordinators, Members |
+  | Asks per person each week | Weekly ask limit |
+  | Post tasks to Bluesky | AT Protocol |
+  | Match columns, Import as, Don't import, Keep, Next, Import history, Skipped, Undo import | Map columns, Goes to, Skip, Find duplicates, Past imports, Set aside |
   | In batches, All eligible, Manual, Batch size | A few at a time, Everyone who fits, Pick by hand, Group size |
   | Not eligible, Missing requirement, Weekly limit reached, Schedule conflict | Can't ask, Asked enough this week, Busy then |
   | Reset link, Share link, Copy, Copy all | Get new link, Send this link, Copy message |

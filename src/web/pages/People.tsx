@@ -89,7 +89,7 @@ export function People() {
     return { volunteers: v.volunteers as Row[], lists: l.lists as { id: string; name: string; filter: Filter }[] };
   }, [path]);
   const [filter, setFilter] = useState<Filter>({ status: (params.get('filter') as Filter['status']) ?? '' });
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding] = useState(params.has('add'));
   const [messaging, setMessaging] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 

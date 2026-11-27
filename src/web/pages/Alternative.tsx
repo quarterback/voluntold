@@ -38,7 +38,7 @@ export function Alternative({ id }: { id: keyof typeof COMPETITORS }) {
   }, [c.name]);
 
   const demo = () => navigate(BROWSER_DEMO || signedIn ? '/start?demo=1' : '/login?next=' + encodeURIComponent('/start?demo=1'));
-  const enter = () => navigate(signedIn ? '/start' : '/login?signup=1');
+  const enter = () => navigate(signedIn ? '/start' : '/signup');
   const enterLabel = signedIn ? `Open ${BRAND.name}` : 'Request free access';
   const lime = { bgcolor: vt.lime, color: vt.onLime, '&:hover': { bgcolor: '#B3E12A' } };
   const outline = { color: vt.onInk, borderColor: vt.onInk, '&:hover': { borderColor: vt.onInk, bgcolor: 'rgba(255,255,255,0.08)' } };

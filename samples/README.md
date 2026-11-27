@@ -8,3 +8,5 @@ Made-up volunteers for trying the import. Every address uses example.com.
 Text, Word and PDF imports need a model set up on the server (`MODEL_PROVIDER` and `MODEL_API_KEY`).
 
 `meeting-notes.txt` is sample board meeting notes for trying "Notes into tasks" in [the next version spec](../docs/specs/next-version.md).
+
+`exports/` holds made-up exports that copy the layout of other tools' files: Wild Apricot, Mailchimp, Google Forms, SignUpGenius, Google Contacts and two hand-kept rosters. See [its README](exports/README.md).

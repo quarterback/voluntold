@@ -20,7 +20,7 @@ export function Home() {
   // The browser demo has no sign-in, so its only way in is the demo.
   const demo = () => navigate(BROWSER_DEMO || signedIn ? '/start?demo=1' : '/login?next=' + encodeURIComponent('/start?demo=1'));
   // On the live site, new organizations sign up here. The browser demo has no accounts.
-  const enter = () => navigate(signedIn ? '/start' : '/login?signup=1');
+  const enter = () => navigate(signedIn ? '/start' : '/signup');
   const enterLabel = signedIn ? `Open ${BRAND.name}` : 'Request free access';
   const signIn = () => navigate('/login');
   const lime = { bgcolor: vt.lime, color: vt.onLime, '&:hover': { bgcolor: '#B3E12A' } };
