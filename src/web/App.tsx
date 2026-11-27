@@ -33,7 +33,8 @@ export function App() {
       <Route path="/login" element={BROWSER_DEMO ? <DemoLogin /> : <Login />} />
       <Route path="/me" element={<VolunteerPage />} />
       <Route path="/" element={<Home />} />
-      <Route path="/wildapricot-alternative" element={<Alternative />} />
+      <Route path="/wildapricot-alternative" element={<Alternative id="wildapricot" />} />
+      <Route path="/galaxy-digital-alternative" element={<Alternative id="galaxy" />} />
       <Route path="/start" element={<Start />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="/o/:orgId" element={<OrgShell />}>

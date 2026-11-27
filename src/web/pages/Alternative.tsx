@@ -7,24 +7,35 @@ import { FONT_DISPLAY } from '../theme';
 import { BROWSER_DEMO } from '../demoMode';
 import { BRAND } from '../../shared/brand';
 
-// A landing page for search and ads: people comparing ManyArms with
-// WildApricot. The home page doesn't link here, so it stays free of
-// competitor names. Keep every claim about WildApricot to what its own
-// pricing page says, and update the date when you check it again.
-// Price checked November 27, 2026.
-const PRICE = '$66';
+// Landing pages for search and ads: people comparing ManyArms with a tool
+// they pay for. The home page doesn't link here, so it stays free of
+// competitor names. Claims about each competitor come from its own website.
 
-/** The WildApricot comparison page at /wildapricot-alternative. */
-export function Alternative() {
+interface Competitor {
+  name: string;
+  /** Lines under the headline. */
+  intro: string[];
+  costHeading: string;
+  price: { price: string; unit: string; lines: string[] };
+  ours: { price: string; unit: string; lines: string[] };
+  compare: [string, string, string][];
+  involved: { title: string; text: string }[];
+  migrate: string[];
+  questions: { q: string; a: string }[];
+}
+
+/** One comparison page. Each competitor's words live in COMPETITORS below. */
+export function Alternative({ id }: { id: keyof typeof COMPETITORS }) {
+  const c = COMPETITORS[id];
   const navigate = useNavigate();
   const { vt } = useTheme();
 
   const [signedIn, setSignedIn] = useState(false);
   useEffect(() => {
-    document.title = `The free WildApricot alternative | ${BRAND.name}`;
+    document.title = `The free ${c.name} alternative | ${BRAND.name}`;
     fetch('/api/me', { credentials: 'same-origin' }).then((r) => setSignedIn(r.ok)).catch(() => {});
     return () => { document.title = `${BRAND.name}: ${BRAND.tagline}`; };
-  }, []);
+  }, [c.name]);
 
   const demo = () => navigate(BROWSER_DEMO || signedIn ? '/start?demo=1' : '/login?next=' + encodeURIComponent('/start?demo=1'));
   const enter = () => navigate(signedIn ? '/start' : '/login?signup=1');
@@ -54,14 +65,11 @@ export function Alternative() {
         <Container maxWidth="lg" sx={{ pt: { xs: 6, md: 10 }, pb: { xs: 8, md: 12 } }}>
           <Box sx={{ maxWidth: 780 }}>
             <Typography component="h1" sx={{ ...heading, fontSize: { xs: '2.5rem', md: '4rem' }, letterSpacing: '-0.035em', lineHeight: 0.95, mb: 3 }}>
-              The free <Box component="em" sx={{ fontStyle: 'italic', color: vt.tangerine }}>WildApricot</Box> alternative
+              The free <Box component="em" sx={{ fontStyle: 'italic', color: vt.tangerine }}>{c.name}</Box> alternative
             </Typography>
-            <Typography sx={{ fontSize: { xs: '1.0625rem', md: '1.25rem' }, color: vt.onInk2, maxWidth: 620, mb: 1.5 }}>
-              Keep your roster, renewals, roles and member email in one place.
-            </Typography>
-            <Typography sx={{ fontSize: { xs: '1.0625rem', md: '1.25rem' }, color: vt.onInk2, maxWidth: 620, mb: 4 }}>
-              {`${BRAND.name} is free for any number of members. Your bill stays at zero as you grow.`}
-            </Typography>
+            {c.intro.map((t, i) => (
+              <Typography key={t} sx={{ fontSize: { xs: '1.0625rem', md: '1.25rem' }, color: vt.onInk2, maxWidth: 620, mb: i === c.intro.length - 1 ? 4 : 1.5 }}>{t}</Typography>
+            ))}
             {buttons}
           </Box>
         </Container>
@@ -69,10 +77,10 @@ export function Alternative() {
 
       <Container maxWidth="lg" component="main" sx={{ pt: { xs: 8, md: 12 } }}>
         <Box sx={section}>
-          <Typography component="h2" sx={h2}>What a growing list costs</Typography>
+          <Typography component="h2" sx={h2}>{c.costHeading}</Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2.5, maxWidth: 900 }}>
-            <PriceCard name="WildApricot" price={PRICE} unit="a month" lines={['For up to 100 contacts, billed monthly.', 'The price goes up as your contact count grows.']} />
-            <PriceCard name={BRAND.name} price="$0" unit="a month" lines={['For any number of members.', 'Every feature is included.']} highlight />
+            <PriceCard name={c.name} {...c.price} />
+            <PriceCard name={BRAND.name} {...c.ours} highlight />
           </Box>
         </Box>
 
@@ -83,12 +91,12 @@ export function Alternative() {
               <TableHead>
                 <TableRow>
                   <TableCell />
-                  <TableCell sx={{ fontWeight: 700 }}>WildApricot</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>{c.name}</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>{BRAND.name}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {COMPARE.map(([what, them, us]) => (
+                {c.compare.map(([what, them, us]) => (
                   <TableRow key={what}>
                     <TableCell component="th" scope="row" sx={{ fontWeight: 600 }}>{what}</TableCell>
                     <TableCell sx={{ color: vt.text2 }}>{them}</TableCell>
@@ -103,7 +111,7 @@ export function Alternative() {
         <Box sx={section}>
           <Typography component="h2" sx={h2}>Built to get people involved</Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: { xs: 3, md: 5 } }}>
-            {INVOLVED.map((item) => (
+            {c.involved.map((item) => (
               <Box key={item.title} sx={{ borderTop: `1px solid ${vt.border}`, pt: 2 }}>
                 <Typography component="h3" sx={{ fontWeight: 600, fontSize: '1.125rem', mb: 0.75 }}>{item.title}</Typography>
                 <Typography sx={{ color: vt.text2 }}>{item.text}</Typography>
@@ -113,19 +121,16 @@ export function Alternative() {
         </Box>
 
         <Box sx={{ ...section, maxWidth: 760 }}>
-          <Typography component="h2" sx={h2}>Moving from WildApricot</Typography>
+          <Typography component="h2" sx={h2}>Moving from {c.name}</Typography>
           <Box component="ol" sx={{ pl: 3, m: 0, '& li': { mb: 1.5, color: vt.text2, fontSize: '1.0625rem' } }}>
-            <li>Export your contacts from WildApricot as a CSV file.</li>
-            <li>{`Import the file into ${BRAND.name}. It recognizes columns such as Membership level, Renewal due and Member since.`}</li>
-            <li>Check the matches, then add your board, committees and roles.</li>
+            {c.migrate.map((t) => <li key={t}>{t}</li>)}
           </Box>
         </Box>
-
 
         <Box sx={{ ...section, maxWidth: 760 }}>
           <Typography component="h2" sx={h2}>Questions</Typography>
           <Stack spacing={3}>
-            {QUESTIONS.map((q) => (
+            {c.questions.map((q) => (
               <Box key={q.q}>
                 <Typography component="h3" sx={{ fontWeight: 600, fontSize: '1.125rem', mb: 0.5 }}>{q.q}</Typography>
                 <Typography sx={{ color: vt.text2 }}>{q.a}</Typography>
@@ -165,27 +170,77 @@ function PriceCard({ name, price, unit, lines, highlight }: { name: string; pric
   );
 }
 
-const COMPARE: [string, string, string][] = [
-  ['Price', `${PRICE} a month for 100 contacts`, 'Free'],
-  ['As your list grows', 'Price goes up with every tier', 'Still free'],
-  ['Member roster and custom fields', 'Yes', 'Yes'],
-  ['Renewal reminders', 'Yes', 'Automatic or one click'],
-  ['Application page', 'Yes', 'Yes, you approve each applicant'],
-  ['Group email', 'Yes', 'Yes'],
-  ['Volunteer asks', 'Through event registration', 'Sent to the people who fit, longest wait first'],
-  ['Roles with terms and handoffs', 'No', 'Yes'],
-  ['Members answer without logging in', 'No', 'Yes'],
-];
+const FREE = { price: '$0', unit: 'a month' };
+const INVOLVED = { title: 'The right people for each job', text: `Write a task, and ${BRAND.name} emails the people who fit. Whoever has waited longest goes first.` };
+const ROLES = { title: 'Roles that outlast the person', text: 'Track who holds each position and until when. The next person inherits the notes and open work.' };
+const EXPORT = { q: 'Can we take our data with us?', a: 'Yes. Export your roster and tasks whenever you want.' };
 
-const INVOLVED = [
-  { title: 'The right people for each job', text: `Write a task, and ${BRAND.name} emails the members who fit. Whoever has waited longest goes first.` },
-  { title: 'Roles that outlast the person', text: 'Track who holds each position and until when. The next person inherits the notes and open work.' },
-  { title: 'Reports you can act on', text: 'See who renews in the next 30, 60 or 90 days, then email them or export the list.' },
-];
-
-const QUESTIONS = [
-  { q: 'Is it really free?', a: 'Yes. Every feature, any number of members. Request access and we set you up.' },
-  { q: 'Do our members need to pay dues?', a: 'No. Renewals and dues are off until you turn them on.' },
-  { q: 'Do members need an account?', a: 'No. Each person gets email from you and answers from any phone.' },
-  { q: 'Can we take our data with us?', a: 'Yes. Export your roster and tasks whenever you want.' },
-];
+export const COMPETITORS = {
+  // Price from wildapricot.com/pricing, checked November 27, 2026.
+  wildapricot: {
+    name: 'WildApricot',
+    intro: ['Keep your roster, renewals, roles and member email in one place.', `${BRAND.name} is free for any number of members. Your bill stays at zero as you grow.`],
+    costHeading: 'What a growing list costs',
+    price: { price: '$66', unit: 'a month', lines: ['For up to 100 contacts, billed monthly.', 'The price goes up as your contact count grows.'] },
+    ours: { ...FREE, lines: ['For any number of members.', 'Every feature is included.'] },
+    compare: [
+      ['Price', '$66 a month for 100 contacts', 'Free'],
+      ['As your list grows', 'Price goes up with every tier', 'Still free'],
+      ['Member roster and custom fields', 'Yes', 'Yes'],
+      ['Renewal reminders', 'Yes', 'Automatic or one click'],
+      ['Application page', 'Yes', 'Yes, you approve each applicant'],
+      ['Group email', 'Yes', 'Yes'],
+      ['Volunteer asks', 'Through event registration', 'Sent to the people who fit, longest wait first'],
+      ['Roles with terms and handoffs', 'No', 'Yes'],
+      ['Members answer without logging in', 'No', 'Yes'],
+    ],
+    involved: [INVOLVED, ROLES, { title: 'Reports you can act on', text: 'See who renews in the next 30, 60 or 90 days, then email them or export the list.' }],
+    migrate: [
+      'Export your contacts from WildApricot as a CSV file.',
+      `Import the file into ${BRAND.name}. It recognizes columns such as Membership level, Renewal due and Member since.`,
+      'Check the matches, then add your board, committees and roles.',
+    ],
+    questions: [
+      { q: 'Is it really free?', a: 'Yes. Every feature, any number of members. Request access and we set you up.' },
+      { q: 'Do our members need to pay dues?', a: 'No. Renewals and dues are off until you turn them on.' },
+      { q: 'Do members need an account?', a: 'No. Each person gets email from you and answers from any phone.' },
+      EXPORT,
+    ],
+  },
+  // From galaxydigital.com, checked November 27, 2026: quote-based pricing
+  // after a demo, volunteers sign up by creating a profile, and no
+  // membership renewals, dues or board terms on its product pages.
+  galaxy: {
+    name: 'Galaxy Digital',
+    intro: ['Run your volunteers and your members from one roster.', `${BRAND.name} is free. Request access today and skip the sales demo.`],
+    costHeading: 'What it takes to start',
+    price: { price: 'Quote', unit: '', lines: ['Custom price after a sales demo.', 'No price on the website.'] },
+    ours: { ...FREE, lines: ['For any number of people.', 'Request access and start today.'] },
+    compare: [
+      ['Price', 'Custom quote', 'Free'],
+      ['Getting started', 'Book a sales demo', 'Request access online'],
+      ['Volunteer tasks and shifts', 'Yes', 'Yes'],
+      ['Group email', 'Yes', 'Yes'],
+      ['How volunteers sign up', 'Create a profile and log in', 'Tap Accept in an email'],
+      ['Who gets asked', 'Whoever finds the listing', 'The people who fit, longest wait first'],
+      ['Membership renewals and dues', 'No', 'Yes'],
+      ['Board and committee roles with terms', 'No', 'Yes'],
+    ],
+    involved: [
+      INVOLVED,
+      { title: 'Members and volunteers together', text: 'One roster for everyone. Turn on renewals and dues when you need them.' },
+      ROLES,
+    ],
+    migrate: [
+      'Export your volunteer list from Galaxy Digital as a CSV file.',
+      `Import the file into ${BRAND.name}. It matches names, email, phone and your own fields.`,
+      'Add your roles, then write your first task.',
+    ],
+    questions: [
+      { q: 'Is it really free?', a: 'Yes. Every feature, any number of people. Request access and we set you up.' },
+      { q: 'Do volunteers need an account?', a: 'No. Each person gets email from you and answers from any phone.' },
+      { q: 'Can we track members too?', a: 'Yes. Add categories, renewal dates and dues, and run a report of who is due.' },
+      EXPORT,
+    ],
+  },
+} satisfies Record<string, Competitor>;
