@@ -4,9 +4,10 @@ import { must } from '../auth';
 import { loadFields, loadVolunteer, loadVolunteers, logEvent, toTask } from '../db';
 import { cleanText, fail, newId, normalizeEmail, normalizePhone, optionalText, parseJson } from '../util';
 import { parseDate } from '../../shared/membership';
+import { isoDate, personFromRow, phoneKey, splitMany } from '../../shared/importing';
 import { rolesOf } from './roles';
 import { standing } from '../../shared/sentences';
-import type { AskStatus, Field, FieldValue, Tier, Volunteer } from '../../shared/types';
+import type { AskStatus, Field, FieldType, FieldValue, Tier, Volunteer } from '../../shared/types';
 import { DAY_KEYS, PART_KEYS } from '../../shared/rules';
 import { extractRows, modelConfigured } from '../model';
 import { firstOffers, sweep } from '../engine';
@@ -19,7 +20,7 @@ export const peopleRoutes = new Hono<AppBindings>();
 export function coerceValue(field: Field, raw: unknown): FieldValue {
   if (raw === null || raw === undefined) return null;
   if (field.type === 'many') {
-    const list = Array.isArray(raw) ? raw : String(raw).split(/[,;|]/);
+    const list = Array.isArray(raw) ? raw : splitMany(String(raw));
     const out = [...new Set(list.map((v) => cleanText(String(v), 100)).filter(Boolean))];
     return out.length ? out : null;
   }
@@ -31,6 +32,8 @@ export function coerceValue(field: Field, raw: unknown): FieldValue {
       return Number.isFinite(n) ? n : null;
     }
     case 'date': {
+      const iso = isoDate(text);
+      if (iso) return iso;
       const t = Date.parse(text);
       return Number.isNaN(t) ? null : new Date(t).toISOString().slice(0, 10);
     }
@@ -336,13 +339,14 @@ peopleRoutes.post('/import/preview', async (c) => {
   const byPhone = new Map<string, Volunteer>();
   for (const v of existing) {
     if (v.email) byEmail.set(v.email, v);
-    if (v.phone) byPhone.set(v.phone, v);
+    const key = phoneKey(v.phone);
+    if (key) byPhone.set(key, v);
   }
   const seenEmail = new Map<string, number>();
   const seenPhone = new Map<string, number>();
   const result = rows.map((r, i) => {
     const email = normalizeEmail(r.email);
-    const phone = normalizePhone(r.phone);
+    const phone = phoneKey(normalizePhone(r.phone));
     const name = cleanText(r.name, 200);
     let problem: string | null = null;
     if (!name) problem = 'No name';
@@ -361,7 +365,9 @@ peopleRoutes.post('/import/preview', async (c) => {
   return c.json({ rows: result });
 });
 
-type Target = 'name' | 'email' | 'phone' | 'ignore' | `field:${string}` | `new:${string}` | `member:${'category' | 'since' | 'expires' | 'dues'}`;
+type Target = 'name' | 'first' | 'last' | 'email' | 'phone' | 'ignore' | `field:${string}` | `new:${string}` | `member:${'category' | 'since' | 'expires' | 'dues'}`;
+
+const NEW_FIELD_TYPES: FieldType[] = ['text', 'number', 'date', 'one', 'many', 'yesno'];
 
 interface CommitRow {
   cells: Record<string, string>;
@@ -373,7 +379,7 @@ interface CommitRow {
 /** Membership cells from an import row. A date that can't be read is left empty. */
 function importMembership(member: Record<string, string>) {
   const date = (raw: string | undefined) => {
-    const t = parseDate(raw);
+    const t = parseDate(isoDate(raw ?? '') ?? raw);
     return t === 'bad' ? null : t;
   };
   return { category: optionalText(member.category, 80), since: date(member.since), expires: date(member.expires), dues: date(member.dues) };
@@ -406,22 +412,22 @@ peopleRoutes.post('/import/commit', async (c) => {
   const db = c.env.DB;
   const now = c.get('now');
 
-  // Columns that become new fields.
-  let fields = await loadFields(db, actor.orgId);
-  const newFieldStatements: D1PreparedStatement[] = [];
+  // Columns that become new fields. They're saved only if a person comes in with them.
+  const newTypes: Record<string, unknown> = body.newFieldTypes && typeof body.newFieldTypes === 'object' ? body.newFieldTypes : {};
+  const fields = await loadFields(db, actor.orgId);
+  const newFields: Field[] = [];
   for (const [column, target] of Object.entries(columnMap)) {
     if (typeof target === 'string' && target.startsWith('new:')) {
       const label = cleanText(target.slice(4), 80) || cleanText(column, 80);
-      const id = newId();
-      newFieldStatements.push(
-        db.prepare('INSERT INTO fields (id, org_id, label, type, options_json, position, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(id, actor.orgId, label, 'text', '[]', fields.length + newFieldStatements.length, now),
-      );
-      columnMap[column] = `field:${id}`;
+      const type = NEW_FIELD_TYPES.includes(newTypes[column] as FieldType) ? (newTypes[column] as FieldType) : 'text';
+      const field: Field = { id: newId(), label, type, options: [], position: fields.length + newFields.length };
+      newFields.push(field);
+      fields.push(field);
+      columnMap[column] = `field:${field.id}`;
     }
   }
-  if (newFieldStatements.length) await db.batch(newFieldStatements);
-  fields = await loadFields(db, actor.orgId);
   const fieldById = new Map(fields.map((f) => [f.id, f]));
+  const lastFirst = body.lastFirst === true;
 
   const existing = new Map((await loadVolunteers(db, actor.orgId)).map((v) => [v.id, v]));
   const importId = newId();
@@ -437,12 +443,11 @@ peopleRoutes.post('/import/commit', async (c) => {
     const raw: Record<string, unknown> = {};
     const values: Record<string, FieldValue> = {};
     const member: Record<string, string> = {};
+    Object.assign(raw, personFromRow(row.cells ?? {}, columnMap, { lastFirst }));
     for (const [column, target] of Object.entries(columnMap)) {
       const cell = row.cells?.[column];
       if (cell === undefined) continue;
-      if (target === 'name' || target === 'email' || target === 'phone') {
-        raw[target] = raw[target] ? `${raw[target]} ${cell}` : cell;
-      } else if (typeof target === 'string' && target.startsWith('member:')) {
+      if (typeof target === 'string' && target.startsWith('member:')) {
         member[target.slice(7)] = cell;
       } else if (typeof target === 'string' && target.startsWith('field:')) {
         const field = fieldById.get(target.slice(6));
@@ -514,6 +519,11 @@ peopleRoutes.post('/import/commit', async (c) => {
       .bind(importId, actor.orgId, cleanText(body.fileName, 200) || 'file', cleanText(body.fileType, 40) || 'unknown', JSON.stringify(columnMap), added, merged, JSON.stringify(setAside), actor.memberId, now),
     logEvent(db, { orgId: actor.orgId, actorKind: 'member', actorId: actor.memberId, verb: 'imported', objectType: 'import', objectId: importId, at: now, meta: { added, merged, setAside: setAside.length } }),
   );
+  if (added + merged > 0 && newFields.length) {
+    await db.batch(newFields.map((f) =>
+      db.prepare('INSERT INTO fields (id, org_id, label, type, options_json, position, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(f.id, actor.orgId, f.label, f.type, '[]', f.position, now),
+    ));
+  }
   for (let i = 0; i < statements.length; i += 50) await db.batch(statements.slice(i, i + 50));
   await growOptions(db, actor.orgId, fields, allValues);
   // Imported people get tags with no coordinator action. The model sees field values only.
@@ -524,7 +534,9 @@ peopleRoutes.post('/import/commit', async (c) => {
 
 peopleRoutes.get('/imports', async (c) => {
   const { results } = await c.env.DB.prepare(
-    'SELECT id, file_name, file_type, added, merged, set_aside_json, set_aside_cleared, created_at FROM imports WHERE org_id = ? ORDER BY created_at DESC LIMIT 50',
+    `SELECT i.id, i.file_name, i.file_type, i.added, i.merged, i.set_aside_json, i.set_aside_cleared, i.created_at, i.undone_at,
+       (SELECT COUNT(*) FROM volunteers v WHERE v.import_id = i.id AND v.org_id = i.org_id) AS people
+     FROM imports i WHERE i.org_id = ? ORDER BY i.created_at DESC LIMIT 50`,
   )
     .bind(c.get('actor').orgId)
     .all<Record<string, string | number>>();
@@ -622,4 +634,44 @@ peopleRoutes.get('/export/:kind{(volunteers|tasks|asks|spots)\\.csv}', async (c)
     body = csv(data.spots.map((s) => ({ ...s, created_at: iso(s.created_at), updated_at: iso(s.updated_at) })), ['id', 'task_id', 'volunteer_id', 'status', 'created_at', 'updated_at']);
   }
   return c.body(body, 200, { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="${kind}.csv"` });
+});
+
+/**
+ * Undo an import: remove the people it added. Anyone who has been asked since
+ * stays, because their history matters more than a clean list. Details merged
+ * into people who were already here stay too.
+ */
+peopleRoutes.post('/imports/:importId/undo', async (c) => {
+  const actor = c.get('actor');
+  must(actor, 'manage_people');
+  const db = c.env.DB;
+  const importId = c.req.param('importId');
+  const imp = await db.prepare('SELECT id, undone_at FROM imports WHERE id = ? AND org_id = ?').bind(importId, actor.orgId).first<{ id: string; undone_at: number | null }>();
+  if (!imp) fail(404, 'Not found');
+  const { results } = await db
+    .prepare(
+      `SELECT v.id, (SELECT COUNT(*) FROM asks a WHERE a.volunteer_id = v.id) + (SELECT COUNT(*) FROM role_terms r WHERE r.volunteer_id = v.id) AS used
+       FROM volunteers v WHERE v.import_id = ? AND v.org_id = ?`,
+    )
+    .bind(importId, actor.orgId)
+    .all<{ id: string; used: number }>();
+  const remove = results.filter((r) => r.used === 0).map((r) => r.id);
+  const statements: D1PreparedStatement[] = [];
+  for (const id of remove) {
+    statements.push(
+      db.prepare('DELETE FROM volunteer_sessions WHERE volunteer_id = ? AND org_id = ?').bind(id, actor.orgId),
+      db.prepare('DELETE FROM emails WHERE volunteer_id = ? AND org_id = ?').bind(id, actor.orgId),
+      db.prepare('DELETE FROM team_members WHERE volunteer_id = ? AND org_id = ?').bind(id, actor.orgId),
+      db.prepare('DELETE FROM offer_skips WHERE volunteer_id = ? AND org_id = ?').bind(id, actor.orgId),
+      db.prepare("DELETE FROM taggings WHERE object_type = 'volunteer' AND object_id = ? AND org_id = ?").bind(id, actor.orgId),
+      db.prepare('DELETE FROM volunteers WHERE id = ? AND org_id = ?').bind(id, actor.orgId),
+    );
+  }
+  const now = c.get('now');
+  statements.push(
+    db.prepare('UPDATE imports SET undone_at = ?, set_aside_cleared = 1 WHERE id = ? AND org_id = ?').bind(now, importId, actor.orgId),
+    logEvent(db, { orgId: actor.orgId, actorKind: 'member', actorId: actor.memberId, verb: 'undid', objectType: 'import', objectId: importId, at: now, meta: { removed: remove.length, kept: results.length - remove.length } }),
+  );
+  for (let i = 0; i < statements.length; i += 50) await db.batch(statements.slice(i, i + 50));
+  return c.json({ removed: remove.length, kept: results.length - remove.length });
 });

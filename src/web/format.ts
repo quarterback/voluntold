@@ -1,6 +1,18 @@
 import { day, timeRange } from '../shared/time';
 export { ago, shortDate, standing } from '../shared/sentences';
 
+import type { FieldType } from '../shared/types';
+
+/** Field types, in the words other tools use for them. */
+export const FIELD_TYPE_TEXT: Record<FieldType, string> = {
+  text: 'Short text',
+  number: 'Number',
+  date: 'Date',
+  one: 'Dropdown',
+  many: 'Checkboxes',
+  yesno: 'Yes or no',
+};
+
 export function when(t: { timing: string; startsAt: number | null; endsAt: number | null; dueAt: number | null }, timeZone?: string): string {
   if (t.timing === 'at_time' && t.startsAt && t.endsAt) return `${day(t.startsAt, timeZone)}, ${timeRange(t.startsAt, t.endsAt, timeZone)}`;
   if (t.timing === 'by_date' && t.dueAt) return `Due ${day(t.dueAt, timeZone)}`;

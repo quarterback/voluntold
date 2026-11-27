@@ -80,6 +80,15 @@ export function Section({ title, note, action, children, flush }: { title?: stri
   );
 }
 
+/**
+ * One line of help under a heading. Screens stay free of explanations except
+ * through this, so every explanation is short, easy to find and easy to remove
+ * (EDITORIAL.md, "Help lines").
+ */
+export function Help({ children, sx }: { children: ReactNode; sx?: object }) {
+  return <Typography variant="body2" color="text.secondary" sx={sx}>{children}</Typography>;
+}
+
 export type Tone = 'neutral' | 'accent' | 'success' | 'warning' | 'danger' | 'info';
 
 /** A small status pill. The word carries the meaning; the color only helps. */

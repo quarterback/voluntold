@@ -1,5 +1,6 @@
 import { HTTPException } from 'hono/http-exception';
 import type { Env } from './env';
+import { cleanPhone } from '../shared/importing';
 
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz234567';
 
@@ -105,7 +106,7 @@ export function normalizeEmail(value: unknown): string | null {
 }
 
 export function normalizePhone(value: unknown): string | null {
-  const text = cleanText(value, 40);
+  const text = cleanPhone(cleanText(value, 60));
   const digits = text.replace(/[^\d+]/g, '');
   return digits.replace(/\D/g, '').length >= 7 ? digits : null;
 }
