@@ -18,7 +18,7 @@ The pilot in [SPEC.md](docs/SPEC.md):
 
 - organizations, members and roles (admin, coordinator, team lead)
 - details defined by each organization, and teams
-- a two-step sign-up and a setup guide that takes a new organization to its first ask
+- a guided sign-up and a setup guide that stays with a new organization to its first ask
 - import from CSV, Excel, XML, JSON, text, Word and PDF files, with column matching, duplicate merging and undo
 - tasks with requirements, and the three ways to ask
 - private links and the volunteer's page

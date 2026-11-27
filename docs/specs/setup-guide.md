@@ -2,40 +2,47 @@
 
 **Status:** built November 27, 2026, from [decision 0017](../decisions/0017-setup-guide-and-import.md). The research behind it is in [the research note](../research/onboarding-and-import-2026-11.md).
 
-This covers what a new organization sees from "Request free access" to its first ask. It replaces the part of [the onboarding spec](onboarding.md) that said not to build a setup guide. That spec's facilitated sessions and its demo guide are unchanged.
+This covers what a new organization sees from "Request free access" to its first ask. The owner reshaped it twice on November 27: first asking for a guided first run, then for one helper that leads sign-up and stays through setup. It replaces the part of [the onboarding spec](onboarding.md) that said not to build a setup guide. That spec's facilitated sessions and its demo guide are unchanged.
 
 ## Sign-up
 
-1. **Email and code.** Unchanged.
-2. **Create your organization.** The organization's name, and what it calls its people: volunteers, members, or participants.
-3. **Tell us about it.** How many people, where the list is today, a website, and what the organization will use the tool for. The last two are optional. The screen says why it asks: an admin of the tool reviews each organization before it can send email ([decision 0013](../decisions/0013-approve-new-organizations.md)). The person confirms everyone on the roster is 18 or older.
+One question on each screen, with a progress bar and one line of help beside the helper's face. Nothing is created until the last step, so a person who stops leaves nothing half set up.
 
-The organization then opens on Today.
+1. **What is your organization called?** The name, and what it calls its people: volunteers, members, or participants.
+2. **How do we reach you?** The person's email, and a website if there is one.
+3. **Tell us about your group.** How many people, and where the list is today. The person confirms everyone on the roster is 18 or older. The screen says why it asks: an admin of the tool reviews each organization before it can send email ([decision 0013](../decisions/0013-approve-new-organizations.md)).
+4. **Check your email.** The 6 digit code. "Create organization" checks the code, creates the account and the organization, and opens Today.
 
-**Done when:** a person can create an organization on a phone without scrolling past a field they don't understand.
+Someone already signed in sees steps 1 and 3 only. Answers survive a reload until the organization is created.
+
+**Done when:** a person can create an organization on a phone, one question at a time, without scrolling.
 
 ## The setup guide
 
-A card at the top of Today, titled "Get started", with a count and a progress bar.
+After the organization exists, a helper stays with the person from screen to screen. It sits where the demo guide sits: beside the page on a wide screen, a sheet above the tabs on a phone. It shows one step at a time.
 
 | Step | Finishes when | Can skip |
 |---|---|---|
 | Create your organization | Always done | |
-| Choose what to track about people | The person opens Custom fields, or the organization has people | Yes |
-| Add your people | The organization has one person | |
+| Add another admin | The organization has two people who can sign in | Yes |
+| Bring in your people | The organization has one person | |
+| Check what you track about people | The person chooses Done on Custom fields | Yes |
 | Create your first task | The organization has one task | |
 | Ask people to help | The organization has sent one ask | |
-| Add another admin | The organization has two people who can sign in | Yes |
 
-- The first unfinished step is open. It shows one line of help and one button. The "Add your people" step also has "Add one person". Tapping another step opens it instead.
-- The help for "Add your people" follows the sign-up answer: upload your spreadsheet, or export from your current tool.
-- Nobody ticks a box. The server counts people, tasks, asks, and admins each time the organization loads.
-- Until the organization is approved, the card says so in one line, and that links can be copied meanwhile.
-- While the guide shows and the organization is empty, Today leaves out "To do", "Capacity", and "Urgent ask".
+- **Before the person goes there,** the guide shows the step's name, one line on what it is for, and one button. "Bring in your people" also has "Add one person". Its line follows the sign-up answer: upload your spreadsheet, or export from your current tool.
+- **Once they are on that screen,** the line changes to what to do there, and the button goes away. On a phone the sheet shrinks to a strip, so it stays out of the way of the work.
+- **When the step is done,** the guide moves to the next one by itself. The server counts admins, people, tasks, and asks each time the person changes screens. Nobody ticks a box.
+- **All steps** are listed under the current one on a wide screen, and behind a button on a phone. Tapping one opens it.
+- Until the organization is approved, the "Ask people to help" step says email is off and links can be copied.
+- When every step is done or skipped, the guide says "Setup is done". Choosing Done removes it for good.
+- While setup is unfinished and the organization is empty, Today leaves out "Capacity" and "Urgent ask".
 
-**Where it goes.** The close button hides the guide. Settings shows a "Setup guide" row with the count, and the desktop menu shows the same, until every step is done or skipped. Either one brings the guide back. When every step is done or skipped, the guide and both links go away.
+**Putting it away.** The close button shrinks the guide to a small "Setup" button with the count, which brings it back. Settings has a "Setup guide" row that does the same. Both go away when setup is finished.
 
 **Who sees it.** Admins and coordinators of a real organization. Team leads and sample organizations don't.
+
+**The helper's face** is a round head with five arms. It is a placeholder drawing for the owner to approve or replace. The help is scripted. It is not a chatbot, and nothing a person types goes to a model.
 
 **Done when:** a new organization can go from sign-up to a sent ask using only the guide's buttons, and `node e2e/smoke.mjs` walks that path.
 
@@ -52,7 +59,7 @@ Settings is a menu. Each row has a name and one line saying what is inside, and 
 7. Import and export
 8. Advanced: post tasks to Bluesky, delete the organization
 
-**Bluesky posting** shows under Advanced only when all of these are true: the person is an admin, the server can post, and the setup guide is finished or hidden. An organization that already connected an account always sees it. The task form shows its "Post to" switch only when an account is connected. The words "AT Protocol" don't appear in the interface.
+**Bluesky posting** shows under Advanced only when all of these are true: the person is an admin, the server can post, and setup is finished. An organization that already connected an account always sees it. The task form shows its "Post to" switch only when an account is connected. The words "AT Protocol" don't appear in the interface.
 
 ## Import
 

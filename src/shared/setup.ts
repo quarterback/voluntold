@@ -2,16 +2,18 @@
 // account to its first ask. Each step finishes on its own when the
 // organization's data shows it happened, so nobody ticks a box.
 
-export const SETUP_STEPS = ['org', 'details', 'people', 'task', 'ask', 'admin'] as const;
+// The order a new organization meets them: who else runs it, then its people,
+// then what it tracks, then its first task and ask.
+export const SETUP_STEPS = ['org', 'admin', 'people', 'details', 'task', 'ask'] as const;
 export type SetupStep = (typeof SETUP_STEPS)[number];
 
 /** Steps a person can skip. The rest are the point of the tool. */
-export const SKIPPABLE: SetupStep[] = ['details', 'admin'];
+export const SKIPPABLE: SetupStep[] = ['admin', 'details'];
 
 export interface SetupSaved {
   hidden?: boolean;
   skipped?: SetupStep[];
-  /** Steps with nothing to count, finished by opening their screen. */
+  /** Steps with nothing to count, finished when the person says so. */
   seen?: SetupStep[];
 }
 
@@ -38,7 +40,7 @@ export function setupState(counts: SetupCounts, saved: SetupSaved): SetupState {
   const skippedSet = new Set(saved.skipped ?? []);
   const isDone: Record<SetupStep, boolean> = {
     org: true,
-    details: seen.has('details') || counts.people > 0,
+    details: seen.has('details'),
     people: counts.people > 0,
     task: counts.tasks > 0,
     ask: counts.asks > 0,

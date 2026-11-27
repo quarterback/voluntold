@@ -38,51 +38,52 @@ async function noSideScroll(p, where) {
   check(!wide, `no sideways scrolling on ${where}`);
 }
 
-async function signIn(p, email) {
-  await p.goto(`${BASE}/login`);
-  await p.getByLabel('Email').fill(email);
-  await p.getByRole('button', { name: 'Send code' }).click();
-  const code = (await p.getByText(/Test mode code/).textContent()).match(/\d{6}/)[0];
-  await p.getByLabel('Verification code').fill(code);
-  await p.getByRole('button', { name: 'Sign in' }).click();
-}
-
-// 1. Sign up in two short steps, land on Today with the setup guide, and add a second admin.
+// 1. Sign up one question at a time, land on Today with the setup guide, and add a second admin.
 const email = `coord-${Date.now()}@example.com`;
-await signIn(page, email);
-await page.getByRole('heading', { name: 'Create your organization' }).waitFor();
-await shot('sign-up-step-1');
+const guide = page.getByRole('complementary', { name: 'Setup guide' });
+await page.goto(`${BASE}/signup`);
+await page.getByRole('heading', { name: 'What is your organization called?' }).waitFor();
 await page.getByLabel('Organization name').fill('Chapter A');
+await shot('sign-up-name');
+await noSideScroll(page, 'Sign-up');
+await page.getByRole('button', { name: 'Next' }).click();
+await page.getByLabel('Your email').fill(email);
 await page.getByRole('button', { name: 'Next' }).click();
 await page.getByLabel('Everyone on our roster is 18 or older').check();
-await shot('sign-up-step-2');
+await shot('sign-up-details');
+await page.getByRole('button', { name: 'Next' }).click();
+const code = (await page.getByText(/Test mode code/).textContent()).match(/\d{6}/)[0];
+await page.getByLabel('Verification code').fill(code);
+await shot('sign-up-verify');
 await page.getByRole('button', { name: 'Create organization' }).click();
-await page.getByRole('heading', { name: 'Get started' }).waitFor();
-check((await page.getByText('1 of 6 done').count()) === 1, 'a new organization lands on Today with the setup guide');
+await guide.getByText('Add another admin').waitFor();
+console.log('ok - a new organization lands on Today with the setup guide at its first step');
 await shot('today-setup-guide');
 await noSideScroll(page, 'Today with the setup guide');
 const settings = page.url().replace(/\/today.*/, '/settings');
 
-await page.getByRole('button', { name: 'Review custom fields' }).click();
-await page.getByRole('heading', { name: 'Custom fields' }).waitFor();
-check(await page.getByText('Can lead').count() > 0, 'starter field Experience has Can lead');
-await shot('settings-custom-fields');
-await noSideScroll(page, 'Custom fields');
+await guide.getByRole('button', { name: 'Add admin' }).click();
+await page.getByLabel('Email', { exact: true }).fill(`second-${Date.now()}@example.com`);
+await page.getByRole('main').getByRole('button', { name: 'Add admin' }).click();
+await page.getByText(/second-.*@example.com/).waitFor();
+check((await page.getByRole('main').getByText('Admin', { exact: true }).count()) >= 2, 'second admin added');
+await guide.getByText(/Bring in your volunteers/).waitFor();
+console.log('ok - the guide moves on to bringing people in');
+await shot('setup-guide-people');
 
 await page.goto(settings);
 await page.getByRole('navigation', { name: 'Settings' }).waitFor();
 check(!/AT Protocol|Bluesky/.test(await page.locator('body').innerText()), 'no AT Protocol in Settings during setup');
 await shot('settings-menu');
 await noSideScroll(page, 'Settings');
-await page.getByRole('button', { name: /Admins and coordinators/ }).click();
-await page.getByLabel('Email', { exact: true }).fill(`second-${Date.now()}@example.com`);
-await page.getByRole('button', { name: 'Add admin' }).click();
-await page.getByText(/second-.*@example.com/).waitFor();
-check((await page.getByText('Admin', { exact: true }).count()) >= 2, 'second admin added');
+await page.getByRole('button', { name: /Custom fields/ }).click();
+await page.getByRole('heading', { name: 'Custom fields' }).waitFor();
+check(await page.getByText('Can lead').count() > 0, 'starter field Experience has Can lead');
+await noSideScroll(page, 'Custom fields');
 
 // 2. Import the sample CSV, merge the duplicate, skip the row with no contact.
 await page.goto(settings.replace('/settings', '/today'));
-await page.getByRole('button', { name: 'Import a list' }).click();
+await guide.getByRole('button', { name: 'Import a list' }).click();
 await page.locator('input[type=file]').setInputFiles('samples/volunteers.csv');
 await page.getByRole('heading', { name: 'Match columns' }).waitFor();
 check((await page.getByText('alex@example.com').count()) > 0, 'each column shows what it holds');

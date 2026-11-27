@@ -147,17 +147,12 @@ function MembershipSection() {
 }
 
 function FieldsSection() {
-  const { fields, path, reload, me, setup } = useOrg();
+  const { fields, path, reload, me } = useOrg();
   const dialogs = useDialogs();
   const [label, setLabel] = useState('');
   const [type, setType] = useState<FieldType>('one');
   const { error, run } = useAction();
   const canEdit = me.role !== 'lead';
-  // Opening this page is the "choose what to track" step of the setup guide.
-  const seen = setup.steps.find((x) => x.key === 'details')?.done;
-  useEffect(() => {
-    if (!seen && canEdit) api(path('/setup'), { method: 'PATCH', body: { seen: 'details' } }).then(reload, () => undefined);
-  }, [seen, canEdit, path, reload]);
   return (
     <Section>
       {error && <Alert severity="error" sx={{ mb: 1.5 }}>{error}</Alert>}
@@ -388,8 +383,8 @@ export function Settings() {
   const members = data?.members ?? [];
   const words = peopleWords(org.peopleWord);
   const admin = me.role === 'admin';
-  // Bluesky posting waits until setup is out of the way, and until it can work.
-  const bluesky = admin && atprotoReady && (setup.finished || setup.hidden || org.sample || !!org.atproto);
+  // Bluesky posting waits until setup is finished, and until it can work.
+  const bluesky = admin && atprotoReady && (setup.finished || org.sample || !!org.atproto);
   const list = sections({ admin, lead: me.role === 'lead', bluesky, people: words.people });
   const current = list.find((s) => s.key === section);
   const open = (key: string) => navigate(`/o/${org.id}/settings/${key}`);

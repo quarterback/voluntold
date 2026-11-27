@@ -17,7 +17,6 @@ import { api } from '../api';
 import { useOrg } from './OrgShell';
 import { IconTile, Loading, Page, StatTile, useLoad, type Tone } from './common';
 import { day, time, timeRange } from '../../shared/time';
-import { SetupGuide } from './SetupGuide';
 
 interface Item {
   kind: string;
@@ -77,8 +76,8 @@ export function Today() {
   const { path, org, setup, me } = useOrg();
   const navigate = useNavigate();
   const theme = useTheme();
-  // A new organization sees the setup guide alone, not empty lists and zeroes.
-  const settingUp = !org.sample && me.role !== 'lead' && !setup.finished && !setup.hidden;
+  // While the setup guide is leading, an empty organization isn't shown zeroes.
+  const settingUp = !org.sample && me.role !== 'lead' && !setup.finished;
   const wide = useMediaQuery(theme.breakpoints.up('md'));
   const { data, error } = useLoad(() => api(path('/today')), [path]);
   if (!data) return <Loading error={error} />;
@@ -93,10 +92,9 @@ export function Today() {
 
   return (
     <Page title={date} width={880}>
-      <SetupGuide />
-      {!(settingUp && items.length === 0) && <Typography variant="h2" component="h2" sx={{ mb: 1 }}>To do</Typography>}
-      <Card sx={{ display: settingUp && items.length === 0 ? 'none' : undefined }}>
-        {items.length === 0 && <Typography variant="body2" color="text.secondary" sx={{ p: 2.5 }}>Nothing to do</Typography>}
+      <Typography variant="h2" component="h2" sx={{ mb: 1 }}>To do</Typography>
+      <Card>
+        {items.length === 0 && <Typography variant="body2" color="text.secondary" sx={{ p: 2.5 }}>{settingUp ? 'Nothing to do yet' : 'Nothing to do'}</Typography>}
         {items.map((item, i) => (
           <Box key={i}>
             {i > 0 && <Divider />}

@@ -18,6 +18,7 @@ import { Loading, useLoad } from './common';
 import type { Field, Tag } from '../../shared/types';
 import type { SetupState } from '../../shared/setup';
 import { GUIDE_WIDTH, Guide, GuideProvider, useGuideOpen } from './Guide';
+import { SETUP_WIDTH, SetupGuide, useSetupOpen } from './SetupGuide';
 import { BROWSER_DEMO, StartOverButton } from '../demoMode';
 
 const SWITCH = BROWSER_DEMO ? '/start?demo=1' : '/start?choose=1';
@@ -94,12 +95,6 @@ export function OrgShell() {
             ))}
           </List>
           <Box sx={{ flex: 1 }} />
-          {!data.org.sample && data.me.role !== 'lead' && !data.setup.finished && (
-            <Button onClick={async () => { await api(path('/setup'), { method: 'PATCH', body: { hidden: false } }); await reload(); go('today'); }}
-              sx={{ justifyContent: 'flex-start', color: theme.vt.lime, px: 1.25, mb: 1 }}>
-              Setup guide · {data.setup.done} of {data.setup.total}
-            </Button>
-          )}
           {BROWSER_DEMO
             ? <StartOverButton size="small" sx={{ alignSelf: 'flex-start', color: theme.vt.onInk2 }} />
             : <Typography variant="caption" sx={{ px: 1.25, color: theme.vt.onInk2 }} noWrap>{data.me.email}</Typography>}
@@ -116,6 +111,7 @@ export function OrgShell() {
       )}
       <Main wide={wide} />
       <Guide />
+      <SetupGuide />
       {!wide && (
         <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10 }} elevation={0}>
           <BottomNavigation showLabels value={tab === 'settings' ? false : tab} onChange={(_, v) => go(v)} component="nav" aria-label="Main">
@@ -131,11 +127,14 @@ export function OrgShell() {
 /** The page column. It leaves room for the demo guide on wide screens. */
 function Main({ wide }: { wide: boolean }) {
   const guide = useGuideOpen();
+  const setup = useSetupOpen();
   const { org } = useOrg();
   return (
-    <Box component="main" sx={{ ml: wide ? `${SIDEBAR}px` : 0, mr: wide && guide ? `${GUIDE_WIDTH}px` : 0 }}>
+    <Box component="main" sx={{ ml: wide ? `${SIDEBAR}px` : 0, mr: wide && guide ? `${GUIDE_WIDTH}px` : wide && setup ? `${SETUP_WIDTH}px` : 0 }}>
       {!org.approved && !org.sample && !BROWSER_DEMO && <Alert severity="info" sx={{ borderRadius: 0 }}>Pending approval: email is off</Alert>}
       <Outlet />
+      {/* Room to scroll the page clear of the setup guide's sheet on a phone. */}
+      {!wide && setup && <Box aria-hidden sx={{ height: 200 }} />}
     </Box>
   );
 }

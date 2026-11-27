@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { Home } from './pages/Home';
 import { Login } from './pages/Login';
 import { Start } from './pages/Start';
+import { Signup } from './pages/Signup';
 import { OrgShell } from './pages/OrgShell';
 import { Today } from './pages/Today';
 import { Tasks } from './pages/Tasks';
@@ -33,6 +34,7 @@ export function App() {
       <Route path="/me" element={<VolunteerPage />} />
       <Route path="/" element={<Home />} />
       <Route path="/start" element={<Start />} />
+      <Route path="/signup" element={BROWSER_DEMO ? <Navigate to="/start?demo=1" replace /> : <Signup />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="/o/:orgId" element={<OrgShell />}>
         <Route index element={<Navigate to="today" replace />} />
