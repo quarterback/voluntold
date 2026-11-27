@@ -77,7 +77,9 @@ check(!/AT Protocol|Bluesky/.test(await page.locator('body').innerText()), 'no A
 await shot('settings-menu');
 await noSideScroll(page, 'Settings');
 await page.getByRole('button', { name: /Custom fields/ }).click();
-await page.getByRole('heading', { name: 'Custom fields' }).waitFor();
+// The menu row is a heading too, so wait for the page's own address.
+await page.waitForURL(/\/settings\/fields$/);
+await page.getByText('Can lead').first().waitFor();
 check(await page.getByText('Can lead').count() > 0, 'starter field Experience has Can lead');
 await noSideScroll(page, 'Custom fields');
 
